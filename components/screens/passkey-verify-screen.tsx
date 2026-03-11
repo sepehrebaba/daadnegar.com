@@ -1,0 +1,105 @@
+"use client";
+
+import { useState } from 'react';
+import { useApp } from '@/context/app-context';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, KeyRound } from 'lucide-react';
+
+export function PasskeyVerifyScreen() {
+  const { navigate, verifyPasskey, setUser, goBack } = useApp();
+  const [passkey, setPasskey] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    
+    console.log('[v0] User attempting to verify passkey');
+
+    // شبیه‌سازی تاخیر شبکه
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    if (verifyPasskey(passkey)) {
+      console.log('[v0] Passkey verified successfully');
+      // TODO: API call to get user data from DB
+      setUser({
+        id: 'existing-user-id',
+        passkey: passkey,
+        inviteCode: 'INVITE2024',
+        isActivated: true,
+        tokensCount: 5,
+        approvedRequestsCount: 7, // برای نمایش بخش تایید
+      });
+      
+      console.log('[v0] User data loaded, redirecting to main menu');
+      navigate('main-menu');
+    } else {
+      console.log('[v0] Invalid passkey entered');
+      setError('رمز عبور نادرست است');
+    }
+    
+    setIsLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+            <KeyRound className="h-8 w-8 text-primary" />
+          </div>
+          <CardTitle className="text-xl font-bold text-foreground">
+            ورود به حساب
+          </CardTitle>
+          <CardDescription>
+            رمز عبور خود را وارد کنید
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="passkey">رمز عبور</Label>
+              <Input
+                id="passkey"
+                type="password"
+                placeholder="رمز عبور خود را وارد کنید"
+                value={passkey}
+                onChange={(e) => setPasskey(e.target.value)}
+                dir="ltr"
+              />
+            </div>
+            
+            {error && (
+              <div className="flex items-center gap-2 text-destructive bg-destructive/10 p-3 rounded-lg">
+                <AlertCircle className="h-5 w-5" />
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+            
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={!passkey || isLoading}
+            >
+              {isLoading ? 'در حال بررسی...' : 'ورود'}
+            </Button>
+            
+            <Button 
+              type="button"
+              onClick={goBack}
+              variant="ghost"
+              className="w-full"
+            >
+              بازگشت
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
