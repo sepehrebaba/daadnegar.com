@@ -10,23 +10,7 @@ export function WelcomeScreen() {
   const { navigate } = useApp();
 
   return (
-    <div className="flex flex-1 flex-col items-center p-4 pb-8">
-      {/* Logo above the card */}
-      <div className="mb-6 flex justify-center">
-        <Image src="/icon.svg" alt="دادبان" width={80} height={80} className="h-20 w-20" />
-      </div>
-
-      {/* Justice illustration */}
-      <div className="text-primary/80 mx-auto mb-6 w-full max-w-[200px]">
-        <Image
-          src="/justice-illustration.svg"
-          alt="ترازو عدالت"
-          width={200}
-          height={166}
-          className="h-auto w-full"
-        />
-      </div>
-
+    <div className="flex flex-1 flex-col items-center p-4 pb-3">
       {/* Main card */}
       <Card className="w-full max-w-lg">
         <CardHeader className="text-center">
@@ -36,8 +20,10 @@ export function WelcomeScreen() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <p className="text-muted-foreground text-center text-sm font-medium">
-            ورود به حساب کاربری
+          <img src="./hero.png" alt="دادبان" className="h-auto w-full object-contain" />
+
+          <p className="text-muted-foreground mt-2 text-center text-sm font-medium">
+            برای شروع، لطفاً یکی از روش‌های زیر را انتخاب کنید
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
@@ -59,26 +45,6 @@ export function WelcomeScreen() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Links below the card */}
-      <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-        <Button
-          onClick={() => navigate("about")}
-          variant="link"
-          className="text-muted-foreground gap-2"
-        >
-          <HelpCircle className="h-4 w-4" />
-          ما چه کاری انجام می‌دهیم؟
-        </Button>
-        <Button
-          onClick={() => navigate("security")}
-          variant="link"
-          className="text-muted-foreground gap-2"
-        >
-          <Shield className="h-4 w-4" />
-          نگرانی‌های امنیتی
-        </Button>
-      </div>
     </div>
   );
 }
