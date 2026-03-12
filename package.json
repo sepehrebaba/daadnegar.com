@@ -16,6 +16,7 @@
     "prisma:migrate": "pnpm exec prisma migrate deploy",
     "prisma:migrate:dev": "pnpm exec prisma migrate dev",
     "prisma:seed": "pnpm exec prisma db seed",
+    "prisma:studio": "pnpm exec prisma studio",
     "start": "next start"
   },
   "lint-staged": {

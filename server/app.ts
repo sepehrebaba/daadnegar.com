@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 import { constantsService } from "./services/constants";
+import { inviteService } from "./services/invite";
 import { meService } from "./services/me";
 import { reportsService } from "./services/reports";
 import { peopleService } from "./services/people";
@@ -87,6 +88,7 @@ export const app = new Elysia({ prefix: "/api", aot: false })
     }),
   )
   .use(constantsService)
+  .use(inviteService)
   .use(meService)
   .use(peopleService)
   .use(reportsService)

@@ -272,6 +272,62 @@ async function seedFamousPeople() {
   console.log("Famous people seeded.");
 }
 
+const DEMO_INVITE_TOKEN = "demo-token-invite-2024";
+const DEMO_PASSKEY = "demo123";
+
+async function seedDemoToken() {
+  const existing = await prisma.inviteSession.findUnique({
+    where: { token: DEMO_INVITE_TOKEN },
+  });
+  if (existing) {
+    console.log("Demo invite token already exists, skipping.");
+    return;
+  }
+  const inviteCode = await prisma.inviteCode.findFirst({
+    where: { code: "DEMO456", isActive: true },
+  });
+  if (!inviteCode) {
+    console.log("DEMO456 invite code not found, skipping demo token seed.");
+    return;
+  }
+  const { hashPassword } = await import("better-auth/crypto");
+  const passkeyHash = await hashPassword(DEMO_PASSKEY);
+
+  const demoEmail = "invite-demo@dadban.local";
+  let demoUser = await prisma.user.findUnique({
+    where: { email: demoEmail },
+  });
+  if (!demoUser) {
+    demoUser = await prisma.user.create({
+      data: {
+        name: "کاربر دمو",
+        email: demoEmail,
+        accounts: {
+          create: {
+            accountId: demoEmail,
+            providerId: "invite-passkey",
+            password: passkeyHash,
+          },
+        },
+      },
+    });
+  }
+
+  const expiresAt = new Date();
+  expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+  await prisma.inviteSession.create({
+    data: {
+      token: DEMO_INVITE_TOKEN,
+      inviteCodeId: inviteCode.id,
+      passkeyHash,
+      userId: demoUser.id,
+      expiresAt,
+    },
+  });
+  console.log(`Demo invite token seeded. Token: ${DEMO_INVITE_TOKEN}, passkey: ${DEMO_PASSKEY}`);
+}
+
 async function seedAdminPanel() {
   const existing = await prisma.adminPanelUser.findFirst();
   if (existing) {
@@ -295,6 +351,7 @@ async function seedAdminPanel() {
 async function main() {
   await seedUser();
   await seedInviteCodes();
+  await seedDemoToken();
   await seedCategories();
   await seedProvincesAndCities();
   await seedUnknownPerson();

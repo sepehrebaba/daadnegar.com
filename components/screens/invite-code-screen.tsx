@@ -12,7 +12,7 @@ import { AlertCircle, KeyRound } from "lucide-react";
 
 export function InviteCodeScreen() {
   const router = useRouter();
-  const { verifyInviteCode } = useApp();
+  const { validateInviteCode } = useApp();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,26 +22,16 @@ export function InviteCodeScreen() {
     setError("");
     setIsLoading(true);
 
-    console.log("[v0] User submitting invite code:", code);
+    const result = await validateInviteCode(code);
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    if (verifyInviteCode(code)) {
-      console.log("[v0] Invite code valid, checking if passkey exists");
-      // TODO: API call to check if user already has passkey
-      const existingPasskey = localStorage.getItem("najva_passkey");
-
-      if (existingPasskey) {
-        console.log("[v0] Existing passkey found, redirecting to verify");
+    if (result.ok) {
+      if (result.hasPasskey) {
         router.push(routes.passkeyVerify);
       } else {
-        console.log("[v0] No passkey found, redirecting to register");
         router.push(routes.passkeyRegister);
       }
     } else {
-      console.log("[v0] Invalid invite code");
-      setError("کد دعوت نامعتبر است");
+      setError(result.error);
     }
 
     setIsLoading(false);

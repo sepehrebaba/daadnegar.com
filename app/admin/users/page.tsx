@@ -63,11 +63,12 @@ export default function AdminUsersPage() {
     e.preventDefault();
     setInviteLoading(true);
     setInviteSuccess("");
-    const { data, error } = await api.admin.invitations.post({
-      email: inviteEmail || undefined,
-      name: inviteName || undefined,
+    const body: { email?: string; name?: string; expiresInDays?: number } = {
       expiresInDays: 7,
-    });
+    };
+    if (inviteEmail?.trim()) body.email = inviteEmail.trim();
+    if (inviteName?.trim()) body.name = inviteName.trim();
+    const { data, error } = await api.admin.invitations.post(body);
     setInviteLoading(false);
     if (error) {
       setInviteSuccess(`خطا: ${error.message}`);

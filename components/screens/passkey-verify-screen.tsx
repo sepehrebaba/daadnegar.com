@@ -22,28 +22,13 @@ export function PasskeyVerifyScreen() {
     setError("");
     setIsLoading(true);
 
-    console.log("[v0] User attempting to verify passkey");
+    const result = await verifyPasskey(passkey);
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    if (verifyPasskey(passkey)) {
-      console.log("[v0] Passkey verified successfully");
-      // TODO: API call to get user data from DB
-      setUser({
-        id: "existing-user-id",
-        passkey: passkey,
-        inviteCode: "INVITE2024",
-        isActivated: true,
-        tokensCount: 5,
-        approvedRequestsCount: 7, // For displaying approval section
-      });
-
-      console.log("[v0] User data loaded, redirecting to main menu");
+    if (result.ok) {
+      setUser(result.user);
       router.push(routes.mainMenu);
     } else {
-      console.log("[v0] Invalid passkey entered");
-      setError("رمز عبور نادرست است");
+      setError(result.error);
     }
 
     setIsLoading(false);

@@ -36,25 +36,15 @@ export function PasskeyRegisterScreen() {
 
     setIsLoading(true);
 
-    // Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    const result = await registerPasskey(passkey);
 
-    console.log("[v0] Registering passkey for new user");
-    registerPasskey(passkey);
+    if (result.ok) {
+      setUser(result.user);
+      router.push(routes.mainMenu);
+    } else {
+      setError(result.error);
+    }
 
-    // TODO: API call to activate user in DB
-    console.log("[v0] Activating user in database");
-    setUser({
-      id: crypto.randomUUID(),
-      passkey: passkey,
-      inviteCode: "INVITE2024",
-      isActivated: true,
-      tokensCount: 0,
-      approvedRequestsCount: 0,
-    });
-
-    console.log("[v0] User activated successfully, redirecting to main menu");
-    router.push(routes.mainMenu);
     setIsLoading(false);
   };
 

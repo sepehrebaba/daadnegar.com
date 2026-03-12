@@ -2,15 +2,21 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { AppState, AppScreen, Language, User, ReportCase, Person } from "@/types";
-import { api } from "@/lib/edyen";
+import { api, DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
+
+export type ValidateInviteResult =
+  | { ok: true; token: string; hasPasskey: boolean }
+  | { ok: false; error: string };
+
+export type PasskeyResult = { ok: true; user: User } | { ok: false; error: string };
 
 interface AppContextType {
   state: AppState;
   navigate: (screen: AppScreen) => void;
   setLanguage: (lang: Language) => void;
-  registerPasskey: (passkey: string) => void;
-  verifyPasskey: (passkey: string) => boolean;
-  verifyInviteCode: (code: string) => boolean;
+  validateInviteCode: (code: string) => Promise<ValidateInviteResult>;
+  registerPasskey: (passkey: string) => Promise<PasskeyResult>;
+  verifyPasskey: (passkey: string) => Promise<PasskeyResult>;
   setUser: (user: User | null) => void;
   startReport: () => void;
   updateReport: (data: Partial<ReportCase>) => void;
@@ -63,29 +69,55 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, language: lang }));
   }, []);
 
-  const registerPasskey = useCallback((passkey: string) => {
-    console.log("[v0] Registering new passkey:", passkey);
-    // TODO: API call to register passkey - currently stored in localStorage for demo
-    localStorage.setItem("najva_passkey", passkey);
-    console.log("[v0] Passkey registered successfully");
+  const validateInviteCode = useCallback(async (code: string): Promise<ValidateInviteResult> => {
+    const { data, error } = await api.invite.validate.post({ code });
+    if (error || !data) {
+      return { ok: false, error: (error as Error)?.message ?? "کد دعوت نامعتبر است" };
+    }
+    if (!("ok" in data) || !data.ok) {
+      return { ok: false, error: (data as { error?: string }).error ?? "کد دعوت نامعتبر است" };
+    }
+    const { token, hasPasskey } = data;
+    localStorage.setItem(DADBAN_INVITE_TOKEN_KEY, token);
+    return { ok: true, token, hasPasskey };
   }, []);
 
-  const verifyPasskey = useCallback((passkey: string): boolean => {
-    console.log("[v0] Verifying passkey:", passkey);
-    // TODO: API call to verify passkey
-    const storedPasskey = localStorage.getItem("najva_passkey");
-    const isValid = storedPasskey === passkey;
-    console.log("[v0] Passkey verification result:", isValid);
-    return isValid;
+  const registerPasskey = useCallback(async (passkey: string): Promise<PasskeyResult> => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
+    if (!token) {
+      return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
+    }
+    const { data, error } = await api.invite.register.post({ token, passkey });
+    if (error || !data) {
+      return { ok: false, error: (error as Error)?.message ?? "خطا در ثبت رمز عبور" };
+    }
+    if (!("ok" in data) || !data.ok) {
+      return { ok: false, error: (data as { error?: string }).error ?? "خطا در ثبت رمز عبور" };
+    }
+    const user = (data as { user?: User }).user;
+    if (!user) return { ok: false, error: "خطا در دریافت اطلاعات کاربر" };
+    setState((prev) => ({ ...prev, user }));
+    return { ok: true, user };
   }, []);
 
-  const verifyInviteCode = useCallback((code: string): boolean => {
-    console.log("[v0] Verifying invite code:", code);
-    // TODO: API call to verify invite code - test codes: INVITE2024, TEST123, DEMO456
-    const validCodes = ["INVITE2024", "TEST123", "DEMO456"];
-    const isValid = validCodes.includes(code.toUpperCase());
-    console.log("[v0] Invite code verification result:", isValid);
-    return isValid;
+  const verifyPasskey = useCallback(async (passkey: string): Promise<PasskeyResult> => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
+    if (!token) {
+      return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
+    }
+    const { data, error } = await api.invite.verify.post({ token, passkey });
+    if (error || !data) {
+      return { ok: false, error: (error as Error)?.message ?? "رمز عبور نادرست است" };
+    }
+    if (!("ok" in data) || !data.ok) {
+      return { ok: false, error: (data as { error?: string }).error ?? "رمز عبور نادرست است" };
+    }
+    const user = (data as { user?: User }).user;
+    if (!user) return { ok: false, error: "خطا در دریافت اطلاعات کاربر" };
+    setState((prev) => ({ ...prev, user }));
+    return { ok: true, user };
   }, []);
 
   const setUser = useCallback((user: User | null) => {
@@ -205,7 +237,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLanguage,
         registerPasskey,
         verifyPasskey,
-        verifyInviteCode,
+        validateInviteCode,
         setUser,
         startReport,
         updateReport,

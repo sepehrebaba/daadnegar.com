@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { createAuditLog } from "./audit";
 import { auth } from "@/lib/auth";
+import { resolveInviteToken } from "../lib/auth-invite";
 
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
@@ -9,7 +10,25 @@ async function getSession(headers: Headers) {
 
 export const reportsService = new Elysia({ prefix: "/reports", aot: false })
   .derive(async ({ request }) => {
-    const session = await getSession(request.headers);
+    let session = await getSession(request.headers);
+    if (!session?.user && request.headers) {
+      const inviteUser = await resolveInviteToken(request.headers.get("Authorization"));
+      if (inviteUser) {
+        session = {
+          user: {
+            id: inviteUser.userId,
+            name: inviteUser.name,
+            email: inviteUser.email,
+            image: null,
+            emailVerified: null,
+            role: "user",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+          session: null,
+        };
+      }
+    }
     return { session };
   })
   .post(

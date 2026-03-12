@@ -22,9 +22,11 @@ export function InviteUserScreen() {
     setSuccess("");
     setIsLoading(true);
 
-    const { data, error: inviteError } = await authClient.inviteUser({
-      email: email || undefined,
-    });
+    const trimmedEmail = email.trim();
+    const body = trimmedEmail
+      ? { type: "personal" as const, email: trimmedEmail }
+      : { type: "public" as const };
+    const { data, error: inviteError } = await authClient.inviteUser(body);
 
     if (inviteError) {
       setError(inviteError.message || "خطا در ارسال دعوت.");
@@ -46,7 +48,7 @@ export function InviteUserScreen() {
     setSuccess("");
     setIsLoading(true);
 
-    const { data, error: inviteError } = await authClient.inviteUser({});
+    const { data, error: inviteError } = await authClient.inviteUser({ type: "public" });
 
     if (inviteError) {
       setError(inviteError.message || "خطا در ایجاد دعوت عمومی.");
