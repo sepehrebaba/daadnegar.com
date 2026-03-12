@@ -89,10 +89,14 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         (await prisma.inviteSession.findFirst({ where: { userId: session.user.id } }));
       if (isInviteUser) {
         const reward = await getSettingNumber(SETTING_KEYS.TOKENS_REWARD_INVITED_ACTIVITY);
-        await prisma.user.update({
-          where: { id: session.user.id },
-          data: { tokenBalance: { increment: reward } },
-        });
+        const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
+          await import("../lib/token-transaction");
+        await addTokenTransaction(
+          session.user.id,
+          reward,
+          TOKEN_TRANSACTION_TYPES.invite_activity,
+          report.id,
+        );
       }
       return report;
     },

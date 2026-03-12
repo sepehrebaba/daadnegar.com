@@ -1,25 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { api, DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, CheckCircle, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle, Mail, Copy, Check } from "lucide-react";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 export function InviteUserScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
+  const [copied, setCopied] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const copyToClipboard = useCallback(async () => {
+    if (!inviteCode) return;
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = inviteCode;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [inviteCode]);
 
   const handlePersonalInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setSuccess("");
+    setSuccessMessage("");
+    setInviteCode("");
     setIsLoading(true);
 
     const trimmedEmail = email.trim();
@@ -45,10 +72,11 @@ export function InviteUserScreen() {
 
     const res = data as { ok?: boolean; code?: string; registerLink?: string } | null;
     const code = res?.code ?? "";
-    setSuccess(
-      email
-        ? `دعوت به ${email} ارسال شد. کد دعوت: ${code}`
-        : `کد دعوت شما: ${code}\nاین کد یک‌بار مصرف است. آن را با دیگران به اشتراک بگذارید.`,
+    setInviteCode(code);
+    setSuccessMessage(
+      trimmedEmail
+        ? `دعوت به ${trimmedEmail} ارسال شد.`
+        : "کد دعوت با موفقیت ایجاد شد. این کد یک‌بار مصرف است.",
     );
     setEmail("");
     setIsLoading(false);
@@ -56,7 +84,8 @@ export function InviteUserScreen() {
 
   const handlePublicInvite = async () => {
     setError("");
-    setSuccess("");
+    setSuccessMessage("");
+    setInviteCode("");
     setIsLoading(true);
 
     const token =
@@ -84,7 +113,8 @@ export function InviteUserScreen() {
     }
 
     const code = res?.code ?? "";
-    setSuccess(`کد دعوت شما: ${code}\nاین کد یک‌بار مصرف است. آن را با دیگران به اشتراک بگذارید.`);
+    setInviteCode(code);
+    setSuccessMessage("کد دعوت با موفقیت ایجاد شد. این کد یک‌بار مصرف است.");
     setIsLoading(false);
   };
 
@@ -120,10 +150,44 @@ export function InviteUserScreen() {
               </div>
             )}
 
-            {success && (
-              <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 text-green-600 dark:bg-green-950/30">
-                <CheckCircle className="h-5 w-5 shrink-0" />
-                <span className="text-sm">{success}</span>
+            {successMessage && inviteCode && (
+              <div className="space-y-3 rounded-lg border border-green-200 bg-green-50/50 p-4 dark:border-green-900/50 dark:bg-green-950/20">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-500" />
+                  <span className="text-foreground text-sm">{successMessage}</span>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground text-xs">کد دعوت</Label>
+                  <InputGroup>
+                    <InputGroupInput
+                      value={inviteCode}
+                      readOnly
+                      className="text-center font-mono text-lg font-bold tracking-widest"
+                      dir="ltr"
+                    />
+                    <InputGroupAddon align="inline-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={copyToClipboard}
+                        className="gap-2"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-4 w-4 text-green-600" />
+                            کپی شد!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="h-4 w-4" />
+                            کپی
+                          </>
+                        )}
+                      </Button>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </div>
               </div>
             )}
 

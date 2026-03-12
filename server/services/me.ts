@@ -52,4 +52,16 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
       tokensCount: user?.tokenBalance ?? 0,
       approvedRequestsCount,
     };
+  })
+  .get("/transactions", async ({ session }) => {
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    const transactions = await prisma.tokenTransaction.findMany({
+      where: { userId: session.user.id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: { id: true, amount: true, type: true, createdAt: true },
+    });
+    return transactions;
   });

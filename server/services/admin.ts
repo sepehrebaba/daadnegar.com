@@ -514,23 +514,27 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
 
       if (body.status === "accepted" || body.status === "rejected") {
         const { getSettingNumber, SETTING_KEYS } = await import("../lib/settings");
+        const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
+          await import("../lib/token-transaction");
         if (body.status === "accepted") {
           const reward = await getSettingNumber(SETTING_KEYS.TOKENS_REWARD_APPROVED_REPORT);
-          await prisma.user.update({
-            where: { id: existing.userId },
-            data: { tokenBalance: { increment: reward } },
-          });
+          await addTokenTransaction(
+            existing.userId,
+            reward,
+            TOKEN_TRANSACTION_TYPES.report_approved,
+            report.id,
+          );
         } else if (rejectionReason === "false" || rejectionReason === "problematic") {
           const key =
             rejectionReason === "false"
               ? SETTING_KEYS.TOKENS_DEDUCT_FALSE_REPORT
               : SETTING_KEYS.TOKENS_DEDUCT_PROBLEMATIC_REPORT;
           const deduct = await getSettingNumber(key);
-          const newBalance = Math.max(0, (existing.user.tokenBalance ?? 0) - deduct);
-          await prisma.user.update({
-            where: { id: existing.userId },
-            data: { tokenBalance: newBalance },
-          });
+          const txType =
+            rejectionReason === "false"
+              ? TOKEN_TRANSACTION_TYPES.report_false
+              : TOKEN_TRANSACTION_TYPES.report_problematic;
+          await addTokenTransaction(existing.userId, -deduct, txType, report.id);
         }
       }
 

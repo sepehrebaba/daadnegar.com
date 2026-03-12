@@ -27,9 +27,26 @@ model User {
   reports         Report[]
   auditLogs       AuditLog[]
   admin           Admin?
-  inviteSessions  InviteSession[]
-  usedInviteCodes InviteCode[]
+  inviteSessions     InviteSession[]
+  usedInviteCodes    InviteCode[]
   createdInviteCodes InviteCode[] @relation("InviteCodeInviter")
+  tokenTransactions  TokenTransaction[]
+}
+
+/** Event-sourcing: هر تغییر توکن ثبت می‌شود. tokenBalance در User فقط cache است. */
+model TokenTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int      // مثبت = واریز، منفی = برداشت
+  type      String   // registration | report_approved | report_false | report_problematic | invite_activity
+  refId     String?  // مثلاً reportId برای تراکنش‌های مربوط به گزارش
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("token_transaction")
 }
 
 model Session {

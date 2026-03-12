@@ -2,22 +2,58 @@
 
 import { useState, useEffect, useLayoutEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useApp } from "@/context/app-context";
 import { api } from "@/lib/edyen";
 import { DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { AlertCircle, UserPlus } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { AlertCircle, UserPlus, Eye, EyeOff, Check, Circle } from "lucide-react";
 import { routes } from "@/lib/routes";
+import { isPasswordSecure, getPasswordStrength, PASSWORD_RULES } from "@/lib/password-utils";
+
+const PASSWORD_REQUIREMENTS = [
+  {
+    key: "minLength" as const,
+    label: "حداقل ۸ کاراکتر",
+    check: (p: string) => p.length >= PASSWORD_RULES.minLength,
+  },
+  {
+    key: "hasUppercase" as const,
+    label: "یک حرف بزرگ (A-Z)",
+    check: (p: string) => /[A-Z]/.test(p),
+  },
+  {
+    key: "hasLowercase" as const,
+    label: "یک حرف کوچک (a-z)",
+    check: (p: string) => /[a-z]/.test(p),
+  },
+  { key: "hasNumber" as const, label: "یک عدد (0-9)", check: (p: string) => /[0-9]/.test(p) },
+  {
+    key: "hasSpecial" as const,
+    label: "یک کاراکتر خاص (!@#$%)",
+    check: (p: string) => /[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(p),
+  },
+];
 
 export function RegisterScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setUser } = useApp();
   const codeParam = searchParams.get("code");
 
   const [email, setEmail] = useState("");
-  const [passkey, setPasskey] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
@@ -55,12 +91,20 @@ export function RegisterScreen() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!isPasswordSecure(password)) {
+      setError("لطفاً رمز عبوری امن انتخاب کنید و تمام قوانین را رعایت کنید.");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setError("رمز عبور با تکرار آن یکسان نیست.");
+      return;
+    }
     setIsLoading(true);
 
     const { data, error: regError } = await api.invite["register-by-code"].post({
       code: codeParam!,
       email: email.trim(),
-      passkey,
+      passkey: password,
     });
 
     if (regError || !data?.ok) {
@@ -73,9 +117,24 @@ export function RegisterScreen() {
       return;
     }
 
-    const result = data as { ok: boolean; token: string };
+    const result = data as {
+      ok: boolean;
+      token: string;
+      user?: { id: string; name?: string; tokensCount?: number; approvedRequestsCount?: number };
+    };
     if (result.token) {
       localStorage.setItem(DADBAN_INVITE_TOKEN_KEY, result.token);
+    }
+    if (result.user) {
+      setUser({
+        id: result.user.id,
+        name: result.user.name ?? "",
+        passkey: "",
+        inviteCode: "",
+        isActivated: true,
+        tokensCount: result.user.tokensCount ?? 0,
+        approvedRequestsCount: result.user.approvedRequestsCount ?? 0,
+      } as Parameters<typeof setUser>[0]);
     }
     router.push(routes.mainMenu);
     setIsLoading(false);
@@ -115,18 +174,80 @@ export function RegisterScreen() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">رمز عبور (حداقل ۶ کاراکتر)</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={passkey}
-                onChange={(e) => setPasskey(e.target.value)}
-                className="text-center"
-                dir="ltr"
-                minLength={6}
-                required
-              />
+              <Label htmlFor="password">رمز عبور</Label>
+              <InputGroup>
+                <InputGroupInput
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="text-center"
+                  dir="ltr"
+                  minLength={PASSWORD_RULES.minLength}
+                  required
+                  aria-invalid={password.length > 0 && !isPasswordSecure(password)}
+                />
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    type="button"
+                    size="icon-xs"
+                    variant="ghost"
+                    onClick={() => setShowPassword((p) => !p)}
+                    aria-label={showPassword ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
+              {password.length > 0 && (
+                <div className="space-y-1.5">
+                  <Progress value={getPasswordStrength(password)} className="h-1.5" />
+                  <ul className="text-muted-foreground space-y-0.5 text-xs">
+                    {PASSWORD_REQUIREMENTS.map(({ key, label, check }) => (
+                      <li key={key} className="flex items-center gap-2">
+                        {check(password) ? (
+                          <Check className="size-3.5 shrink-0 text-green-600 dark:text-green-500" />
+                        ) : (
+                          <Circle className="size-3 shrink-0 opacity-40" />
+                        )}
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password-confirm">تکرار رمز عبور</Label>
+              <InputGroup>
+                <InputGroupInput
+                  id="password-confirm"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  className="text-center"
+                  dir="ltr"
+                  required
+                  aria-invalid={passwordConfirm.length > 0 && password !== passwordConfirm}
+                />
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    type="button"
+                    size="icon-xs"
+                    variant="ghost"
+                    onClick={() => setShowPassword((p) => !p)}
+                    aria-label={showPassword ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
+              {passwordConfirm.length > 0 && password !== passwordConfirm && (
+                <p className="text-destructive text-xs">رمز عبور با تکرار آن یکسان نیست</p>
+              )}
             </div>
 
             {error && (
@@ -139,7 +260,12 @@ export function RegisterScreen() {
             <Button
               type="submit"
               className="w-full"
-              disabled={!email.trim() || passkey.length < 6 || isLoading}
+              disabled={
+                !email.trim() ||
+                !isPasswordSecure(password) ||
+                password !== passwordConfirm ||
+                isLoading
+              }
             >
               {isLoading ? "در حال ثبت‌نام..." : "ثبت‌نام"}
             </Button>

@@ -3,7 +3,7 @@
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Languages } from "lucide-react";
+import { Languages, House } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,13 +69,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Footer - visible on all pages */}
       <footer className="border-border bg-muted/30 border-t px-4 py-4 pt-8">
         {/* Links below the card */}
-        <div className="mb-4 flex flex-col justify-center gap-2 sm:mb-6 sm:flex-row sm:gap-7">
+        <div className="mb-4 flex flex-row justify-center gap-5 sm:mb-6 sm:gap-7">
           <Link
-            href={routes.about}
+            href={routes.home}
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
           >
-            <HelpCircle className="h-4 w-4" />
-            ما چه کاری انجام می‌دهیم؟
+            <House className="h-4 w-4" />
+            خانه
           </Link>
           <Link
             href={routes.security}
@@ -83,6 +83,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           >
             <Shield className="h-4 w-4" />
             نگرانی‌های امنیتی
+          </Link>
+          <Link
+            href={routes.about}
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
+          >
+            <HelpCircle className="h-4 w-4" />
+            ما چه کاری انجام می‌دهیم؟
           </Link>
         </div>
 

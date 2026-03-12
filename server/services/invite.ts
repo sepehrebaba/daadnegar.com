@@ -2,6 +2,8 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { auth } from "@/lib/auth";
 import { resolveInviteToken } from "../lib/auth-invite";
+import { getSettingNumber, SETTING_KEYS } from "../lib/settings";
+import { TOKEN_TRANSACTION_TYPES } from "../lib/token-transaction";
 import { randomBytes } from "node:crypto";
 
 const TOKEN_EXPIRY_DAYS = 365;
@@ -92,33 +94,44 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
 
       const ctx = await auth.$context;
       const passkeyHash = await ctx.password.hash(body.passkey);
+      const defaultTokens = Math.max(
+        0,
+        await getSettingNumber(SETTING_KEYS.DEFAULT_TOKENS_NEW_USER),
+      );
 
       const email = `invite-${session.id}@dadban.local`;
-      const user = await prisma.user.create({
-        data: {
-          name: `کاربر ${session.inviteCode.code}`,
-          email,
-          accounts: {
-            create: {
-              accountId: email,
-              providerId: "invite-passkey",
-              password: passkeyHash,
+      const user = await prisma.$transaction(async (tx) => {
+        const u = await tx.user.create({
+          data: {
+            name: `کاربر ${session.inviteCode.code}`,
+            email,
+            tokenBalance: defaultTokens,
+            accounts: {
+              create: {
+                accountId: email,
+                providerId: "invite-passkey",
+                password: passkeyHash,
+              },
             },
           },
-        },
+        });
+        await tx.tokenTransaction.create({
+          data: {
+            userId: u.id,
+            amount: defaultTokens,
+            type: TOKEN_TRANSACTION_TYPES.registration,
+          },
+        });
+        await tx.inviteSession.update({
+          where: { id: session.id },
+          data: { passkeyHash, userId: u.id },
+        });
+        return u;
       });
 
-      await prisma.inviteSession.update({
-        where: { id: session.id },
-        data: { passkeyHash, userId: user.id },
+      const approvedRequestsCount = await prisma.report.count({
+        where: { userId: user.id, status: "accepted" },
       });
-
-      const [tokensCount, approvedRequestsCount] = await Promise.all([
-        prisma.report.count({ where: { userId: user.id } }),
-        prisma.report.count({
-          where: { userId: user.id, status: "accepted" },
-        }),
-      ]);
 
       return {
         ok: true,
@@ -129,7 +142,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
           passkey: "",
           inviteCode: session.inviteCode.code,
           isActivated: true,
-          tokensCount,
+          tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
         },
       };
@@ -165,8 +178,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       }
 
       const user = session.user!;
-      const [tokensCount, approvedRequestsCount] = await Promise.all([
-        prisma.report.count({ where: { userId: user.id } }),
+      const [approvedRequestsCount] = await Promise.all([
         prisma.report.count({
           where: { userId: user.id, status: "accepted" },
         }),
@@ -181,7 +193,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
           passkey: "",
           inviteCode: session.inviteCode.code,
           isActivated: true,
-          tokensCount,
+          tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
         },
       };
@@ -207,8 +219,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
     }
 
     const user = session.user;
-    const [tokensCount, approvedRequestsCount] = await Promise.all([
-      prisma.report.count({ where: { userId: user.id } }),
+    const [approvedRequestsCount] = await Promise.all([
       prisma.report.count({
         where: { userId: user.id, status: "accepted" },
       }),
@@ -221,7 +232,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         passkey: "",
         inviteCode: session.inviteCode.code,
         isActivated: true,
-        tokensCount,
+        tokensCount: user.tokenBalance ?? 0,
         approvedRequestsCount,
       },
     };
@@ -329,42 +340,54 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
 
       const ctx = await auth.$context;
       const passkeyHash = await ctx.password.hash(body.passkey);
-
-      const user = await prisma.user.create({
-        data: {
-          name: email.split("@")[0] ?? "کاربر",
-          email,
-          accounts: {
-            create: {
-              accountId: email,
-              providerId: "invite-passkey",
-              password: passkeyHash,
-            },
-          },
-        },
-      });
+      const defaultTokens = Math.max(
+        0,
+        await getSettingNumber(SETTING_KEYS.DEFAULT_TOKENS_NEW_USER),
+      );
 
       const sessionToken = generateToken();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + TOKEN_EXPIRY_DAYS);
 
-      await prisma.inviteSession.create({
-        data: {
-          token: sessionToken,
-          inviteCodeId: inviteCode.id,
-          passkeyHash,
-          userId: user.id,
-          expiresAt,
-        },
+      const user = await prisma.$transaction(async (tx) => {
+        const u = await tx.user.create({
+          data: {
+            name: email.split("@")[0] ?? "کاربر",
+            email,
+            tokenBalance: defaultTokens,
+            accounts: {
+              create: {
+                accountId: email,
+                providerId: "invite-passkey",
+                password: passkeyHash,
+              },
+            },
+          },
+        });
+        await tx.tokenTransaction.create({
+          data: {
+            userId: u.id,
+            amount: defaultTokens,
+            type: TOKEN_TRANSACTION_TYPES.registration,
+          },
+        });
+        await tx.inviteSession.create({
+          data: {
+            token: sessionToken,
+            inviteCodeId: inviteCode.id,
+            passkeyHash,
+            userId: u.id,
+            expiresAt,
+          },
+        });
+        await tx.inviteCode.update({
+          where: { id: inviteCode.id },
+          data: { usedById: u.id, isActive: false },
+        });
+        return u;
       });
 
-      await prisma.inviteCode.update({
-        where: { id: inviteCode.id },
-        data: { usedById: user.id, isActive: false },
-      });
-
-      const [tokensCount, approvedRequestsCount] = await Promise.all([
-        prisma.report.count({ where: { userId: user.id } }),
+      const [approvedRequestsCount] = await Promise.all([
         prisma.report.count({
           where: { userId: user.id, status: "accepted" },
         }),
@@ -379,7 +402,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
           passkey: "",
           inviteCode: normalizedCode,
           isActivated: true,
-          tokensCount,
+          tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
         },
       };

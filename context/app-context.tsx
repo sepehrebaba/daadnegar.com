@@ -190,11 +190,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ),
     });
     if (error) throw new Error(String(error));
-    setState((prev) => ({
-      ...prev,
-      currentReport: null,
-      user: prev.user ? { ...prev.user, tokensCount: prev.user.tokensCount + 1 } : null,
-    }));
+    setState((prev) => ({ ...prev, currentReport: null }));
+    // توکن‌های جدید (مثلاً invite_activity) توسط بک‌اند ثبت می‌شوند؛ کاربر را دوباره بارگذاری کن
+    const { data: me } = await api.me.get();
+    if (me) {
+      setState((prev) => ({
+        ...prev,
+        user: prev.user
+          ? {
+              ...prev.user,
+              tokensCount: me.tokensCount ?? 0,
+              approvedRequestsCount: me.approvedRequestsCount ?? 0,
+            }
+          : null,
+      }));
+    }
   }, [state.currentReport]);
 
   const selectRequest = useCallback((request: ReportCase) => {

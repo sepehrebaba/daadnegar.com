@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
@@ -15,11 +16,32 @@ import {
 } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { api } from "@/lib/edyen";
 
 export function MainMenuScreen() {
   const router = useRouter();
-  const { state, startReport } = useApp();
+  const { state, startReport, setUser } = useApp();
   const user = state.user;
+
+  // بارگذاری کاربر از سرور در صورت رفرش یا ورود مستقیم (invite token یا session cookie)
+  useEffect(() => {
+    if (state.user) return;
+    let cancelled = false;
+    api.me.get().then(({ data, error }) => {
+      if (cancelled || error || !data) return;
+      setUser({
+        id: data.id,
+        passkey: "",
+        inviteCode: data.inviteCode ?? "",
+        isActivated: true,
+        tokensCount: data.tokensCount ?? 0,
+        approvedRequestsCount: data.approvedRequestsCount ?? 0,
+      } as Parameters<typeof setUser>[0]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [state.user, setUser]);
 
   // Show approval section only for users with 5+ approved requests
   const showApprovalSection = user && user.approvedRequestsCount >= 5;
