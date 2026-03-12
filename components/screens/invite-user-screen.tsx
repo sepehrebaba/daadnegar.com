@@ -43,10 +43,12 @@ export function InviteUserScreen() {
       return;
     }
 
+    const res = data as { ok?: boolean; code?: string; registerLink?: string } | null;
+    const code = res?.code ?? "";
     setSuccess(
       email
-        ? `دعوت نامه به ${email} ارسال شد.`
-        : "دعوت عمومی ایجاد شد. لینک را با سایرین به اشتراک بگذارید.",
+        ? `دعوت به ${email} ارسال شد. کد دعوت: ${code}`
+        : `کد دعوت شما: ${code}\nاین کد یک‌بار مصرف است. آن را با دیگران به اشتراک بگذارید.`,
     );
     setEmail("");
     setIsLoading(false);
@@ -74,19 +76,15 @@ export function InviteUserScreen() {
       setIsLoading(false);
       return;
     }
-    const res = data as { ok?: boolean; id?: string; inviteLink?: string } | null;
+    const res = data as { ok?: boolean; code?: string; registerLink?: string } | null;
     if (res && !res.ok) {
       setError((res as { error?: string })?.error || "خطا در ایجاد دعوت عمومی.");
       setIsLoading(false);
       return;
     }
 
-    const inviteLink =
-      res?.inviteLink ??
-      (res?.id
-        ? `${typeof window !== "undefined" ? window.location.origin : ""}/accept-invitation?invitationId=${res.id}`
-        : "");
-    setSuccess(`لینک دعوت عمومی: ${inviteLink}`);
+    const code = res?.code ?? "";
+    setSuccess(`کد دعوت شما: ${code}\nاین کد یک‌بار مصرف است. آن را با دیگران به اشتراک بگذارید.`);
     setIsLoading(false);
   };
 

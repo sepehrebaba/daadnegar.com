@@ -590,35 +590,34 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
     },
     { params: t.Object({ id: t.String() }) },
   )
-  // Invitations
+  // Invitations (creates 8-char InviteCode, one-time use)
   .post(
     "/invitations",
     async ({ body, request, ip, auth }) => {
+      const { ensureUniqueInviteCode } = await import("./invite");
       const firstAdmin = await prisma.admin.findFirst();
       const inviterId = firstAdmin?.userId;
       if (!inviterId) throw new Error("No admin user found to create invitations");
-      const invite = await prisma.appInvitation.create({
+      const code = await ensureUniqueInviteCode();
+      const invite = await prisma.inviteCode.create({
         data: {
+          code,
           inviterId,
-          email: body.email,
-          name: body.name,
-          status: "pending",
-          expiresAt: body.expiresInDays
-            ? new Date(Date.now() + body.expiresInDays * 24 * 60 * 60 * 1000)
-            : undefined,
+          invitedEmail: body.email ?? null,
         },
       });
       await createAuditLog({
         action: "create",
-        entity: "AppInvitation",
+        entity: "InviteCode",
         entityId: invite.id,
-        details: JSON.stringify({ email: invite.email }),
+        details: JSON.stringify({ code: invite.code, email: invite.invitedEmail }),
         ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
       });
-      const baseURL = process.env.BETTER_AUTH_URL || "http://localhost:3000";
+      const baseURL =
+        process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       return {
         ...invite,
-        inviteLink: `${baseURL}/accept-invitation?invitationId=${invite.id}`,
+        inviteLink: `${baseURL}/register?code=${code}`,
       };
     },
     {

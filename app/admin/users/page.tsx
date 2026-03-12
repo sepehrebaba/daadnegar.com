@@ -74,7 +74,15 @@ export default function AdminUsersPage() {
       setInviteSuccess(`خطا: ${error.message}`);
       return;
     }
-    setInviteSuccess(data?.inviteLink ? `لینک دعوت: ${data.inviteLink}` : "دعوت ایجاد شد.");
+    const code = (data as { code?: string })?.code;
+    const link = (data as { inviteLink?: string })?.inviteLink;
+    setInviteSuccess(
+      code && link
+        ? `کد دعوت: ${code}\nلینک: ${link}`
+        : code
+          ? `کد دعوت: ${code}`
+          : "دعوت ایجاد شد.",
+    );
   };
 
   const handleRoleChange = async (userId: string, role: "user" | "validator") => {

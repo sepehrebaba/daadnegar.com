@@ -24,4 +24,5 @@ export const routes = {
   requestDetail: (id: string) => `/request/${id}`,
   approvalList: "/approval-list",
   inviteUser: "/invite-user",
+  register: "/register",
 } as const;

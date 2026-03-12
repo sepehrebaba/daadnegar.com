@@ -24,12 +24,12 @@ model User {
 
   sessions        Session[]
   accounts        Account[]
-  invitationsSent AppInvitation[]
   reports         Report[]
   auditLogs       AuditLog[]
   admin           Admin?
   inviteSessions  InviteSession[]
   usedInviteCodes InviteCode[]
+  createdInviteCodes InviteCode[] @relation("InviteCodeInviter")
 }
 
 model Session {
@@ -75,22 +75,6 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-}
-
-model AppInvitation {
-  id              String    @id @default(cuid())
-  name            String?
-  email           String?
-  inviterId       String
-  status          String
-  domainWhitelist String?
-  expiresAt       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  inviter User @relation(fields: [inviterId], references: [id], onDelete: Cascade)
-
-  @@map("appInvitation")
 }
 
 // --- Dadban domain models ---
@@ -243,16 +227,20 @@ model AuditLog {
 }
 
 model InviteCode {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  isActive  Boolean  @default(true)
-  usedById  String?  // one code = one person; set when user registers
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  code         String   @unique
+  isActive     Boolean  @default(true)
+  usedById     String?  // one code = one person; set when user registers
+  inviterId    String?  // for user-created invites; null = seed codes (e.g. DEMO456)
+  invitedEmail String?  // for personal invites - who we're inviting
+  createdAt    DateTime @default(now())
 
-  usedBy    User?     @relation(fields: [usedById], references: [id], onDelete: SetNull)
-  sessions  InviteSession[]
+  inviter  User?     @relation("InviteCodeInviter", fields: [inviterId], references: [id], onDelete: SetNull)
+  usedBy   User?     @relation(fields: [usedById], references: [id], onDelete: SetNull)
+  sessions InviteSession[]
 
   @@index([usedById])
+  @@index([inviterId])
   @@map("invite_code")
 }
 
