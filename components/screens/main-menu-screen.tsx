@@ -4,8 +4,17 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Coins, FileText, ListChecks, ClipboardCheck, LogOut, UserPlus } from "lucide-react";
+import {
+  Coins,
+  FileText,
+  ListChecks,
+  ClipboardCheck,
+  LogOut,
+  UserPlus,
+  AlertCircle,
+} from "lucide-react";
 import { routes } from "@/lib/routes";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function MainMenuScreen() {
   const router = useRouter();
@@ -16,10 +25,16 @@ export function MainMenuScreen() {
   const showApprovalSection = user && user.approvedRequestsCount >= 5;
 
   return (
-    <div className="bg-background flex items-center justify-center p-4">
+    <div className="bg-background flex flex-col items-center justify-center gap-4 p-4">
+      <Alert className="max-w-md" variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          برای ثبت گزارش جدید، لطفاً مطمئن شوید که اتصال شما امن است.
+        </AlertDescription>
+      </Alert>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-foreground text-2xl font-bold">منوی اصلی</CardTitle>
+          <CardTitle className="text-foreground text-2xl font-bold">پنل کاربری</CardTitle>
           <p className="text-muted-foreground mt-2">به دادبان خوش آمدید</p>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">

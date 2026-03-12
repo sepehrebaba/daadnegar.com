@@ -18,7 +18,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { state, setLanguage } = useApp();
 
   return (
-    <div className="bg-background flex flex-col">
+    <div className="bg-background flex min-h-screen flex-col">
       {/* Header - visible on all pages */}
       <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
         <div className="container flex h-14 items-center justify-between px-4">
@@ -67,9 +67,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex flex-1 flex-col">{children}</main>
 
       {/* Footer - visible on all pages */}
-      <footer className="border-border bg-muted/30 border-t px-4 py-2">
+      <footer className="border-border bg-muted/30 border-t px-4 py-4 pt-8">
         {/* Links below the card */}
-        <div className="flex flex-col justify-center gap-3 sm:flex-row">
+        <div className="mb-4 flex flex-col justify-center gap-2 sm:mb-6 sm:flex-row sm:gap-7">
           <Link
             href={routes.about}
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
