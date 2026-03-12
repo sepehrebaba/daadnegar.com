@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/edyen";
+import { api, DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,10 @@ export function InviteUserScreen() {
     const body = trimmedEmail
       ? { type: "personal" as const, email: trimmedEmail }
       : { type: "public" as const };
-    const { data, error: inviteError } = await api.invite["invite-user"].post(body);
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
+    const opts = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const { data, error: inviteError } = await api.invite["invite-user"].post(body, opts);
 
     if (inviteError?.value) {
       const errMsg = inviteError?.value?.error?.message || "خطا در ارسال دعوت.";
@@ -54,7 +57,13 @@ export function InviteUserScreen() {
     setSuccess("");
     setIsLoading(true);
 
-    const { data, error: inviteError } = await api.invite["invite-user"].post({ type: "public" });
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
+    const opts = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+    const { data, error: inviteError } = await api.invite["invite-user"].post(
+      { type: "public" },
+      opts,
+    );
 
     if (inviteError) {
       const errMsg =

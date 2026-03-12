@@ -14,12 +14,15 @@ function getInviteToken(): string | null {
 }
 
 export const api = treaty<App>(getBaseUrl(), {
-  fetch: (input, init) => {
+  fetch: { credentials: "include" },
+  headers: () => {
     const token = getInviteToken();
-    const headers = new Headers(init?.headers);
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-    return fetch(input, { ...init, headers, credentials: "include" });
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  },
+  fetcher: (url, options) => {
+    const token = getInviteToken();
+    const headers = new Headers(options?.headers as HeadersInit);
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(url, { ...options, headers, credentials: "include" });
   },
 }).api;

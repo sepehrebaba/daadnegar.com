@@ -210,13 +210,19 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
   .post(
     "/invite-user",
     async ({ body, request, status }) => {
+      // Support both: 1) Bearer token (InviteCode users), 2) Session cookie (accept-invitation users)
+      let inviterId: string | null = null;
       const inviteUser = await resolveInviteToken(request.headers.get("Authorization"));
-      if (!inviteUser) {
-        console.error("Unauthorized invite attempt");
+      if (inviteUser) {
+        inviterId = inviteUser.userId;
+      } else {
+        const session = await auth.api.getSession({ headers: request.headers });
+        if (session?.user?.id) inviterId = session.user.id;
+      }
+      if (!inviterId) {
         throw status(401, "لطفاً وارد شوید");
       }
       if (body.type === "personal" && !body.email?.trim()) {
-        console.log("Personal invite attempt without email by user", inviteUser.userId);
         throw status(400, "برای دعوت شخصی ایمیل الزامی است");
       }
 
@@ -225,7 +231,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
 
       const invite = await prisma.appInvitation.create({
         data: {
-          inviterId: inviteUser.userId,
+          inviterId,
           email: body.type === "personal" ? body.email : null,
           name: body.type === "personal" && body.name ? body.name : null,
           status: "pending",
