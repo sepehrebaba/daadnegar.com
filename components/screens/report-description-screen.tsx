@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle } from "lucide-react";
 
 export function ReportDescriptionScreen() {
-  const { navigate, setReportDescription, goBack } = useApp();
+  const router = useRouter();
+  const { setReportDescription } = useApp();
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +32,7 @@ export function ReportDescriptionScreen() {
     await new Promise((resolve) => setTimeout(resolve, 500));
     console.log("[v0] Report saved successfully");
 
-    navigate("report-success");
+    router.push(routes.reportSuccess);
     setIsLoading(false);
   };
 
@@ -67,7 +70,12 @@ export function ReportDescriptionScreen() {
             {isLoading ? "در حال ارسال..." : "ارسال گزارش"}
           </Button>
 
-          <Button onClick={goBack} variant="ghost" className="w-full" disabled={isLoading}>
+          <Button
+            onClick={() => router.back()}
+            variant="ghost"
+            className="w-full"
+            disabled={isLoading}
+          >
             بازگشت
           </Button>
         </CardContent>

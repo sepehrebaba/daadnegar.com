@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,7 +13,8 @@ import { AlertCircle, LogIn } from "lucide-react";
 import { api } from "@/lib/edyen";
 
 export function LoginScreen() {
-  const { navigate, setUser, goBack } = useApp();
+  const router = useRouter();
+  const { setUser } = useApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -55,7 +58,7 @@ export function LoginScreen() {
           approvedRequestsCount: me.approvedRequestsCount ?? 0,
         });
       }
-      navigate("main-menu");
+      router.push(routes.mainMenu);
     } else {
       setError("ورود با خطا مواجه شد. لطفاً دوباره تلاش کنید.");
     }
@@ -115,7 +118,7 @@ export function LoginScreen() {
               {isLoading ? "در حال ورود..." : "ورود"}
             </Button>
 
-            <Button type="button" onClick={goBack} variant="ghost" className="w-full">
+            <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
               بازگشت
             </Button>
           </form>

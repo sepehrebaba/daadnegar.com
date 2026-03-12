@@ -1,15 +1,18 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coins, FileText, ListChecks, ClipboardCheck, LogOut, UserPlus } from "lucide-react";
+import { routes } from "@/lib/routes";
 
 export function MainMenuScreen() {
-  const { navigate, state, goBack } = useApp();
+  const router = useRouter();
+  const { state, startReport } = useApp();
   const user = state.user;
 
-  // نمایش بخش تایید فقط برای کاربرانی که ۵ درخواست تایید شده دارند
+  // Show approval section only for users with 5+ approved requests
   const showApprovalSection = user && user.approvedRequestsCount >= 5;
 
   return (
@@ -21,10 +24,7 @@ export function MainMenuScreen() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <Button
-            onClick={() => {
-              console.log("[v0] User clicked: My Tokens");
-              navigate("my-tokens");
-            }}
+            onClick={() => router.push(routes.myTokens)}
             className="w-full justify-start gap-3 py-6 text-base"
             variant="outline"
           >
@@ -37,8 +37,8 @@ export function MainMenuScreen() {
 
           <Button
             onClick={() => {
-              console.log("[v0] User clicked: Report Case");
-              navigate("report-step1");
+              startReport();
+              router.push(routes.reportCategory);
             }}
             className="w-full justify-start gap-3 py-6 text-base"
             variant="default"
@@ -48,10 +48,7 @@ export function MainMenuScreen() {
           </Button>
 
           <Button
-            onClick={() => {
-              console.log("[v0] User clicked: My Requests");
-              navigate("my-requests");
-            }}
+            onClick={() => router.push(routes.myRequests)}
             className="w-full justify-start gap-3 py-6 text-base"
             variant="outline"
           >
@@ -60,7 +57,7 @@ export function MainMenuScreen() {
           </Button>
 
           <Button
-            onClick={() => navigate("invite-user")}
+            onClick={() => router.push(routes.inviteUser)}
             className="w-full justify-start gap-3 py-6 text-base"
             variant="outline"
           >
@@ -70,10 +67,7 @@ export function MainMenuScreen() {
 
           {showApprovalSection && (
             <Button
-              onClick={() => {
-                console.log("[v0] User clicked: Approval Wait List");
-                navigate("approval-list");
-              }}
+              onClick={() => router.push(routes.approvalList)}
               className="w-full justify-start gap-3 border-amber-300 bg-amber-100 py-6 text-base text-amber-900 hover:bg-amber-200"
               variant="outline"
             >
@@ -85,10 +79,7 @@ export function MainMenuScreen() {
           <div className="border-border my-2 border-t" />
 
           <Button
-            onClick={() => {
-              console.log("[v0] User logging out");
-              goBack();
-            }}
+            onClick={() => router.push(routes.home)}
             variant="ghost"
             className="text-muted-foreground w-full gap-2"
           >

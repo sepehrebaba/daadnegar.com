@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, KeyRound } from "lucide-react";
 
 export function PasskeyVerifyScreen() {
-  const { navigate, verifyPasskey, setUser, goBack } = useApp();
+  const router = useRouter();
+  const { verifyPasskey, setUser } = useApp();
   const [passkey, setPasskey] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +24,7 @@ export function PasskeyVerifyScreen() {
 
     console.log("[v0] User attempting to verify passkey");
 
-    // شبیه‌سازی تاخیر شبکه
+    // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (verifyPasskey(passkey)) {
@@ -33,11 +36,11 @@ export function PasskeyVerifyScreen() {
         inviteCode: "INVITE2024",
         isActivated: true,
         tokensCount: 5,
-        approvedRequestsCount: 7, // برای نمایش بخش تایید
+        approvedRequestsCount: 7, // For displaying approval section
       });
 
       console.log("[v0] User data loaded, redirecting to main menu");
-      navigate("main-menu");
+      router.push(routes.mainMenu);
     } else {
       console.log("[v0] Invalid passkey entered");
       setError("رمز عبور نادرست است");
@@ -81,7 +84,7 @@ export function PasskeyVerifyScreen() {
               {isLoading ? "در حال بررسی..." : "ورود"}
             </Button>
 
-            <Button type="button" onClick={goBack} variant="ghost" className="w-full">
+            <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
               بازگشت
             </Button>
           </form>

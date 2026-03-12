@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, Fingerprint } from "lucide-react";
 
 export function PasskeyRegisterScreen() {
-  const { navigate, registerPasskey, setUser, goBack } = useApp();
+  const router = useRouter();
+  const { registerPasskey, setUser } = useApp();
   const [passkey, setPasskey] = useState("");
   const [confirmPasskey, setConfirmPasskey] = useState("");
   const [error, setError] = useState("");
@@ -33,7 +36,7 @@ export function PasskeyRegisterScreen() {
 
     setIsLoading(true);
 
-    // شبیه‌سازی تاخیر شبکه
+    // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     console.log("[v0] Registering passkey for new user");
@@ -51,7 +54,7 @@ export function PasskeyRegisterScreen() {
     });
 
     console.log("[v0] User activated successfully, redirecting to main menu");
-    navigate("main-menu");
+    router.push(routes.mainMenu);
     setIsLoading(false);
   };
 
@@ -106,7 +109,7 @@ export function PasskeyRegisterScreen() {
               {isLoading ? "در حال ثبت..." : "ثبت و ورود"}
             </Button>
 
-            <Button type="button" onClick={goBack} variant="ghost" className="w-full">
+            <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
               بازگشت
             </Button>
           </form>

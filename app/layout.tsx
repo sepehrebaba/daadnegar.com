@@ -9,7 +9,7 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: "ربات دادبان",
+  title: "پلتفرم گزارش امن دادبان",
   description: "سیستم گزارش‌دهی دادبان",
   generator: "v0.app",
   icons: {

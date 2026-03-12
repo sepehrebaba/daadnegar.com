@@ -35,7 +35,7 @@ export const auth = betterAuth({
           inviteLink,
         });
         // TODO: Integrate with Resend, SendGrid, etc.
-        // await sendEmail({ to: data.email, subject: 'دعوت نامه', body: `لینک دعوت: ${inviteLink}` });
+        // await sendEmail({ to: data.email, subject: 'Invitation', body: `Invite link: ${inviteLink}` });
       },
     }),
   ],

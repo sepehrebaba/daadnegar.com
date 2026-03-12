@@ -13,6 +13,7 @@ interface AppContextType {
   verifyInviteCode: (code: string) => boolean;
   setUser: (user: User | null) => void;
   startReport: () => void;
+  updateReport: (data: Partial<ReportCase>) => void;
   setReportPerson: (person: Person) => void;
   setReportDocuments: (docs: string[]) => void;
   setReportDescription: (desc: string) => void;
@@ -36,20 +37,18 @@ const initialState: AppState = {
   selectedRequest: null,
 };
 
-// ذخیره تاریخچه صفحات برای دکمه بازگشت
+// Screen history for back navigation
 let screenHistory: AppScreen[] = ["welcome"];
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(initialState);
 
-  // ناوبری بین صفحات
   const navigate = useCallback((screen: AppScreen) => {
     console.log("[v0] Navigating to:", screen);
     screenHistory.push(screen);
     setState((prev) => ({ ...prev, currentScreen: screen }));
   }, []);
 
-  // بازگشت به صفحه قبل
   const goBack = useCallback(() => {
     if (screenHistory.length > 1) {
       screenHistory.pop();
@@ -59,22 +58,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // تنظیم زبان
   const setLanguage = useCallback((lang: Language) => {
     console.log("[v0] Language set to:", lang);
     setState((prev) => ({ ...prev, language: lang }));
   }, []);
 
-  // ثبت Passkey جدید
   const registerPasskey = useCallback((passkey: string) => {
     console.log("[v0] Registering new passkey:", passkey);
-    // TODO: API call to register passkey
-    // در اینجا passkey در localStorage ذخیره می‌شود (برای دمو)
+    // TODO: API call to register passkey - currently stored in localStorage for demo
     localStorage.setItem("najva_passkey", passkey);
     console.log("[v0] Passkey registered successfully");
   }, []);
 
-  // تایید Passkey
   const verifyPasskey = useCallback((passkey: string): boolean => {
     console.log("[v0] Verifying passkey:", passkey);
     // TODO: API call to verify passkey
@@ -84,31 +79,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return isValid;
   }, []);
 
-  // تایید کد دعوت
   const verifyInviteCode = useCallback((code: string): boolean => {
     console.log("[v0] Verifying invite code:", code);
-    // TODO: API call to verify invite code
-    // کد فعلی برای تست: INVITE2024
+    // TODO: API call to verify invite code - test codes: INVITE2024, TEST123, DEMO456
     const validCodes = ["INVITE2024", "TEST123", "DEMO456"];
     const isValid = validCodes.includes(code.toUpperCase());
     console.log("[v0] Invite code verification result:", isValid);
     return isValid;
   }, []);
 
-  // تنظیم کاربر
   const setUser = useCallback((user: User | null) => {
     console.log("[v0] Setting user:", user);
     // TODO: API call to save/update user
     setState((prev) => ({ ...prev, user }));
   }, []);
 
-  // شروع گزارش جدید
   const startReport = useCallback(() => {
     console.log("[v0] Starting new report");
     setState((prev) => ({ ...prev, currentReport: { id: crypto.randomUUID() } }));
   }, []);
 
-  // تنظیم فرد گزارش
+  const updateReport = useCallback((data: Partial<ReportCase>) => {
+    setState((prev) => ({
+      ...prev,
+      currentReport: { ...prev.currentReport, ...data },
+    }));
+  }, []);
+
   const setReportPerson = useCallback((person: Person) => {
     console.log("[v0] Setting report person:", person);
     setState((prev) => ({
@@ -117,7 +114,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // تنظیم مدارک گزارش
   const setReportDocuments = useCallback((docs: string[]) => {
     console.log("[v0] Setting report documents:", docs);
     setState((prev) => ({
@@ -126,7 +122,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // تنظیم توضیحات گزارش
   const setReportDescription = useCallback((desc: string) => {
     console.log("[v0] Setting report description:", desc);
     setState((prev) => ({
@@ -135,14 +130,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  // ارسال گزارش
   const submitReport = useCallback(async () => {
     const report = state.currentReport;
     if (!report?.personId || !report?.description) return;
     const { data, error } = await api.reports.post({
       personId: report.personId,
       description: report.description,
-      documents: (report.documents ?? []).map((url, i) => ({ name: `doc-${i}`, url })),
+      title: report.title,
+      categoryId: report.categoryId,
+      subcategoryId: report.subcategoryId,
+      organizationType: report.organizationType,
+      organizationName: report.organizationName,
+      province: report.province,
+      city: report.city,
+      exactLocation: report.exactLocation,
+      occurrenceFrequency: report.occurrenceFrequency,
+      occurrenceDate: report.occurrenceDate?.toISOString(),
+      hasEvidence: report.hasEvidence,
+      evidenceTypes: report.evidenceTypes?.join(","),
+      evidenceDescription: report.evidenceDescription,
+      wantsContact: report.wantsContact,
+      contactEmail: report.contactEmail,
+      contactPhone: report.contactPhone,
+      contactSocial: report.contactSocial,
+      documents: (report.documents ?? []).map((url, i) =>
+        typeof url === "string" ? { name: `doc-${i}`, url } : url,
+      ),
     });
     if (error) throw new Error(String(error));
     setState((prev) => ({
@@ -152,38 +165,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, [state.currentReport]);
 
-  // انتخاب درخواست برای مشاهده جزئیات
   const selectRequest = useCallback((request: ReportCase) => {
     setState((prev) => ({ ...prev, selectedRequest: request }));
   }, []);
 
-  // تایید درخواست
   const approveRequest = useCallback(async (requestId: string) => {
     const { error } = await api.reports({ id: requestId }).approve.put();
     if (error) throw new Error(String(error));
   }, []);
 
-  // رد درخواست
   const rejectRequest = useCallback(async (requestId: string) => {
     const { error } = await api.reports({ id: requestId }).reject.put();
     if (error) throw new Error(String(error));
   }, []);
 
-  // دریافت لیست افراد معروف
   const getFamousPeople = useCallback(async (search?: string) => {
     const { data, error } = await api.people.famous.get({ query: { search } });
     if (error) throw new Error(String(error));
     return (data ?? []) as Person[];
   }, []);
 
-  // دریافت درخواست‌های کاربر
   const getMyRequests = useCallback(async () => {
     const { data, error } = await api.reports.my.get();
     if (error) throw new Error(String(error));
     return (data ?? []) as ReportCase[];
   }, []);
 
-  // دریافت درخواست‌های در انتظار تایید
   const getPendingRequests = useCallback(async () => {
     const { data, error } = await api.reports.pending.get();
     if (error) throw new Error(String(error));
@@ -201,6 +208,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         verifyInviteCode,
         setUser,
         startReport,
+        updateReport,
         setReportPerson,
         setReportDocuments,
         setReportDescription,

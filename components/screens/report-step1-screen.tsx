@@ -1,23 +1,26 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { User, Users } from "lucide-react";
 
 export function ReportStep1Screen() {
-  const { navigate, startReport, goBack } = useApp();
+  const router = useRouter();
+  const { startReport } = useApp();
 
   const handleFamousPerson = () => {
     console.log("[v0] User selected: Famous person");
     startReport();
-    navigate("report-famous-list");
+    router.push(routes.reportFamous);
   };
 
   const handleManualEntry = () => {
     console.log("[v0] User selected: Manual entry");
     startReport();
-    navigate("report-manual-entry");
+    router.push(routes.reportManual);
   };
 
   return (
@@ -50,7 +53,7 @@ export function ReportStep1Screen() {
             <span className="text-muted-foreground text-xs">ورود اطلاعات فرد</span>
           </Button>
 
-          <Button onClick={goBack} variant="ghost" className="mt-2">
+          <Button onClick={() => router.back()} variant="ghost" className="mt-2">
             بازگشت
           </Button>
         </CardContent>

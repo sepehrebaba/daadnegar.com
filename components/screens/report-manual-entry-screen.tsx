@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, Upload, User } from "lucide-react";
 
 export function ReportManualEntryScreen() {
-  const { navigate, setReportPerson, goBack } = useApp();
+  const router = useRouter();
+  const { setReportPerson } = useApp();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [nationalCode, setNationalCode] = useState("");
@@ -50,7 +53,7 @@ export function ReportManualEntryScreen() {
       if (error) throw new Error(String(error));
       if (data) {
         setReportPerson({ ...data, isFamous: false });
-        navigate("report-documents");
+        router.push(routes.reportDocuments);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "خطا در ثبت اطلاعات");
@@ -148,7 +151,7 @@ export function ReportManualEntryScreen() {
               {isSubmitting ? "در حال ثبت..." : "ادامه"}
             </Button>
 
-            <Button type="button" onClick={goBack} variant="ghost" className="w-full">
+            <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
               بازگشت
             </Button>
           </form>

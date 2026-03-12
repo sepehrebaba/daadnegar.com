@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CheckCircle, XCircle, FileText } from "lucide-react";
@@ -14,7 +16,8 @@ const statusConfig: Record<RequestStatus, { label: string; icon: typeof Clock; c
 };
 
 export function MyRequestsScreen() {
-  const { navigate, getMyRequests, selectRequest, goBack } = useApp();
+  const router = useRouter();
+  const { getMyRequests } = useApp();
   const [requests, setRequests] = useState<ReportCase[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,8 +30,7 @@ export function MyRequestsScreen() {
 
   const handleSelectRequest = (request: (typeof requests)[0]) => {
     console.log("[v0] User selected request:", request.id);
-    selectRequest(request);
-    navigate("request-detail");
+    router.push(routes.requestDetail(request.id));
   };
 
   return (
@@ -83,7 +85,7 @@ export function MyRequestsScreen() {
             })
           )}
 
-          <Button onClick={goBack} variant="ghost" className="mt-4">
+          <Button onClick={() => router.back()} variant="ghost" className="mt-4">
             بازگشت
           </Button>
         </CardContent>

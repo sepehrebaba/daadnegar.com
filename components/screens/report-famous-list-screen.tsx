@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +11,8 @@ import { Search, User } from "lucide-react";
 import type { Person } from "@/types";
 
 export function ReportFamousListScreen() {
-  const { navigate, getFamousPeople, setReportPerson, goBack } = useApp();
+  const router = useRouter();
+  const { getFamousPeople, setReportPerson } = useApp();
   const [searchQuery, setSearchQuery] = useState("");
   const [famousPeople, setFamousPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +30,7 @@ export function ReportFamousListScreen() {
   const handleSelectPerson = (person: Person) => {
     console.log("[v0] User selected famous person:", person);
     setReportPerson(person);
-    navigate("report-documents");
+    router.push(routes.reportDocuments);
   };
 
   return (
@@ -54,7 +57,7 @@ export function ReportFamousListScreen() {
               <Button
                 onClick={() => {
                   console.log("[v0] No person found, redirecting to manual entry");
-                  navigate("report-manual-entry");
+                  router.push(routes.reportManual);
                 }}
                 variant="link"
                 className="mt-2"
@@ -82,7 +85,7 @@ export function ReportFamousListScreen() {
             ))
           )}
 
-          <Button onClick={goBack} variant="ghost" className="mt-4">
+          <Button onClick={() => router.back()} variant="ghost" className="mt-4">
             بازگشت
           </Button>
         </CardContent>

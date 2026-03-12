@@ -2,7 +2,20 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { createAuditLog } from "./audit";
 
+const UNKNOWN_PERSON_SLUG = "unknown";
+
 export const peopleService = new Elysia({ prefix: "/people", aot: false })
+  .get("/unknown", async () => {
+    let person = await prisma.person.findFirst({
+      where: { firstName: "نامشخص", lastName: "عمومی" },
+    });
+    if (!person) {
+      person = await prisma.person.create({
+        data: { firstName: "نامشخص", lastName: "عمومی", isFamous: false },
+      });
+    }
+    return person;
+  })
   .get(
     "/famous",
     async ({ query }) => {

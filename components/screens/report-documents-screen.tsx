@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertCircle, FileText, Upload, X } from "lucide-react";
 
 export function ReportDocumentsScreen() {
-  const { navigate, setReportDocuments, goBack } = useApp();
+  const router = useRouter();
+  const { setReportDocuments } = useApp();
   const [documents, setDocuments] = useState<{ name: string; url: string }[]>([]);
   const [error, setError] = useState("");
 
@@ -38,7 +41,7 @@ export function ReportDocumentsScreen() {
 
     console.log("[v0] Setting report documents:", documents);
     setReportDocuments(documents.map((d) => d.url));
-    navigate("report-description");
+    router.push(routes.reportDescription);
   };
 
   return (
@@ -102,7 +105,7 @@ export function ReportDocumentsScreen() {
             ادامه
           </Button>
 
-          <Button onClick={goBack} variant="ghost" className="w-full">
+          <Button onClick={() => router.back()} variant="ghost" className="w-full">
             بازگشت
           </Button>
         </CardContent>

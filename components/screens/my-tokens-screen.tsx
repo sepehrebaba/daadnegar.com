@@ -1,12 +1,14 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Coins } from "lucide-react";
 
 export function MyTokensScreen() {
-  const { state, goBack } = useApp();
+  const router = useRouter();
+  const { state } = useApp();
   const user = state.user;
 
   console.log("[v0] Displaying user tokens count:", user?.tokensCount);
@@ -32,7 +34,7 @@ export function MyTokensScreen() {
             </p>
           </div>
 
-          <Button onClick={goBack} variant="outline" className="w-full">
+          <Button onClick={() => router.back()} variant="outline" className="w-full">
             بازگشت
           </Button>
         </CardContent>

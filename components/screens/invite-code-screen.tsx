@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, KeyRound } from "lucide-react";
 
 export function InviteCodeScreen() {
-  const { navigate, verifyInviteCode, goBack } = useApp();
+  const router = useRouter();
+  const { verifyInviteCode } = useApp();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -21,7 +24,7 @@ export function InviteCodeScreen() {
 
     console.log("[v0] User submitting invite code:", code);
 
-    // شبیه‌سازی تاخیر شبکه
+    // Simulate network delay
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (verifyInviteCode(code)) {
@@ -31,10 +34,10 @@ export function InviteCodeScreen() {
 
       if (existingPasskey) {
         console.log("[v0] Existing passkey found, redirecting to verify");
-        navigate("passkey-verify");
+        router.push(routes.passkeyVerify);
       } else {
         console.log("[v0] No passkey found, redirecting to register");
-        navigate("passkey-register");
+        router.push(routes.passkeyRegister);
       }
     } else {
       console.log("[v0] Invalid invite code");
@@ -80,7 +83,7 @@ export function InviteCodeScreen() {
               {isLoading ? "در حال بررسی..." : "ادامه"}
             </Button>
 
-            <Button type="button" onClick={goBack} variant="ghost" className="w-full">
+            <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
               بازگشت
             </Button>
           </form>

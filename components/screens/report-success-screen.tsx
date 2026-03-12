@@ -1,19 +1,22 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
 
 export function ReportSuccessScreen() {
-  const { navigate, submitReport } = useApp();
+  const router = useRouter();
+  const { submitReport } = useApp();
 
   const handleBackToMenu = () => {
     console.log("[v0] Report submission complete");
     submitReport();
     console.log("[v0] User tokens count updated");
     console.log("[v0] Navigating back to main menu");
-    navigate("main-menu");
+    router.push(routes.mainMenu);
   };
 
   return (

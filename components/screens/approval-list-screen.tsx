@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Check, X, ChevronRight, ChevronLeft, User } from "lucide-react";
 
 export function ApprovalListScreen() {
-  const { getPendingRequests, approveRequest, rejectRequest, goBack } = useApp();
+  const router = useRouter();
+  const { getPendingRequests, approveRequest, rejectRequest } = useApp();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<
@@ -150,7 +152,7 @@ export function ApprovalListScreen() {
             </div>
           )}
 
-          <Button onClick={goBack} variant="ghost" className="mt-auto">
+          <Button onClick={() => router.back()} variant="ghost" className="mt-auto">
             بازگشت
           </Button>
         </CardContent>

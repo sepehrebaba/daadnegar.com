@@ -1,4 +1,4 @@
-// تایپ‌های پروژه نجوا
+// Project type definitions
 
 export type Language = "fa" | "en";
 
@@ -14,17 +14,103 @@ export type AppScreen =
   | "passkey-verify"
   | "main-menu"
   | "my-tokens"
-  | "report-step1"
+  | "report-category"
+  | "report-basic-info"
+  | "report-organization"
+  | "report-person"
+  | "report-location"
+  | "report-occurrence"
+  | "report-evidence"
+  | "report-contact"
+  | "report-confirmation"
+  | "report-success"
   | "report-famous-list"
   | "report-manual-entry"
   | "report-documents"
   | "report-description"
-  | "report-success"
+  | "report-step1"
   | "my-requests"
   | "request-detail"
   | "approval-list"
   | "invite-user"
   | "error";
+
+// Report wizard constants (also seeded in DB)
+export type ReportCategory = "bribery" | "embezzlement" | "nepotism" | "abuse" | "other";
+export type OrganizationType =
+  | "government"
+  | "municipality"
+  | "judiciary"
+  | "military"
+  | "private"
+  | "other";
+export type OccurrenceFrequency = "once" | "few" | "repeated" | "ongoing";
+export type EvidenceType = "document" | "image" | "video" | "audio" | "witness";
+
+export const REPORT_CATEGORIES: {
+  value: ReportCategory;
+  label: string;
+  subcategories: { value: string; label: string }[];
+}[] = [
+  {
+    value: "bribery",
+    label: "رشوه",
+    subcategories: [
+      { value: "cash", label: "نقدی" },
+      { value: "gift", label: "هدیه/خدمات" },
+      { value: "promise", label: "وعده منصب/امتیاز" },
+    ],
+  },
+  {
+    value: "embezzlement",
+    label: "اختلاس",
+    subcategories: [
+      { value: "budget", label: "بودجه دولتی" },
+      { value: "public", label: "اموال عمومی" },
+    ],
+  },
+  {
+    value: "nepotism",
+    label: "پارتی‌بازی و رانت",
+    subcategories: [
+      { value: "hiring", label: "استخدام غیرعادلانه" },
+      { value: "contract", label: "واگذاری قرارداد" },
+    ],
+  },
+  {
+    value: "abuse",
+    label: "سوءاستفاده از قدرت",
+    subcategories: [
+      { value: "position", label: "سوءاستفاده از موقعیت" },
+      { value: "threat", label: "تهدید و ارعاب" },
+    ],
+  },
+  { value: "other", label: "سایر", subcategories: [{ value: "other", label: "موارد دیگر" }] },
+];
+
+export const ORGANIZATION_TYPES: { value: OrganizationType; label: string }[] = [
+  { value: "government", label: "دولتی" },
+  { value: "municipality", label: "شهرداری" },
+  { value: "judiciary", label: "قضایی" },
+  { value: "military", label: "نظامی/امنیتی" },
+  { value: "private", label: "بخش خصوصی" },
+  { value: "other", label: "سایر" },
+];
+
+export const OCCURRENCE_FREQUENCIES: { value: OccurrenceFrequency; label: string }[] = [
+  { value: "once", label: "یک بار" },
+  { value: "few", label: "چند بار" },
+  { value: "repeated", label: "به طور مکرر" },
+  { value: "ongoing", label: "در حال وقوع" },
+];
+
+export const EVIDENCE_TYPES: { value: EvidenceType; label: string }[] = [
+  { value: "document", label: "سند" },
+  { value: "image", label: "تصویر" },
+  { value: "video", label: "ویدئو" },
+  { value: "audio", label: "صوت" },
+  { value: "witness", label: "شاهد" },
+];
 
 export type RequestStatus = "pending" | "accepted" | "rejected";
 
@@ -55,6 +141,25 @@ export interface ReportCase {
   description: string;
   status: RequestStatus;
   createdAt: Date;
+  categoryId?: string;
+  subcategoryId?: string;
+  category?: ReportCategory;
+  subcategory?: string;
+  title?: string;
+  organizationType?: OrganizationType;
+  organizationName?: string;
+  province?: string;
+  city?: string;
+  exactLocation?: string;
+  occurrenceFrequency?: OccurrenceFrequency;
+  occurrenceDate?: Date;
+  hasEvidence?: boolean;
+  evidenceTypes?: EvidenceType[];
+  evidenceDescription?: string;
+  wantsContact?: boolean;
+  contactEmail?: string;
+  contactPhone?: string;
+  contactSocial?: string;
 }
 
 export interface AppState {

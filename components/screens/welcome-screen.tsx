@@ -1,14 +1,12 @@
 "use client";
 
-import { useApp } from "@/context/app-context";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Shield, HelpCircle, KeyRound, LogIn } from "lucide-react";
-import Image from "next/image";
+import { KeyRound, LogIn } from "lucide-react";
+import { routes } from "@/lib/routes";
 
 export function WelcomeScreen() {
-  const { navigate } = useApp();
-
   return (
     <div className="flex flex-1 flex-col items-center p-4 pb-3">
       {/* Main card */}
@@ -27,20 +25,24 @@ export function WelcomeScreen() {
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
-              onClick={() => navigate("invite-code")}
+              asChild
               className="flex-1 justify-center gap-3 py-6 text-base"
               variant="default"
             >
-              <KeyRound className="h-5 w-5 shrink-0" />
-              کد دعوت
+              <Link href={routes.inviteCode}>
+                <KeyRound className="h-5 w-5 shrink-0" />
+                کد دعوت
+              </Link>
             </Button>
             <Button
-              onClick={() => navigate("login")}
+              asChild
               className="flex-1 justify-center gap-3 py-6 text-base"
               variant="secondary"
             >
-              <LogIn className="h-5 w-5 shrink-0" />
-              ورود با ایمیل
+              <Link href={routes.login}>
+                <LogIn className="h-5 w-5 shrink-0" />
+                ورود با ایمیل
+              </Link>
             </Button>
           </div>
         </CardContent>

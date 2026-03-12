@@ -24,6 +24,23 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           personId: body.personId,
           description: body.description,
           status: "pending",
+          categoryId: body.categoryId ?? undefined,
+          subcategoryId: body.subcategoryId ?? undefined,
+          title: body.title ?? undefined,
+          organizationType: body.organizationType ?? undefined,
+          organizationName: body.organizationName ?? undefined,
+          province: body.province ?? undefined,
+          city: body.city ?? undefined,
+          exactLocation: body.exactLocation ?? undefined,
+          occurrenceFrequency: body.occurrenceFrequency ?? undefined,
+          occurrenceDate: body.occurrenceDate ? new Date(body.occurrenceDate) : undefined,
+          hasEvidence: body.hasEvidence ?? undefined,
+          evidenceTypes: body.evidenceTypes ?? undefined,
+          evidenceDescription: body.evidenceDescription ?? undefined,
+          wantsContact: body.wantsContact ?? undefined,
+          contactEmail: body.contactEmail ?? undefined,
+          contactPhone: body.contactPhone ?? undefined,
+          contactSocial: body.contactSocial ?? undefined,
           documents: {
             create: (body.documents ?? []).map((d: { name: string; url: string }) => ({
               name: d.name,
@@ -48,6 +65,23 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       body: t.Object({
         personId: t.String(),
         description: t.String({ minLength: 50 }),
+        categoryId: t.Optional(t.String()),
+        subcategoryId: t.Optional(t.String()),
+        title: t.Optional(t.String()),
+        organizationType: t.Optional(t.String()),
+        organizationName: t.Optional(t.String()),
+        province: t.Optional(t.String()),
+        city: t.Optional(t.String()),
+        exactLocation: t.Optional(t.String()),
+        occurrenceFrequency: t.Optional(t.String()),
+        occurrenceDate: t.Optional(t.String()),
+        hasEvidence: t.Optional(t.Boolean()),
+        evidenceTypes: t.Optional(t.String()),
+        evidenceDescription: t.Optional(t.String()),
+        wantsContact: t.Optional(t.Boolean()),
+        contactEmail: t.Optional(t.String()),
+        contactPhone: t.Optional(t.String()),
+        contactSocial: t.Optional(t.String()),
         documents: t.Optional(t.Array(t.Object({ name: t.String(), url: t.String() }))),
       }),
     },
@@ -80,6 +114,19 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     });
     return reports;
   })
+  .get(
+    "/:id",
+    async ({ params, session }) => {
+      if (!session?.user?.id) throw new Error("Unauthorized");
+      const report = await prisma.report.findFirst({
+        where: { id: params.id, userId: session.user.id },
+        include: { person: true, documents: true },
+      });
+      if (!report) throw new Error("Not found");
+      return report;
+    },
+    { params: t.Object({ id: t.String() }) },
+  )
   .put(
     "/:id/approve",
     async ({ params, request, ip, session }) => {
