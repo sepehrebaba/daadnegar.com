@@ -1,5 +1,4 @@
 import { prisma } from "../db";
-import { auth } from "@/lib/auth";
 
 /** Resolve Bearer token from InviteSession to user. Returns null if invalid. */
 export async function resolveInviteToken(

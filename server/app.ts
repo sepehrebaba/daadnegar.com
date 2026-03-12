@@ -18,7 +18,7 @@ const ipGenerator: Generator<{ ip: { address: string } }> = (_r, _s, { ip }) =>
 export const app = new Elysia({ prefix: "/api", aot: false })
   .trace(async ({ onBeforeHandle, onAfterHandle, onError }) => {
     onBeforeHandle(({ begin, onStop }) => {
-      onStop(({ end }) => {
+      onStop(({ set, end }) => {
         console.info("BeforeHandle took", { duration: end - begin });
       });
     });
@@ -102,15 +102,20 @@ export const app = new Elysia({ prefix: "/api", aot: false })
      * Logs the error and returns a JSON error response.
      */
     ({ code, error, set }) => {
+      const msg = error.response;
       const err = error instanceof Error ? error : new Error(String(error));
-      const message = err.message;
+      const message = msg || err.message;
       const name = err.name;
       console.error("API error handler", { name, message, code });
       set.status = code === "NOT_FOUND" ? 404 : 500;
-      return JSON.stringify({
+
+      set.headers["Content-Type"] = `charset=utf-8`;
+
+      return {
         error: { name, message },
         status: set.status,
-      });
+        code,
+      };
     },
   );
 

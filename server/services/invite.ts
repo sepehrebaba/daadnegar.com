@@ -1,4 +1,4 @@
-import { Elysia, t, error } from "elysia";
+import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { auth } from "@/lib/auth";
 import { resolveInviteToken } from "../lib/auth-invite";
@@ -209,13 +209,15 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
   })
   .post(
     "/invite-user",
-    async ({ body, request }) => {
+    async ({ body, request, status }) => {
       const inviteUser = await resolveInviteToken(request.headers.get("Authorization"));
       if (!inviteUser) {
-        throw error(401, "لطفاً وارد شوید");
+        console.error("Unauthorized invite attempt");
+        throw status(401, "لطفاً وارد شوید");
       }
       if (body.type === "personal" && !body.email?.trim()) {
-        throw error(400, "برای دعوت شخصی ایمیل الزامی است");
+        console.log("Personal invite attempt without email by user", inviteUser.userId);
+        throw status(400, "برای دعوت شخصی ایمیل الزامی است");
       }
 
       const expiresAt = new Date();
