@@ -8,6 +8,16 @@ async function getSession(headers: Headers) {
 }
 
 export const meService = new Elysia({ prefix: "/me", aot: false })
+  .post("/logout", async ({ request }) => {
+    const authHeader = request.headers.get("Authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7).trim();
+      if (token) {
+        await prisma.inviteSession.deleteMany({ where: { token } });
+      }
+    }
+    return { success: true };
+  })
   .derive(async ({ request }) => {
     let session = await getSession(request.headers);
     if (!session?.user && request.headers) {

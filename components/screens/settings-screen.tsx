@@ -51,6 +51,15 @@ export function SettingsScreen() {
   }, [user, hasAuth, router]);
 
   const handleLogout = async () => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
+    if (token) {
+      await fetch("/api/me/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+    }
     await authClient.signOut();
     if (typeof window !== "undefined") {
       localStorage.removeItem(DADBAN_INVITE_TOKEN_KEY);
