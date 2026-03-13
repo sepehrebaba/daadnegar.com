@@ -47,10 +47,11 @@ export function MyTokensScreen() {
       setUser({
         id: data.id,
         passkey: "",
-        inviteCode: "",
+        inviteCode: data.inviteCode ?? "",
         isActivated: true,
         tokensCount: data.tokensCount ?? 0,
         approvedRequestsCount: data.approvedRequestsCount ?? 0,
+        role: data.role ?? "user",
       } as Parameters<typeof setUser>[0]);
     });
     return () => {

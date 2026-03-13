@@ -3,6 +3,7 @@ import { prisma } from "../db";
 import { auth } from "@/lib/auth";
 import { createAuditLog } from "./audit";
 import { resolveInviteToken } from "../lib/auth-invite";
+import { getSettingNumber, SETTING_KEYS } from "../lib/settings";
 
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
@@ -48,7 +49,7 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
             email: inviteUser.email,
             image: null,
             emailVerified: null,
-            role: "user",
+            role: inviteUser.role ?? "user",
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -62,13 +63,16 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
     if (!session?.user?.id) {
       throw new Error("Unauthorized");
     }
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { tokenBalance: true },
-    });
-    const approvedRequestsCount = await prisma.report.count({
-      where: { userId: session.user.id, status: "accepted" },
-    });
+    const [user, approvedRequestsCount, minApprovedReportsForApproval] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { tokenBalance: true, role: true },
+      }),
+      prisma.report.count({
+        where: { userId: session.user.id, status: "accepted" },
+      }),
+      getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
+    ]);
     return {
       id: session.user.id,
       name: session.user.name,
@@ -79,6 +83,8 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
       isActivated: true,
       tokensCount: user?.tokenBalance ?? 0,
       approvedRequestsCount,
+      role: user?.role ?? session.user.role ?? "user",
+      minApprovedReportsForApproval,
     };
   })
   .get("/transactions", async ({ session }) => {

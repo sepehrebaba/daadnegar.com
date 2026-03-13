@@ -121,6 +121,8 @@ export interface User {
   isActivated: boolean;
   tokensCount: number;
   approvedRequestsCount: number;
+  /** "user" | "validator" - validators can always approve reports */
+  role?: string;
 }
 
 export interface Person {

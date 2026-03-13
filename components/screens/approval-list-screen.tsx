@@ -66,11 +66,15 @@ export function ApprovalListScreen() {
         </CardHeader>
         <CardContent className="flex flex-1 flex-col gap-3">
           {loading ? (
-            <div className="text-muted-foreground py-8 text-center">در حال بارگذاری...</div>
+            <div className="text-muted-foreground flex min-h-[330px] items-center justify-center gap-3">
+              در حال بارگذاری...
+            </div>
           ) : currentRequests.length === 0 ? (
-            <div className="text-muted-foreground py-8 text-center">
-              <FileText className="text-muted-foreground/50 mx-auto mb-3 h-12 w-12" />
-              <p>هیچ درخواستی در انتظار تایید نیست</p>
+            <div className="text-muted-foreground flex min-h-[330px] items-center justify-center gap-3">
+              <FileText className="text-muted-foreground/40 mb-3 h-10 w-10" />
+              <p className="text-muted-foreground/50 text-center text-lg font-bold">
+                هیچ درخواستی در انتظار تایید نیست
+              </p>
             </div>
           ) : (
             currentRequests.map((request) => (

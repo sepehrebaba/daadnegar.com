@@ -165,6 +165,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
           isActivated: true,
           tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
+          role: user.role ?? "user",
         },
       };
     },
@@ -228,6 +229,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
           isActivated: true,
           tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
+          role: user.role ?? "user",
         },
       };
     },
@@ -267,6 +269,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         isActivated: true,
         tokensCount: user.tokenBalance ?? 0,
         approvedRequestsCount,
+        role: user.role ?? "user",
       },
     };
   })
@@ -508,6 +511,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
           isActivated: true,
           tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
+          role: user.role ?? "user",
         },
       };
     },

@@ -22,7 +22,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
             email: inviteUser.email,
             image: null,
             emailVerified: null,
-            role: "user",
+            role: inviteUser.role ?? "user",
             createdAt: new Date(),
             updatedAt: new Date(),
           },
@@ -145,8 +145,27 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     const admin = await prisma.admin.findUnique({
       where: { userId: session.user.id },
     });
-    if (!admin) {
-      throw new Error("Forbidden: Admin only");
+    if (admin) {
+      const reports = await prisma.report.findMany({
+        where: { status: "pending" },
+        include: { person: true, user: { select: { id: true, name: true, email: true } } },
+        orderBy: { createdAt: "desc" },
+      });
+      return reports;
+    }
+    const [dbUser, approvedCount, minRequired] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      }),
+      prisma.report.count({
+        where: { userId: session.user.id, status: "accepted" },
+      }),
+      getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
+    ]);
+    const canApprove = dbUser?.role === "validator" || approvedCount >= minRequired;
+    if (!canApprove) {
+      throw new Error("Forbidden: نیاز به نقش اعتبارسنج یا حداقل گزارش‌های تاییدشده");
     }
     const reports = await prisma.report.findMany({
       where: { status: "pending" },
@@ -185,7 +204,18 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       const admin = await prisma.admin.findUnique({
         where: { userId: session.user.id },
       });
-      if (!admin) throw new Error("Forbidden: Admin only");
+      let canApprove = !!admin;
+      if (!canApprove) {
+        const [dbUser, approvedCount, minRequired] = await Promise.all([
+          prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
+          prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
+          getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
+        ]);
+        canApprove = dbUser?.role === "validator" || approvedCount >= minRequired;
+      }
+      if (!canApprove) {
+        throw new Error("Forbidden: نیاز به نقش اعتبارسنج یا حداقل گزارش‌های تاییدشده");
+      }
 
       const report = await prisma.report.update({
         where: { id: params.id },
@@ -213,7 +243,18 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       const admin = await prisma.admin.findUnique({
         where: { userId: session.user.id },
       });
-      if (!admin) throw new Error("Forbidden: Admin only");
+      let canApprove = !!admin;
+      if (!canApprove) {
+        const [dbUser, approvedCount, minRequired] = await Promise.all([
+          prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
+          prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
+          getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
+        ]);
+        canApprove = dbUser?.role === "validator" || approvedCount >= minRequired;
+      }
+      if (!canApprove) {
+        throw new Error("Forbidden: نیاز به نقش اعتبارسنج یا حداقل گزارش‌های تاییدشده");
+      }
 
       const report = await prisma.report.update({
         where: { id: params.id },

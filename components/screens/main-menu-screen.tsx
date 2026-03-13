@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
@@ -24,10 +24,10 @@ export function MainMenuScreen() {
   const router = useRouter();
   const { state, startReport, setUser } = useApp();
   const user = state.user;
+  const [minApprovedForApproval, setMinApprovedForApproval] = useState(5);
 
-  // بارگذاری کاربر از سرور در صورت رفرش یا ورود مستقیم (invite token یا session cookie)
+  // بارگذاری کاربر از سرور و تنظیمات (رفرش، ورود مستقیم، یا به‌روزرسانی)
   useEffect(() => {
-    if (state.user) return;
     let cancelled = false;
     api.me.get().then(({ data, error }) => {
       if (cancelled || error || !data) return;
@@ -38,15 +38,22 @@ export function MainMenuScreen() {
         isActivated: true,
         tokensCount: data.tokensCount ?? 0,
         approvedRequestsCount: data.approvedRequestsCount ?? 0,
+        role: data.role ?? "user",
       } as Parameters<typeof setUser>[0]);
+      setMinApprovedForApproval(
+        typeof data.minApprovedReportsForApproval === "number"
+          ? data.minApprovedReportsForApproval
+          : 5,
+      );
     });
     return () => {
       cancelled = true;
     };
-  }, [state.user, setUser]);
+  }, [setUser]);
 
-  // Show approval section only for users with 5+ approved requests
-  const showApprovalSection = user && user.approvedRequestsCount >= 5;
+  // نمایش بخش تایید برای: کاربر validator یا کاربر با حداقل گزارش‌های تاییدشده
+  const showApprovalSection =
+    user && (user.role === "validator" || user.approvedRequestsCount >= minApprovedForApproval);
 
   return (
     <div className="bg-background flex flex-col items-center justify-center gap-4 p-4">
@@ -58,13 +65,13 @@ export function MainMenuScreen() {
       </Alert>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-foreground text-2xl font-bold">پنل کاربری</CardTitle>
-          <p className="text-muted-foreground mt-2">به دادبان خوش آمدید</p>
+          <CardTitle className="text-foreground text-2xl font-black">پنل کاربری</CardTitle>
+          <p className="text-muted-foreground mt-2">به پلتفرم دادبان خوش آمدید</p>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <Button
             onClick={() => router.push(routes.myTokens)}
-            className="w-full justify-start gap-3 py-6 text-base"
+            className="w-full justify-start gap-3 py-6 text-sm"
             variant="outline"
           >
             <Coins className="h-5 w-5" />
@@ -80,7 +87,7 @@ export function MainMenuScreen() {
                 startReport();
                 router.push(routes.reportCategory);
               }}
-              className="w-full justify-start gap-3 py-6 text-base"
+              className="w-full justify-start gap-3 py-6 text-base font-black"
               variant="default"
             >
               <FileText className="h-5 w-5" />
@@ -96,19 +103,10 @@ export function MainMenuScreen() {
             </Button>
           </div>
 
-          <Button
-            onClick={() => router.push(routes.inviteUser)}
-            className="w-full justify-start gap-3 py-6 text-base"
-            variant="outline"
-          >
-            <UserPlus className="h-5 w-5" />
-            دعوت کاربر
-          </Button>
-
           {showApprovalSection && (
             <Button
               onClick={() => router.push(routes.approvalList)}
-              className="w-full justify-start gap-3 border-amber-300 bg-amber-100 py-6 text-base text-amber-900 hover:bg-amber-200"
+              className="w-full justify-start gap-3 border-amber-300 bg-amber-100 py-6 text-base font-black text-amber-900 hover:bg-amber-200"
               variant="outline"
             >
               <ClipboardCheck className="h-5 w-5" />
@@ -117,8 +115,17 @@ export function MainMenuScreen() {
           )}
 
           <Button
+            onClick={() => router.push(routes.inviteUser)}
+            className="w-full justify-start gap-3 py-6 text-sm"
+            variant="outline"
+          >
+            <UserPlus className="h-5 w-5" />
+            دعوت کاربر
+          </Button>
+
+          <Button
             onClick={() => router.push(`${routes.mainMenu}?settings=open`)}
-            className="w-full justify-start gap-3 py-6 text-base"
+            className="w-full justify-start gap-3 py-6 text-sm"
             variant="outline"
           >
             <Settings className="h-5 w-5" />
