@@ -123,6 +123,8 @@ export interface User {
   approvedRequestsCount: number;
   /** "user" | "validator" - validators can always approve reports */
   role?: string;
+  email?: string;
+  name?: string;
 }
 
 export interface Person {

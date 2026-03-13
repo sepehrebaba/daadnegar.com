@@ -70,11 +70,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     await authClient.signOut();
     if (typeof window !== "undefined") {
       clearInviteTokenStorage();
+      sessionStorage.setItem("dadban_logout_toast", "1");
     }
     setUser(null);
-    toast("با موفقیت خارج شدید!");
-    router.push(routes.home);
+    window.location.href = routes.home;
   };
+
+  // نمایش toast خروج بعد از ریدایرکت (full page load)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("dadban_logout_toast")) {
+      sessionStorage.removeItem("dadban_logout_toast");
+      toast("با موفقیت خارج شدید!");
+    }
+  }, []);
 
   // Sync invite token from localStorage to cookie (for middleware) when token exists
   useEffect(() => {
@@ -101,6 +110,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         tokensCount: data.tokensCount ?? 0,
         approvedRequestsCount: data.approvedRequestsCount ?? 0,
         role: data.role ?? "user",
+        email: data.email,
+        name: data.name,
       } as Parameters<typeof setUser>[0]);
     });
     return () => {

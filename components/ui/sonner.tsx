@@ -15,6 +15,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           background: "#1a1a1a",
           color: "#fff",
           border: "none",
+          fontFamily: 'var(--font-vazir), "Vazirmatn", sans-serif',
         },
       }}
       className="toaster group"

@@ -38,17 +38,16 @@ export function LoginScreen() {
       return;
     }
 
+    console.log(data);
+
     if (data?.user) {
       const { data: me, error: meError } = await api.me.get();
+
+      console.log("====me", me);
       if (meError || !me) {
-        setUser({
-          id: data.user.id,
-          passkey: "",
-          inviteCode: "",
-          isActivated: true,
-          tokensCount: 0,
-          approvedRequestsCount: 0,
-        });
+        // redirect to login page
+        router.push(routes.login);
+        return;
       } else {
         setUser({
           id: me.id,
@@ -57,6 +56,8 @@ export function LoginScreen() {
           isActivated: true,
           tokensCount: me.tokensCount ?? 0,
           approvedRequestsCount: me.approvedRequestsCount ?? 0,
+          email: me.email,
+          name: me.name,
         });
       }
       toast("با موفقیت وارد شدید!");

@@ -73,7 +73,7 @@ export function SettingsForm() {
         <div className="border-border my-2 border-t" />
         <div className="text-foreground/80 flex items-center justify-center gap-2 text-center text-sm font-medium">
           <Mail className="text-muted-foreground h-4 w-4" />
-          email@example.com
+          {state.user?.email ?? "—"}
         </div>
       </CardContent>
     </>
