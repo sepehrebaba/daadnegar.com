@@ -79,7 +79,7 @@ export function MyTokensScreen() {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="text-center">
-            <div className="text-primary mb-2 text-6xl font-bold">
+            <div className="text-primary mb-2 text-6xl font-black">
               {toPersianNum(user?.tokensCount ?? 0)}
             </div>
             <p className="text-muted-foreground">توکن فعال</p>
@@ -88,7 +88,7 @@ export function MyTokensScreen() {
           {/* لیست تراکنش‌ها */}
           <div className="bg-card border-border mt-6 w-full max-w-md overflow-hidden rounded-lg border">
             <div className="border-border border-b px-4 py-3">
-              <h3 className="text-foreground font-semibold">سابقه تراکنش‌ها</h3>
+              <h3 className="text-foreground font-bold">سابقه تراکنش‌ها</h3>
             </div>
             {transactionsLoading ? (
               <div className="text-muted-foreground p-6 text-center text-sm">
@@ -112,19 +112,22 @@ export function MyTokensScreen() {
                         ) : (
                           <ArrowUpCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-500" />
                         )}
-                        <span className="text-foreground truncate">
+                        <span className="text-foreground truncate text-sm">
                           {TRANSACTION_TYPE_LABELS[tx.type] ?? tx.type}
                         </span>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         {/* Use a badge */}
-                        <Badge variant={tx.amount > 0 ? "default" : "destructive"}>
+                        <span className="text-muted-foreground text-[10px]">
+                          {formatTimeAgo(tx.createdAt)}
+                        </span>
+                        <Badge
+                          variant={tx.amount > 0 ? "default" : "destructive"}
+                          className="font-bold"
+                        >
                           {tx.amount > 0 ? "+" : "-"}
                           {toPersianNum(Math.abs(tx.amount))}
                         </Badge>
-                        <span className="text-muted-foreground text-xs">
-                          {formatTimeAgo(tx.createdAt)}
-                        </span>
                       </div>
                     </li>
                   ))}
@@ -133,10 +136,24 @@ export function MyTokensScreen() {
             )}
           </div>
 
-          <div className="bg-secondary rounded-lg p-4 text-center">
-            <p className="text-muted-foreground text-sm">
-              با هر گزارش تایید شده، توکن دریافت می‌کنید. توکن‌ها امتیاز شما در سیستم را نشان می‌دهند.
-            </p>
+          <div className="bg-secondary rounded-lg p-4">
+            <div className="text-muted-foreground text-xs">
+              <span className="text-foreground mb-1 block font-bold">سیستم امتیازدهی:</span>
+              <ul className="list-inside list-disc">
+                <li>
+                  هر گزارش تایید شده: <span className="font-bold">+10</span> توکن
+                </li>
+                <li>
+                  هر گزارش رد شده: <span className="font-bold">-5</span> توکن
+                </li>
+                <li>
+                  هر گزارش مسئله‌دار: <span className="font-bold">-10</span> توکن
+                </li>
+                <li>
+                  هر گزارش اطلاعات نادرست: <span className="font-bold">-10</span> توکن
+                </li>
+              </ul>
+            </div>
           </div>
 
           <Button onClick={() => router.back()} variant="outline" className="w-full">

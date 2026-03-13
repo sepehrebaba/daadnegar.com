@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useApp } from "@/context/app-context";
+import { SettingsModal } from "@/components/settings-modal";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Languages, House, UserCircle, Settings, Shield, HelpCircle, LogOut } from "lucide-react";
@@ -41,8 +43,19 @@ const ChevronDown = () => (
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { state, setLanguage, setUser } = useApp();
   const user = state.user;
+  const isSettingsOpen = searchParams.get("settings") === "open";
+
+  const openSettings = () => {
+    router.push(`${pathname}?settings=open`);
+  };
+
+  const closeSettings = () => {
+    router.replace(pathname ?? "/");
+  };
 
   const handleLogout = async () => {
     const token =
@@ -59,6 +72,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       clearInviteTokenStorage();
     }
     setUser(null);
+    toast("با موفقیت خارج شدید!");
     router.push(routes.home);
   };
 
@@ -119,7 +133,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href={routes.settings} className="flex items-center gap-2">
+                  <Link
+                    href={
+                      pathname ? `${pathname}?settings=open` : routes.mainMenu + "?settings=open"
+                    }
+                    className="flex items-center gap-2"
+                  >
                     <Settings className="h-4 w-4" />
                     تنظیمات
                   </Link>
@@ -161,6 +180,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <main className="flex flex-1 flex-col">{children}</main>
+
+      {/* Settings modal */}
+      {user && (
+        <SettingsModal
+          open={isSettingsOpen}
+          onOpenChange={(open) => !open && closeSettings()}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* Footer - visible on all pages */}
       <footer className="border-border bg-muted/30 border-t px-4 py-4 pt-8">

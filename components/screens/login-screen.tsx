@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, LogIn } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "@/lib/edyen";
 
 export function LoginScreen() {
@@ -58,6 +59,7 @@ export function LoginScreen() {
           approvedRequestsCount: me.approvedRequestsCount ?? 0,
         });
       }
+      toast("با موفقیت وارد شدید!");
       router.push(routes.mainMenu);
     } else {
       setError("ورود با خطا مواجه شد. لطفاً دوباره تلاش کنید.");

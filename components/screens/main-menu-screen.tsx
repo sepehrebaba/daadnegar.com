@@ -13,6 +13,7 @@ import {
   LogOut,
   UserPlus,
   AlertCircle,
+  Settings,
 } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { toPersianNum } from "@/lib/utils";
@@ -73,26 +74,27 @@ export function MainMenuScreen() {
             </span>
           </Button>
 
-          <Button
-            onClick={() => {
-              startReport();
-              router.push(routes.reportCategory);
-            }}
-            className="w-full justify-start gap-3 py-6 text-base"
-            variant="default"
-          >
-            <FileText className="h-5 w-5" />
-            ثبت گزارش جدید
-          </Button>
-
-          <Button
-            onClick={() => router.push(routes.myRequests)}
-            className="w-full justify-start gap-3 py-6 text-base"
-            variant="outline"
-          >
-            <ListChecks className="h-5 w-5" />
-            درخواست‌های من
-          </Button>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Button
+              onClick={() => {
+                startReport();
+                router.push(routes.reportCategory);
+              }}
+              className="w-full justify-start gap-3 py-6 text-base"
+              variant="default"
+            >
+              <FileText className="h-5 w-5" />
+              ثبت گزارش جدید
+            </Button>
+            <Button
+              onClick={() => router.push(routes.myRequests)}
+              className="w-full justify-start gap-3 py-6 text-base"
+              variant="outline"
+            >
+              <ListChecks className="h-5 w-5" />
+              گزارش‌های من
+            </Button>
+          </div>
 
           <Button
             onClick={() => router.push(routes.inviteUser)}
@@ -113,6 +115,15 @@ export function MainMenuScreen() {
               لیست انتظار تایید
             </Button>
           )}
+
+          <Button
+            onClick={() => router.push(`${routes.mainMenu}?settings=open`)}
+            className="w-full justify-start gap-3 py-6 text-base"
+            variant="outline"
+          >
+            <Settings className="h-5 w-5" />
+            تنظیمات
+          </Button>
 
           <div className="border-border my-2 border-t" />
 
