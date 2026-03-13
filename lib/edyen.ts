@@ -2,6 +2,21 @@ import { treaty } from "@elysiajs/eden";
 import type { App } from "@/server/app";
 
 export const DADBAN_INVITE_TOKEN_KEY = "dadban_invite_token";
+export const DADBAN_INVITE_TOKEN_COOKIE = "dadban_invite_token";
+
+/** Sets invite token in both localStorage and cookie (for middleware auth check). */
+export function setInviteTokenStorage(token: string) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(DADBAN_INVITE_TOKEN_KEY, token);
+  document.cookie = `${DADBAN_INVITE_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=31536000; samesite=strict`;
+}
+
+/** Clears invite token from both localStorage and cookie. */
+export function clearInviteTokenStorage() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(DADBAN_INVITE_TOKEN_KEY);
+  document.cookie = `${DADBAN_INVITE_TOKEN_COOKIE}=; path=/; max-age=0`;
+}
 
 const getBaseUrl = () =>
   typeof window !== "undefined"

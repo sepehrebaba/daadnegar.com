@@ -1,20 +1,28 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Languages, House, UserCircle, Settings, Shield, HelpCircle } from "lucide-react";
+import { Languages, House, UserCircle, Settings, Shield, HelpCircle, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
-import { api, DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
+import {
+  api,
+  DADBAN_INVITE_TOKEN_KEY,
+  clearInviteTokenStorage,
+  setInviteTokenStorage,
+} from "@/lib/edyen";
+import { authClient } from "@/lib/auth-client";
 
 const ChevronDown = () => (
   <svg
@@ -32,8 +40,34 @@ const ChevronDown = () => (
 );
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const { state, setLanguage, setUser } = useApp();
   const user = state.user;
+
+  const handleLogout = async () => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
+    if (token) {
+      await fetch("/api/me/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+    }
+    await authClient.signOut();
+    if (typeof window !== "undefined") {
+      clearInviteTokenStorage();
+    }
+    setUser(null);
+    router.push(routes.home);
+  };
+
+  // Sync invite token from localStorage to cookie (for middleware) when token exists
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem(DADBAN_INVITE_TOKEN_KEY);
+    if (token) setInviteTokenStorage(token);
+  }, []);
 
   // بارگذاری کاربر هنگام وجود auth (invite token یا session cookie)
   useEffect(() => {
@@ -89,6 +123,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <Settings className="h-4 w-4" />
                     تنظیمات
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleLogout} className="gap-2">
+                  <LogOut className="h-4 w-4" />
+                  خروج
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

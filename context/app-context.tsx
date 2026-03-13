@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { AppState, AppScreen, Language, User, ReportCase, Person } from "@/types";
-import { api, DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
+import { api, DADBAN_INVITE_TOKEN_KEY, setInviteTokenStorage } from "@/lib/edyen";
 
 export type ValidateInviteResult =
   | { ok: true; token: string; hasPasskey: boolean }
@@ -78,7 +78,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return { ok: false, error: (data as { error?: string }).error ?? "کد دعوت نامعتبر است" };
     }
     const { token, hasPasskey } = data;
-    localStorage.setItem(DADBAN_INVITE_TOKEN_KEY, token);
+    setInviteTokenStorage(token);
     return { ok: true, token, hasPasskey };
   }, []);
 

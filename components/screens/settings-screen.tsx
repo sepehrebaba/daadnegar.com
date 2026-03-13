@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Languages, LogOut, Settings } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { authClient } from "@/lib/auth-client";
-import { api, DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
+import { api, DADBAN_INVITE_TOKEN_KEY, clearInviteTokenStorage } from "@/lib/edyen";
 
 export function SettingsScreen() {
   const router = useRouter();
@@ -62,7 +62,7 @@ export function SettingsScreen() {
     }
     await authClient.signOut();
     if (typeof window !== "undefined") {
-      localStorage.removeItem(DADBAN_INVITE_TOKEN_KEY);
+      clearInviteTokenStorage();
     }
     setUser(null);
     router.push(routes.home);

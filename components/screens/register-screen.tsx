@@ -4,7 +4,7 @@ import { useState, useEffect, useLayoutEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { api } from "@/lib/edyen";
-import { DADBAN_INVITE_TOKEN_KEY } from "@/lib/edyen";
+import { setInviteTokenStorage } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -123,7 +123,7 @@ export function RegisterScreen() {
       user?: { id: string; name?: string; tokensCount?: number; approvedRequestsCount?: number };
     };
     if (result.token) {
-      localStorage.setItem(DADBAN_INVITE_TOKEN_KEY, result.token);
+      setInviteTokenStorage(result.token);
     }
     if (result.user) {
       setUser({
