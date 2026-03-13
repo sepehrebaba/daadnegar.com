@@ -22,7 +22,7 @@ import { api } from "@/lib/edyen";
 
 export function MainMenuScreen() {
   const router = useRouter();
-  const { state, startReport, setUser } = useApp();
+  const { state, startReport, setUser, logout } = useApp();
   const user = state.user;
   const [minApprovedForApproval, setMinApprovedForApproval] = useState(5);
 
@@ -134,11 +134,7 @@ export function MainMenuScreen() {
 
           <div className="border-border my-2 border-t" />
 
-          <Button
-            onClick={() => router.push(routes.home)}
-            variant="ghost"
-            className="text-muted-foreground w-full gap-2"
-          >
+          <Button onClick={logout} variant="ghost" className="text-muted-foreground w-full gap-2">
             <LogOut className="h-4 w-4" />
             خروج
           </Button>

@@ -2,7 +2,14 @@
 
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
 import type { AppState, AppScreen, Language, User, ReportCase, Person } from "@/types";
-import { api, DADBAN_INVITE_TOKEN_KEY, setInviteTokenStorage } from "@/lib/edyen";
+import {
+  api,
+  DADBAN_INVITE_TOKEN_KEY,
+  setInviteTokenStorage,
+  clearInviteTokenStorage,
+} from "@/lib/edyen";
+import { authClient } from "@/lib/auth-client";
+import { routes } from "@/lib/routes";
 
 export type ValidateInviteResult =
   | { ok: true; token: string; hasPasskey: boolean }
@@ -31,6 +38,7 @@ interface AppContextType {
   getMyRequests: () => Promise<ReportCase[]>;
   getPendingRequests: () => Promise<ReportCase[]>;
   goBack: () => void;
+  logout: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -239,6 +247,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return (data ?? []) as ReportCase[];
   }, []);
 
+  const logout = useCallback(async () => {
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
+    if (token) {
+      await fetch("/api/me/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
+      });
+    }
+    await authClient.signOut();
+    if (typeof window !== "undefined") {
+      clearInviteTokenStorage();
+      sessionStorage.setItem("dadban_logout_toast", "1");
+    }
+    setState((prev) => ({ ...prev, user: null }));
+    window.location.href = routes.home;
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -262,6 +289,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         getMyRequests,
         getPendingRequests,
         goBack,
+        logout,
       }}
     >
       {children}

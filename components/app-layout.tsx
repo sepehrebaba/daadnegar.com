@@ -18,13 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
-import {
-  api,
-  DADBAN_INVITE_TOKEN_KEY,
-  clearInviteTokenStorage,
-  setInviteTokenStorage,
-} from "@/lib/edyen";
-import { authClient } from "@/lib/auth-client";
+import { api, DADBAN_INVITE_TOKEN_KEY, setInviteTokenStorage } from "@/lib/edyen";
 
 const ChevronDown = () => (
   <svg
@@ -45,7 +39,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { state, setLanguage, setUser } = useApp();
+  const { state, setLanguage, setUser, logout } = useApp();
   const user = state.user;
   const isSettingsOpen = searchParams.get("settings") === "open";
 
@@ -57,24 +51,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     router.replace(pathname ?? "/");
   };
 
-  const handleLogout = async () => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem(DADBAN_INVITE_TOKEN_KEY) : null;
-    if (token) {
-      await fetch("/api/me/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        credentials: "include",
-      });
-    }
-    await authClient.signOut();
-    if (typeof window !== "undefined") {
-      clearInviteTokenStorage();
-      sessionStorage.setItem("dadban_logout_toast", "1");
-    }
-    setUser(null);
-    window.location.href = routes.home;
-  };
+  const handleLogout = logout;
 
   // نمایش toast خروج بعد از ریدایرکت (full page load)
   useEffect(() => {
@@ -156,7 +133,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={handleLogout} className="gap-2">
+                <DropdownMenuItem variant="destructive" onClick={() => logout()} className="gap-2">
                   <LogOut className="h-4 w-4" />
                   خروج
                 </DropdownMenuItem>
@@ -198,7 +175,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <SettingsModal
           open={isSettingsOpen}
           onOpenChange={(open) => !open && closeSettings()}
-          onLogout={handleLogout}
+          onLogout={() => logout()}
         />
       )}
 
