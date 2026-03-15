@@ -1,9 +1,20 @@
 import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { getAllSettings, setSettings, SETTING_KEYS, type SettingsMap } from "../lib/settings";
+import { documentToServeUrl } from "./upload";
 import { createAuditLog } from "./audit";
 import { auth } from "@/lib/auth";
 import { getAdminPanelSession } from "./admin-panel-auth";
+
+function mapReportDocuments<T extends { documents?: { id: string; name: string; url: string }[] }>(
+  r: T,
+): T {
+  if (!r?.documents?.length) return r;
+  return {
+    ...r,
+    documents: r.documents.map((d) => ({ ...d, url: documentToServeUrl(d) })),
+  };
+}
 
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
@@ -477,7 +488,7 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         },
       });
       if (!report) throw new Error("Not found");
-      return report;
+      return mapReportDocuments(report);
     },
     { params: t.Object({ id: t.String() }) },
   )

@@ -42,6 +42,33 @@ export const api = treaty<App>(getBaseUrl(), {
   },
 }).api;
 
+/** آپلود امن فایل (حذف متادیتا و ذخیره در MinIO) - برای اسناد گزارش */
+export async function uploadReportFile(file: File): Promise<{ key: string; name: string }> {
+  const token = getInviteToken();
+  const base = getBaseUrl();
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${base}/api/upload`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include",
+    body: form,
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let errMsg = "خطا در آپلود فایل";
+    try {
+      const j = JSON.parse(text);
+      if (j?.error?.message) errMsg = j.error.message;
+    } catch {
+      if (text) errMsg = text;
+    }
+    throw new Error(errMsg);
+  }
+  const data = (await res.json()) as { key: string; name: string };
+  return data;
+}
+
 /** دریافت جزئیات گزارش در انتظار (برای اعتبارسنج) */
 export async function getPendingReportDetail(id: string) {
   const token = getInviteToken();

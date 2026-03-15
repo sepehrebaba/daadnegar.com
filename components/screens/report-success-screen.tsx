@@ -1,21 +1,19 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
+import { toPersianNum } from "@/lib/utils";
 
-export function ReportSuccessScreen() {
+function ReportSuccessContent() {
   const router = useRouter();
-  const { submitReport } = useApp();
+  const searchParams = useSearchParams();
+  const tokensAwarded = Number(searchParams.get("tokens") || 0);
 
   const handleBackToMenu = () => {
-    console.log("[v0] Report submission complete");
-    submitReport();
-    console.log("[v0] User tokens count updated");
-    console.log("[v0] Navigating back to main menu");
     router.push(routes.mainMenu);
   };
 
@@ -38,9 +36,13 @@ export function ReportSuccessScreen() {
             </p>
           </div>
 
-          <div className="bg-primary/5 border-primary/20 rounded-lg border p-4 text-center">
-            <p className="text-primary text-sm font-medium">یک توکن به حساب شما اضافه شد!</p>
-          </div>
+          {tokensAwarded > 0 && (
+            <div className="bg-primary/5 border-primary/20 rounded-lg border p-4 text-center">
+              <p className="text-primary text-sm font-medium">
+                {toPersianNum(tokensAwarded)} توکن به حساب شما اضافه شد!
+              </p>
+            </div>
+          )}
 
           <Button onClick={handleBackToMenu} className="w-full">
             بازگشت به منوی اصلی
@@ -48,5 +50,17 @@ export function ReportSuccessScreen() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export function ReportSuccessScreen() {
+  return (
+    <Suspense
+      fallback={
+        <div className="bg-background flex min-h-[200px] items-center justify-center p-4" />
+      }
+    >
+      <ReportSuccessContent />
+    </Suspense>
   );
 }

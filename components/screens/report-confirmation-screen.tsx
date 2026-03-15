@@ -6,7 +6,6 @@ import { useApp } from "@/context/app-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight, CheckCircle, Shield } from "lucide-react";
 
@@ -29,8 +28,10 @@ export function ReportConfirmationScreen() {
       confirmProcessAgreement,
     });
     try {
-      await submitReport();
-      router.push(routes.reportSuccess);
+      const result = await submitReport();
+      const tokens = result?.tokensAwarded ?? 0;
+      const url = tokens > 0 ? `${routes.reportSuccess}?tokens=${tokens}` : routes.reportSuccess;
+      router.push(url);
     } catch {
       setIsSubmitting(false);
     }
@@ -59,56 +60,65 @@ export function ReportConfirmationScreen() {
             </p>
           </div>
 
-          <div className="flex items-start space-x-3 space-x-reverse rounded-lg border p-4">
+          <label
+            htmlFor="confirm-accuracy"
+            className="border-border hover:border-primary/50 flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors"
+          >
             <Checkbox
               id="confirm-accuracy"
               checked={confirmAccuracy}
               onCheckedChange={(c) => setConfirmAccuracy(c as boolean)}
-              className="mt-1"
+              className="mt-1 shrink-0"
             />
-            <div className="space-y-1">
-              <Label htmlFor="confirm-accuracy" className="cursor-pointer font-medium">
+            <div className="min-w-0 flex-1 space-y-1">
+              <span className="font-medium">
                 تایید صحت اطلاعات <span className="text-destructive">*</span>
-              </Label>
+              </span>
               <p className="text-muted-foreground text-sm">
                 تایید می‌کنم اطلاعاتی که وارد کرده‌ام تا حدی که می‌دانم صحیح است.
               </p>
             </div>
-          </div>
+          </label>
 
-          <div className="flex items-start space-x-3 space-x-reverse rounded-lg border p-4">
+          <label
+            htmlFor="confirm-no-personal"
+            className="border-border hover:border-primary/50 flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors"
+          >
             <Checkbox
               id="confirm-no-personal"
               checked={confirmNoPersonalInfo}
               onCheckedChange={(c) => setConfirmNoPersonalInfo(c as boolean)}
-              className="mt-1"
+              className="mt-1 shrink-0"
             />
-            <div className="space-y-1">
-              <Label htmlFor="confirm-no-personal" className="cursor-pointer font-medium">
+            <div className="min-w-0 flex-1 space-y-1">
+              <span className="font-medium">
                 عدم وارد کردن اطلاعات شخصی خطرناک <span className="text-destructive">*</span>
-              </Label>
+              </span>
               <p className="text-muted-foreground text-sm">
                 تایید می‌کنم اطلاعات شخصی غیرضروری یا محتوای خطرناک وارد نکرده‌ام.
               </p>
             </div>
-          </div>
+          </label>
 
-          <div className="flex items-start space-x-3 space-x-reverse rounded-lg border p-4">
+          <label
+            htmlFor="confirm-process"
+            className="border-border hover:border-primary/50 flex cursor-pointer items-start gap-4 rounded-lg border p-4 transition-colors"
+          >
             <Checkbox
               id="confirm-process"
               checked={confirmProcessAgreement}
               onCheckedChange={(c) => setConfirmProcessAgreement(c as boolean)}
-              className="mt-1"
+              className="mt-1 shrink-0"
             />
-            <div className="space-y-1">
-              <Label htmlFor="confirm-process" className="cursor-pointer font-medium">
+            <div className="min-w-0 flex-1 space-y-1">
+              <span className="font-medium">
                 پذیرش فرایند بررسی گزارش <span className="text-destructive">*</span>
-              </Label>
+              </span>
               <p className="text-muted-foreground text-sm">
                 می‌پذیرم که گزارش ممکن است بررسی، رد یا برای اصلاح بازگردانده شود.
               </p>
             </div>
-          </div>
+          </label>
 
           <div className="flex gap-3 pt-4">
             <Button

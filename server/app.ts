@@ -6,6 +6,7 @@ import { reportsService } from "./services/reports";
 import { peopleService } from "./services/people";
 import { adminService } from "./services/admin";
 import { adminPanelAuthService } from "./services/admin-panel-auth";
+import { uploadService } from "./services/upload";
 import { DefaultContext, type Generator, rateLimit } from "elysia-rate-limit";
 import { elysiaHelmet } from "elysiajs-helmet";
 import { ip } from "elysia-ip";
@@ -94,6 +95,7 @@ export const app = new Elysia({ prefix: "/api", aot: false })
   .use(reportsService)
   .use(adminPanelAuthService)
   .use(adminService)
+  .use(uploadService)
   .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
 
   .onError(

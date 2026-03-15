@@ -30,7 +30,7 @@ interface AppContextType {
   setReportPerson: (person: Person) => void;
   setReportDocuments: (docs: string[]) => void;
   setReportDescription: (desc: string) => void;
-  submitReport: () => void;
+  submitReport: () => Promise<{ tokensAwarded?: number } | undefined>;
   selectRequest: (request: ReportCase) => void;
   approveRequest: (requestId: string) => void;
   rejectRequest: (requestId: string, rejectionReason: "problematic" | "false") => void;
@@ -170,7 +170,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
-  const submitReport = useCallback(async () => {
+  const submitReport = useCallback(async (): Promise<{ tokensAwarded?: number } | undefined> => {
     const report = state.currentReport;
     if (!report?.personId || !report?.description) return;
     const { data, error } = await api.reports.post({
@@ -213,6 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           : null,
       }));
     }
+    return { tokensAwarded: (data as { tokensAwarded?: number })?.tokensAwarded };
   }, [state.currentReport]);
 
   const selectRequest = useCallback((request: ReportCase) => {

@@ -4,27 +4,33 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { routes } from "@/lib/routes";
+import { uploadReportFile } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle, FileText, Upload, X } from "lucide-react";
+import { AlertCircle, FileText, Loader2, Upload, X } from "lucide-react";
 
 export function ReportDocumentsScreen() {
   const router = useRouter();
   const { setReportDocuments } = useApp();
   const [documents, setDocuments] = useState<{ name: string; url: string }[]>([]);
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      console.log("[v0] User uploading documents:", files.length, "files");
-      const newDocs = Array.from(files).map((file) => {
-        // TODO: Upload to server and get URL
-        const url = URL.createObjectURL(file);
-        console.log("[v0] Document preview created:", file.name);
-        return { name: file.name, url };
-      });
-      setDocuments((prev) => [...prev, ...newDocs]);
+    if (!files?.length) return;
+    setError("");
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const { key, name } = await uploadReportFile(file);
+        setDocuments((prev) => [...prev, { name, url: key }]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "خطا در آپلود فایل");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -58,13 +64,14 @@ export function ReportDocumentsScreen() {
                 <Upload className="text-primary h-8 w-8" />
               </div>
               <span className="text-foreground text-sm font-medium">
-                کلیک کنید یا فایل‌ها را بکشید
+                {uploading ? "در حال آپلود..." : "کلیک کنید یا فایل‌ها را بکشید"}
               </span>
               <p className="text-muted-foreground mt-1 text-xs">PDF, تصویر یا سایر فرمت‌ها</p>
               <input
                 type="file"
-                accept="*/*"
+                accept="image/*,.pdf"
                 multiple
+                disabled={uploading}
                 onChange={handleFileUpload}
                 className="hidden"
               />

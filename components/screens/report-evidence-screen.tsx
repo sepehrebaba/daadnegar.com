@@ -8,8 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowRight, ArrowLeft, FileCheck, Upload, X, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  ArrowRight,
+  ArrowLeft,
+  AlertCircle,
+  FileCheck,
+  Loader2,
+  Upload,
+  X,
+  Check,
+  FileText,
+  Image,
+  Video,
+  Mic,
+  Users,
+} from "lucide-react";
+import { uploadReportFile } from "@/lib/edyen";
 import { EVIDENCE_TYPES, type EvidenceType } from "@/types";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
 
@@ -39,6 +54,8 @@ export function ReportEvidenceScreen() {
   const [evidenceDescription, setEvidenceDescription] = useState(
     state.currentReport?.evidenceDescription ?? "",
   );
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const isValid = hasEvidence === "no" || (hasEvidence === "yes" && evidenceTypes.length > 0);
 
@@ -48,13 +65,21 @@ export function ReportEvidenceScreen() {
     );
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach((file) => {
-        const url = URL.createObjectURL(file);
-        setEvidenceFiles((prev) => [...prev, { name: file.name, url }]);
-      });
+    if (!files?.length) return;
+    setUploadError("");
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const { key, name } = await uploadReportFile(file);
+        setEvidenceFiles((prev) => [...prev, { name, url: key }]);
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "خطا در آپلود فایل");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -159,31 +184,102 @@ export function ReportEvidenceScreen() {
                 <Label>
                   نوع مدرک <span className="text-destructive">*</span>
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {EVIDENCE_TYPES.map((type) => (
-                    <div key={type.value} className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox
-                        id={type.value}
-                        checked={evidenceTypes.includes(type.value)}
-                        onCheckedChange={() => handleEvidenceTypeToggle(type.value)}
-                      />
-                      <Label htmlFor={type.value} className="cursor-pointer text-sm">
-                        {type.label}
-                      </Label>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  {EVIDENCE_TYPES.map((type) => {
+                    const Icon =
+                      type.value === "document"
+                        ? FileText
+                        : type.value === "image"
+                          ? Image
+                          : type.value === "video"
+                            ? Video
+                            : type.value === "audio"
+                              ? Mic
+                              : Users;
+                    const isSelected = evidenceTypes.includes(type.value);
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => handleEvidenceTypeToggle(type.value)}
+                        className={cn(
+                          "border-border flex items-center gap-3 rounded-xl border-2 p-3 text-right transition-all duration-200",
+                          isSelected
+                            ? "border-primary bg-primary/5 shadow-sm"
+                            : "hover:border-primary/50 hover:bg-muted/50",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
+                            isSelected ? "bg-primary/20" : "bg-muted",
+                          )}
+                        >
+                          <Icon
+                            className={cn(
+                              "h-5 w-5",
+                              isSelected ? "text-primary" : "text-muted-foreground",
+                            )}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              isSelected ? "text-primary" : "text-foreground",
+                            )}
+                          >
+                            {type.label}
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <div className="bg-primary flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
+                            <Check className="text-primary-foreground h-3 w-3" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="space-y-3">
                 <Label>بارگذاری مدارک (اختیاری)</Label>
-                <Button type="button" variant="outline" className="w-full" asChild>
+                {uploadError && (
+                  <div className="text-destructive bg-destructive/10 flex items-center gap-2 rounded-lg p-3 text-sm">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {uploadError}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={uploading}
+                  asChild
+                >
                   <label>
-                    <Upload className="ml-2 h-4 w-4" />
-                    انتخاب فایل
-                    <input type="file" multiple onChange={handleFileUpload} className="hidden" />
+                    {uploading ? (
+                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Upload className="ml-2 h-4 w-4" />
+                    )}
+                    {uploading ? "در حال آپلود..." : "انتخاب فایل"}
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
                   </label>
                 </Button>
+                {uploadError && (
+                  <div className="text-destructive bg-destructive/10 flex items-center gap-2 rounded-lg p-3 text-sm">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {uploadError}
+                  </div>
+                )}
                 {evidenceFiles.length > 0 && (
                   <div className="space-y-2">
                     {evidenceFiles.map((file, idx) => (

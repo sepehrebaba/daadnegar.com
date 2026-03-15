@@ -4,6 +4,17 @@ import { createAuditLog } from "./audit";
 import { auth } from "@/lib/auth";
 import { resolveInviteToken } from "../lib/auth-invite";
 import { getSettingBool, getSettingNumber, SETTING_KEYS } from "../lib/settings";
+import { documentToServeUrl } from "./upload";
+
+function mapReportDocuments<T extends { documents?: { id: string; name: string; url: string }[] }>(
+  r: T,
+): T {
+  if (!r?.documents?.length) return r;
+  return {
+    ...r,
+    documents: r.documents.map((d) => ({ ...d, url: documentToServeUrl(d) })),
+  };
+}
 
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
@@ -89,6 +100,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       const isInviteUser =
         reportCountBefore === 0 &&
         (await prisma.inviteSession.findFirst({ where: { userId: session.user.id } }));
+      let tokensAwarded = 0;
       if (isInviteUser) {
         const reward = await getSettingNumber(SETTING_KEYS.TOKENS_REWARD_INVITED_ACTIVITY);
         const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
@@ -99,8 +111,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           TOKEN_TRANSACTION_TYPES.invite_activity,
           report.id,
         );
+        tokensAwarded = reward;
       }
-      return report;
+      return { ...mapReportDocuments(report), tokensAwarded };
     },
     {
       body: t.Object({
@@ -136,7 +149,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       include: { person: true, documents: true },
       orderBy: { createdAt: "desc" },
     });
-    return reports;
+    return reports.map(mapReportDocuments);
   })
   .get("/pending", async ({ request, session }) => {
     if (!session?.user?.id) {
@@ -202,7 +215,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         canView = dbUser?.role === "validator" || approvedCount >= minRequired;
       }
       if (!canView) throw new Error("Forbidden");
-      return report;
+      return mapReportDocuments(report);
     },
     { params: t.Object({ id: t.String() }) },
   )
@@ -225,7 +238,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
-      return report;
+      return mapReportDocuments(report);
     },
     { params: t.Object({ id: t.String() }) },
   )
