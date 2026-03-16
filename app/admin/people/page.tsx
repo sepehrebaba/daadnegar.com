@@ -21,9 +21,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Plus, Pencil, Eye, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -246,38 +247,47 @@ export default function AdminPeoplePage() {
                     </TableCell>
                     <TableCell>{p.title ?? "—"}</TableCell>
                     <TableCell>
-                      <Badge variant={p.isFamous ? "default" : "secondary"}>
-                        {p.isFamous ? "معروف" : "عادی"}
-                      </Badge>
-                      <Button
-                        variant="ghost"
+                      <ToggleGroup
+                        type="single"
+                        value={p.isFamous ? "famous" : "regular"}
+                        onValueChange={(v) => {
+                          if (v === "famous" && !p.isFamous) toggleFamous(p);
+                          if (v === "regular" && p.isFamous) toggleFamous(p);
+                        }}
+                        variant="outline"
                         size="sm"
-                        className="mr-2"
-                        onClick={() => toggleFamous(p)}
+                        className="w-fit"
                       >
-                        تغییر
-                      </Button>
+                        <ToggleGroupItem className="px-3 text-xs" value="regular" aria-label="عادی">
+                          عادی
+                        </ToggleGroupItem>
+                        <ToggleGroupItem className="px-3 text-xs" value="famous" aria-label="معروف">
+                          معروف
+                        </ToggleGroupItem>
+                      </ToggleGroup>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="xs"
                           onClick={() => {
                             setDetailsPerson(p);
                             setDetailsOpen(true);
                           }}
                           title="مشاهده جزئیات"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3" />
+                          مشاهده
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
+                          size="xs"
                           onClick={() => openEdit(p)}
                           title="ویرایش"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-3 w-3" />
+                          ویرایش
                         </Button>
                       </div>
                     </TableCell>

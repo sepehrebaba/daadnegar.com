@@ -295,7 +295,7 @@ export default function AdminUsersPage() {
                           گزینه‌ها
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                      <DropdownMenuContent align="start">
                         <DropdownMenuItem onClick={() => openChangePasswordModal(u)}>
                           <Key className="ml-2 h-2 w-2" />
                           تغییر رمزعبور
@@ -420,7 +420,7 @@ export default function AdminUsersPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="ml-auto w-auto"
+                  className="min-w-0 flex-1"
                   size="sm"
                   disabled={!isPasswordSecure(pwPassword) || pwPassword !== pwConfirm || pwLoading}
                 >
