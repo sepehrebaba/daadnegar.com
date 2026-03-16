@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,45 +21,81 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronLeft, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-type Province = { id: string; name: string; sortOrder: number; _count?: { cities: number } };
+type Province = { id: string; name: string; sortOrder: number; cities: City[] };
+type City = {
+  id: string;
+  name: string;
+  provinceId: string;
+  sortOrder: number;
+};
 
 export default function AdminProvincesPage() {
-  const [data, setData] = useState<Province[]>([]);
+  const [provinces, setProvinces] = useState<Province[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editing, setEditing] = useState<Province | null>(null);
-  const [form, setForm] = useState({ name: "", sortOrder: 0 });
+  const [cityDialogOpen, setCityDialogOpen] = useState(false);
+  const [editingProvince, setEditingProvince] = useState<Province | null>(null);
+  const [editingCity, setEditingCity] = useState<City | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [provinceForm, setProvinceForm] = useState({ name: "", sortOrder: 0 });
+  const [cityForm, setCityForm] = useState({
+    name: "",
+    provinceId: "",
+    sortOrder: 0,
+  });
 
   const load = async () => {
     const { data: res, error } = await api.admin.provinces.get();
     if (error) return;
-    setData(res?.data ?? []);
+    setProvinces(res?.data ?? []);
   };
 
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, []);
 
-  const openCreate = () => {
-    setEditing(null);
-    setForm({ name: "", sortOrder: data.length });
+  const openCreateProvince = () => {
+    setEditingProvince(null);
+    setProvinceForm({ name: "", sortOrder: provinces.length });
     setDialogOpen(true);
   };
 
-  const openEdit = (p: Province) => {
-    setEditing(p);
-    setForm({ name: p.name, sortOrder: p.sortOrder });
+  const openEditProvince = (p: Province) => {
+    setEditingProvince(p);
+    setProvinceForm({ name: p.name, sortOrder: p.sortOrder });
     setDialogOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const openCreateCity = (provinceId: string) => {
+    const p = provinces.find((x) => x.id === provinceId);
+    setEditingCity(null);
+    setCityForm({
+      name: "",
+      provinceId: provinceId,
+      sortOrder: p ? p.cities.length : 0,
+    });
+    setCityDialogOpen(true);
+  };
+
+  const openEditCity = (c: City) => {
+    setEditingCity(c);
+    setCityForm({
+      name: c.name,
+      provinceId: c.provinceId,
+      sortOrder: c.sortOrder,
+    });
+    setCityDialogOpen(true);
+  };
+
+  const handleProvinceSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editing) {
-      const { error } = await api.admin.provinces({ id: editing.id }).put({
-        name: form.name,
-        sortOrder: form.sortOrder,
+    if (editingProvince) {
+      const { error } = await api.admin.provinces({ id: editingProvince.id }).put({
+        name: provinceForm.name,
+        sortOrder: provinceForm.sortOrder,
       });
       if (!error) {
         setDialogOpen(false);
@@ -67,8 +103,8 @@ export default function AdminProvincesPage() {
       }
     } else {
       const { error } = await api.admin.provinces.post({
-        name: form.name,
-        sortOrder: form.sortOrder,
+        name: provinceForm.name,
+        sortOrder: provinceForm.sortOrder,
       });
       if (!error) {
         setDialogOpen(false);
@@ -77,10 +113,144 @@ export default function AdminProvincesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleCitySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cityForm.provinceId) return;
+    if (editingCity) {
+      const { error } = await api.admin.cities({ id: editingCity.id }).put({
+        name: cityForm.name,
+        provinceId: cityForm.provinceId,
+        sortOrder: cityForm.sortOrder,
+      });
+      if (!error) {
+        setCityDialogOpen(false);
+        load();
+      }
+    } else {
+      const { error } = await api.admin.cities.post({
+        name: cityForm.name,
+        provinceId: cityForm.provinceId,
+        sortOrder: cityForm.sortOrder,
+      });
+      if (!error) {
+        setCityDialogOpen(false);
+        load();
+      }
+    }
+  };
+
+  const handleDeleteProvince = async (id: string) => {
     if (!confirm("حذف این استان و شهرهای مرتبط؟")) return;
     const { error } = await api.admin.provinces({ id }).delete();
     if (!error) load();
+  };
+
+  const handleDeleteCity = async (id: string) => {
+    if (!confirm("حذف این شهر؟")) return;
+    const { error } = await api.admin.cities({ id }).delete();
+    if (!error) load();
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpanded((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const renderRow = (p: Province) => {
+    const hasChildren = p.cities.length > 0;
+    const isExpanded = expanded.has(p.id);
+    const nameCell = (
+      <TableCell className="w-full">
+        <div
+          role={hasChildren ? "button" : undefined}
+          tabIndex={hasChildren ? 0 : undefined}
+          className={`flex min-w-0 items-center gap-1 ${hasChildren ? "w-full cursor-pointer rounded select-none" : ""}`}
+          onClick={hasChildren ? () => toggleExpand(p.id) : undefined}
+          onKeyDown={
+            hasChildren
+              ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleExpand(p.id);
+                  }
+                }
+              : undefined
+          }
+          aria-label={hasChildren ? (isExpanded ? "بستن" : "باز کردن") : undefined}
+        >
+          {hasChildren ? (
+            <span className="shrink-0">
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </span>
+          ) : (
+            <span className="w-5 shrink-0" />
+          )}
+          <span className="min-w-0 truncate font-medium">{p.name}</span>
+        </div>
+      </TableCell>
+    );
+    return (
+      <React.Fragment key={p.id}>
+        <TableRow className={cn("w-full", hasChildren ? "bg-muted/70" : "bg-muted/30")}>
+          {nameCell}
+          <TableCell>استان</TableCell>
+          <TableCell dir="ltr">{p.sortOrder}</TableCell>
+          <TableCell>
+            <div className="flex justify-start gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openCreateCity(p.id);
+                }}
+                title="افزودن شهر"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => openEditProvince(p)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => handleDeleteProvince(p.id)}>
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
+          </TableCell>
+        </TableRow>
+        {hasChildren &&
+          isExpanded &&
+          p.cities.map((c) => (
+            <TableRow key={c.id}>
+              <TableCell>
+                <div className="flex min-w-0 items-center gap-1" style={{ paddingInlineStart: 24 }}>
+                  <span className="w-5 shrink-0" />
+                  <span className="min-w-0 truncate">{c.name}</span>
+                </div>
+              </TableCell>
+              <TableCell>شهر</TableCell>
+              <TableCell dir="ltr">{c.sortOrder}</TableCell>
+              <TableCell>
+                <div className="flex justify-start gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => openEditCity(c)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDeleteCity(c.id)}>
+                    <Trash2 className="text-destructive h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+      </React.Fragment>
+    );
   };
 
   if (loading)
@@ -93,8 +263,8 @@ export default function AdminProvincesPage() {
   return (
     <div dir="rtl" className="text-start">
       <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">استان‌ها</h1>
-        <Button onClick={openCreate}>
+        <h1 className="text-2xl font-bold">استان‌ها و شهرها</h1>
+        <Button onClick={openCreateProvince}>
           <Plus className="me-2 h-4 w-4" />
           افزودن استان
         </Button>
@@ -102,35 +272,25 @@ export default function AdminProvincesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>لیست استان‌ها</CardTitle>
+          <CardTitle>لیست استان‌ها و شهرها</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table dir="rtl">
+          <Table className="w-full min-w-full table-fixed" dir="rtl">
+            <colgroup>
+              <col style={{ width: "50%" }} />
+              <col style={{ width: "15%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "25%" }} />
+            </colgroup>
             <TableHeader>
               <TableRow>
                 <TableHead>نام</TableHead>
+                <TableHead>نوع</TableHead>
                 <TableHead>ترتیب</TableHead>
-                <TableHead className="w-24">عملیات</TableHead>
+                <TableHead className="w-32">عملیات</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {data.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell>{p.name}</TableCell>
-                  <TableCell dir="ltr">{p.sortOrder}</TableCell>
-                  <TableCell>
-                    <div className="flex justify-start gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(p.id)}>
-                        <Trash2 className="text-destructive h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
+            <TableBody>{provinces.map((p) => renderRow(p))}</TableBody>
           </Table>
         </CardContent>
       </Card>
@@ -138,14 +298,14 @@ export default function AdminProvincesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent dir="rtl" className="text-start">
           <DialogHeader>
-            <DialogTitle>{editing ? "ویرایش استان" : "افزودن استان"}</DialogTitle>
+            <DialogTitle>{editingProvince ? "ویرایش استان" : "افزودن استان"}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleProvinceSubmit} className="space-y-4">
             <div>
               <Label>نام</Label>
               <Input
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                value={provinceForm.name}
+                onChange={(e) => setProvinceForm((f) => ({ ...f, name: e.target.value }))}
                 required
               />
             </div>
@@ -153,17 +313,78 @@ export default function AdminProvincesPage() {
               <Label>ترتیب</Label>
               <Input
                 type="number"
-                value={form.sortOrder}
-                onChange={(e) => setForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))}
+                value={provinceForm.sortOrder}
+                onChange={(e) =>
+                  setProvinceForm((f) => ({
+                    ...f,
+                    sortOrder: Number(e.target.value),
+                  }))
+                }
                 dir="ltr"
                 className="text-left"
               />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="submit">{editing ? "ذخیره" : "افزودن"}</Button>
+              <Button type="submit">{editingProvince ? "ذخیره" : "افزودن"}</Button>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 انصراف
               </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cityDialogOpen} onOpenChange={setCityDialogOpen}>
+        <DialogContent dir="rtl" className="text-start">
+          <DialogHeader>
+            <DialogTitle>{editingCity ? "ویرایش شهر" : "افزودن شهر"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCitySubmit} className="space-y-4">
+            <div>
+              <Label>نام شهر</Label>
+              <Input
+                value={cityForm.name}
+                onChange={(e) => setCityForm((f) => ({ ...f, name: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <Label>استان</Label>
+              <select
+                value={cityForm.provinceId}
+                onChange={(e) => setCityForm((f) => ({ ...f, provinceId: e.target.value }))}
+                className="border-input h-9 w-full rounded-md border px-3 text-start"
+                dir="rtl"
+                required
+              >
+                <option value="">انتخاب استان</option>
+                {provinces.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label>ترتیب</Label>
+              <Input
+                type="number"
+                value={cityForm.sortOrder}
+                onChange={(e) =>
+                  setCityForm((f) => ({
+                    ...f,
+                    sortOrder: Number(e.target.value),
+                  }))
+                }
+                dir="ltr"
+                className="text-left"
+              />
+            </div>
+            <DialogFooter className="flex flex-row-reverse gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setCityDialogOpen(false)}>
+                انصراف
+              </Button>
+              <Button type="submit">{editingCity ? "ذخیره" : "افزودن"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

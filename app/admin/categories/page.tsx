@@ -22,7 +22,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Pencil, Trash2, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronLeft, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Category = {
   id: string;
@@ -186,8 +187,8 @@ export default function AdminCategoriesPage() {
         <div
           role={hasChildren ? "button" : undefined}
           tabIndex={hasChildren ? 0 : undefined}
-          className={`flex min-w-0 items-center gap-1 ${hasChildren ? "hover:bg-muted/50 w-full cursor-pointer rounded select-none" : ""}`}
-          style={{ paddingInlineStart: depth * 24 }}
+          className={`flex min-w-0 items-center gap-1 ${hasChildren ? "w-full cursor-pointer rounded select-none" : ""}`}
+          style={{ paddingInlineStart: depth * 8 }}
           onClick={hasChildren ? () => toggleExpand(node.id) : undefined}
           onKeyDown={
             hasChildren
@@ -206,7 +207,7 @@ export default function AdminCategoriesPage() {
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4" />
               )}
             </span>
           ) : (
@@ -218,7 +219,10 @@ export default function AdminCategoriesPage() {
     );
     return (
       <>
-        <TableRow key={node.id}>
+        <TableRow
+          key={node.id}
+          className={cn("w-full", hasChildren ? "bg-muted/70" : "bg-muted/30")}
+        >
           {nameCell}
           <TableCell>{node.slug}</TableCell>
           <TableCell>{node.type}</TableCell>

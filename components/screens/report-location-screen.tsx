@@ -88,23 +88,25 @@ export function ReportLocationScreen() {
             </Select>
           </div>
 
-          {cities.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="city">شهر (اختیاری)</Label>
-              <Select value={cityId} onValueChange={setCityId}>
-                <SelectTrigger id="city" className="w-full">
-                  <SelectValue placeholder="انتخاب شهر..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {cities.map((c) => (
-                    <SelectItem key={c.id} value={c.name}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="city">شهر (اختیاری)</Label>
+            <Select
+              value={cityId}
+              onValueChange={setCityId}
+              disabled={!isValid || cities.length === 0}
+            >
+              <SelectTrigger id="city" className="w-full">
+                <SelectValue placeholder="انتخاب شهر..." />
+              </SelectTrigger>
+              <SelectContent>
+                {cities.map((c) => (
+                  <SelectItem key={c.id} value={c.name}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="exact-location">محل دقیق (اختیاری)</Label>
@@ -117,7 +119,7 @@ export function ReportLocationScreen() {
           </div>
 
           <Alert variant="default" className="border-amber-200 bg-amber-50">
-            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-600" />
             <AlertDescription className="text-amber-800">
               از وارد کردن آدرس منزل یا اطلاعات شخصی خودداری کنید.
             </AlertDescription>

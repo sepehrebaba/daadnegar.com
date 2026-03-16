@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X } from "lucide-react";
+import { Check, X, Eye } from "lucide-react";
 import Link from "next/link";
 
 type Report = {
@@ -121,20 +121,24 @@ export default function AdminReportsPage() {
                     <TableCell>{statusBadge(r.status)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/admin/reports/${r.id}`}>مشاهده</Link>
+                        <Button variant="outline" size="xs" asChild>
+                          <Link className="text-xs" href={`/admin/reports/${r.id}`}>
+                            <Eye className="h-2 w-2" />
+                            مشاهده
+                          </Link>
                         </Button>
                         {r.status === "pending" && (
                           <>
-                            <Button size="sm" onClick={() => updateStatus(r.id, "accepted")}>
-                              <Check className="h-4 w-4" />
+                            <Button size="xs" onClick={() => updateStatus(r.id, "accepted")}>
+                              <Check className="h-2 w-2" />
+                              <span>تایید</span>
                             </Button>
                             <Button
-                              size="sm"
+                              size="xs"
                               variant="destructive"
                               onClick={() => updateStatus(r.id, "rejected")}
                             >
-                              <X className="h-4 w-4" />
+                              <X className="h-2 w-2" /> رد
                             </Button>
                           </>
                         )}

@@ -336,14 +336,22 @@ export function ReportPersonScreen() {
                 <DialogTitle>افزودن شخص جدید</DialogTitle>
               </DialogHeader>
               <div className="min-h-0 flex-1 overflow-y-auto">
-                <Alert size="sm" variant="default" className="mb-1 border-amber-200 bg-amber-50">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <Alert
+                  size="sm"
+                  variant="default"
+                  className="mb-1 border-amber-200 bg-amber-50 dark:border-yellow-400"
+                >
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-600" />
                   <AlertDescription className="text-amber-800">
                     شخص اضافه شده بعد از بررسی توسط مدیران سامانه تایید خواهد شد.
                   </AlertDescription>
                 </Alert>
-                <Alert size="sm" variant="default" className="border-amber-200 bg-amber-50">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                <Alert
+                  size="sm"
+                  variant="default"
+                  className="border-amber-200 bg-amber-50 dark:border-yellow-400"
+                >
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-600" />
                   <AlertDescription className="text-amber-800">
                     لطفا ابتدا از موجود نبودن شخص در لیست افراد معروف مطمئن شوید.
                   </AlertDescription>

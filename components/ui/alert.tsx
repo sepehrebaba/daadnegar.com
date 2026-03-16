@@ -10,9 +10,9 @@ const alertVariants = cva(
       variant: {
         default: "bg-card text-card-foreground",
         destructive:
-          "text-destructive bg-yellow-50/40 *:data-[slot=alert-description]:text-yellow-700 [&>svg]:text-current",
+          "text-destructive bg-yellow-50/40 *:data-[slot=alert-description]:text-yellow-600 dark:bg-yellow-950 [&>svg]:text-yellow-600",
         error:
-          "text-destructive bg-red-50/40 *:data-[slot=alert-description]:text-red-700 [&>svg]:text-current",
+          "text-destructive bg-red-50/40 *:data-[slot=alert-description]:text-red-700 dark:bg-red-950 [&>svg]:text-red-700",
       },
       size: {
         xs: "gap-x-1 gap-y-0 px-2 py-1 text-xs has-[>svg]:gap-x-1 [&>svg]:size-3",
@@ -37,7 +37,11 @@ function Alert({
     <div
       data-slot="alert"
       role="alert"
-      className={cn(alertVariants({ variant, size }), className)}
+      className={cn(
+        alertVariants({ variant, size }),
+        "[&>svg]:relative [&>svg]:top-[-1px]",
+        className,
+      )}
       {...props}
     />
   );

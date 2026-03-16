@@ -106,7 +106,7 @@ export function MainMenuScreen() {
           {showApprovalSection && (
             <Button
               onClick={() => router.push(routes.approvalList)}
-              className="w-full justify-start gap-3 border-amber-300 bg-amber-100 py-6 text-base font-black text-amber-900 hover:bg-amber-200"
+              className="w-full justify-start gap-3 border-amber-300 bg-amber-100 py-6 text-base font-black text-amber-900 hover:bg-amber-200 dark:border-amber-700 dark:bg-amber-900 dark:text-amber-100 dark:hover:bg-amber-800"
               variant="outline"
             >
               <ClipboardCheck className="h-5 w-5" />
