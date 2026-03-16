@@ -25,6 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Eye, Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function detailValue(value?: string | null): string {
   return value != null && value !== "" ? value : "-";
@@ -173,90 +174,105 @@ export default function AdminPeoplePage() {
         </div>
       </div>
 
-      <div className="mb-4 flex gap-4">
-        <Input
-          placeholder="جستجو..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <label className="flex items-center gap-2">
-          <Switch
-            checked={famousOnly === true}
-            onCheckedChange={(c) => setFamousOnly(c ? true : null)}
-          />
-          فقط افراد معروف
-        </label>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <h3 className="text-lg font-bold">لیست افراد</h3>
+            <div className="flex gap-4">
+              <Input
+                placeholder="جستجو..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="max-w-xs"
+              />
+              <label className="flex items-center gap-2 text-sm">
+                <Switch
+                  dir="ltr"
+                  checked={famousOnly === true}
+                  onCheckedChange={(c) => setFamousOnly(c ? true : null)}
+                />
+                معروف
+              </label>
+            </div>
+          </CardTitle>
+        </CardHeader>
 
-      {loading ? (
-        <p>در حال بارگذاری...</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>آواتار</TableHead>
-              <TableHead>نام</TableHead>
-              <TableHead>عنوان</TableHead>
-              <TableHead>معروف</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {people.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>
-                  <Avatar>
-                    <AvatarImage
-                      src={p.imageUrl ?? undefined}
-                      alt={`${p.firstName} ${p.lastName}`}
-                    />
-                    <AvatarFallback>
-                      {p.firstName[0]}
-                      {p.lastName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                </TableCell>
-                <TableCell>
-                  {p.firstName} {p.lastName}
-                </TableCell>
-                <TableCell>{p.title ?? "—"}</TableCell>
-                <TableCell>
-                  <Badge variant={p.isFamous ? "default" : "secondary"}>
-                    {p.isFamous ? "معروف" : "عادی"}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mr-2"
-                    onClick={() => toggleFamous(p)}
-                  >
-                    تغییر
-                  </Button>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setDetailsPerson(p);
-                        setDetailsOpen(true);
-                      }}
-                      title="مشاهده جزئیات"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => openEdit(p)} title="ویرایش">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+        <CardContent dir="rtl">
+          {loading ? (
+            <p>در حال بارگذاری...</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>آواتار</TableHead>
+                  <TableHead>نام</TableHead>
+                  <TableHead>عنوان</TableHead>
+                  <TableHead>معروف</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {people.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <Avatar>
+                        <AvatarImage
+                          src={p.imageUrl ?? undefined}
+                          alt={`${p.firstName} ${p.lastName}`}
+                        />
+                        <AvatarFallback>
+                          {p.firstName[0]}
+                          {p.lastName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>
+                      {p.firstName} {p.lastName}
+                    </TableCell>
+                    <TableCell>{p.title ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant={p.isFamous ? "default" : "secondary"}>
+                        {p.isFamous ? "معروف" : "عادی"}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mr-2"
+                        onClick={() => toggleFamous(p)}
+                      >
+                        تغییر
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setDetailsPerson(p);
+                            setDetailsOpen(true);
+                          }}
+                          title="مشاهده جزئیات"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEdit(p)}
+                          title="ویرایش"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">

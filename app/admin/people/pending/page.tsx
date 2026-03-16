@@ -21,7 +21,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowRight, ChevronRight, Check, X, Merge, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronRight, Check, X, Merge, Search } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type PendingPerson = {
   id: string;
@@ -202,59 +203,67 @@ export default function AdminPendingPeoplePage() {
               بازگشت
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold">اشخاص در انتظار تایید</h1>
         </div>
       </div>
 
-      <div className="mb-4">
-        <Input
-          placeholder="جستجو (نام، نام خانوادگی، کد ملی)..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">اشخاص در انتظار تایید</h1>
 
-      {loading ? (
-        <p>در حال بارگذاری...</p>
-      ) : pending.length === 0 ? (
-        <p className="text-muted-foreground">شخصی در انتظار تایید نیست.</p>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>آواتار</TableHead>
-              <TableHead>نام</TableHead>
-              <TableHead>نام خانوادگی</TableHead>
-              <TableHead>تاریخ افزودن</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pending.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell>
-                  <Avatar>
-                    <AvatarImage src={p.imageUrl ?? undefined} alt={p.firstName} />
-                    <AvatarFallback>
-                      {p.firstName[0]}
-                      {p.lastName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                </TableCell>
-                <TableCell>{p.firstName}</TableCell>
-                <TableCell>{p.lastName}</TableCell>
-                <TableCell>{formatDate(p.createdAt)}</TableCell>
-                <TableCell>
-                  <Button variant="outline" size="sm" onClick={() => openDetails(p)}>
-                    جزئیات
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )}
+            <div className="mb-4">
+              <Input
+                placeholder="جستجو (نام، نام خانوادگی، کد ملی)..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="max-w-lg"
+              />
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p>در حال بارگذاری...</p>
+          ) : pending.length === 0 ? (
+            <p className="text-muted-foreground">شخصی در انتظار تایید نیست.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>آواتار</TableHead>
+                  <TableHead>نام</TableHead>
+                  <TableHead>نام خانوادگی</TableHead>
+                  <TableHead>تاریخ افزودن</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pending.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <Avatar>
+                        <AvatarImage src={p.imageUrl ?? undefined} alt={p.firstName} />
+                        <AvatarFallback>
+                          {p.firstName[0]}
+                          {p.lastName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
+                    <TableCell>{p.firstName}</TableCell>
+                    <TableCell>{p.lastName}</TableCell>
+                    <TableCell>{formatDate(p.createdAt)}</TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm" onClick={() => openDetails(p)}>
+                        جزئیات
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Details Modal */}
       <Dialog open={detailsOpen} onOpenChange={(open) => !open && closeDetails()}>
@@ -357,11 +366,13 @@ export default function AdminPendingPeoplePage() {
                       onClick={() => selectMergeTarget(p)}
                       className="bg-muted/50 hover:bg-muted flex w-full items-center justify-between rounded p-2 text-start"
                     >
-                      <span>
+                      <span className="text-xs">
                         {p.firstName} {p.lastName}
+                        {p.title ? ` (${p.title})` : ""}
+                        {p.fatherName && ` - ${p.fatherName}`}
                         {p.nationalCode && ` - ${p.nationalCode}`}
                       </span>
-                      <ArrowRight className="h-4 w-4" />
+                      <ArrowLeft className="h-3 w-3" />
                     </button>
                   ))}
                 </div>

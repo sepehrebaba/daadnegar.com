@@ -94,46 +94,48 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">کاربران</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="mb-6 text-2xl font-bold">کاربران</h1>
 
-      <div className="mb-6 flex gap-4">
-        <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="ml-2 h-4 w-4" />
-              دعوت کاربر
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>دعوت کاربر جدید</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleInvite} className="space-y-4">
-              <div>
-                <Label>ایمیل (اختیاری - برای دعوت عمومی خالی بگذارید)</Label>
-                <Input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="user@example.com"
-                  dir="ltr"
-                />
-              </div>
-              <div>
-                <Label>نام (اختیاری)</Label>
-                <Input
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                  placeholder="نام کاربر"
-                />
-              </div>
-              {inviteSuccess && <p className="text-muted-foreground text-sm">{inviteSuccess}</p>}
-              <Button type="submit" disabled={inviteLoading}>
-                {inviteLoading ? "در حال ایجاد..." : "ایجاد دعوت"}
+        <div className="mb-6 flex gap-4">
+          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="ml-2 h-4 w-4" />
+                دعوت کاربر
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>دعوت کاربر جدید</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleInvite} className="space-y-4">
+                <div>
+                  <Label>ایمیل (اختیاری - برای دعوت عمومی خالی بگذارید)</Label>
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="user@example.com"
+                    dir="ltr"
+                  />
+                </div>
+                <div>
+                  <Label>نام (اختیاری)</Label>
+                  <Input
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    placeholder="نام کاربر"
+                  />
+                </div>
+                {inviteSuccess && <p className="text-muted-foreground text-sm">{inviteSuccess}</p>}
+                <Button type="submit" disabled={inviteLoading}>
+                  {inviteLoading ? "در حال ایجاد..." : "ایجاد دعوت"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>

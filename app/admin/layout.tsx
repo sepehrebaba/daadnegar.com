@@ -60,8 +60,8 @@ const regionsSubItems = [
 
 const settingsSubItems = [
   { href: "/admin/settings", label: "تنظیمات سیستم", icon: Settings },
-  { href: "/admin/ip-whitelist", label: "IP های مجاز", icon: Globe },
-  { href: "/admin/panel-users", label: "کاربران پنل", icon: UserCog },
+  { href: "/admin/settings/ip-whitelist", label: "IP های مجاز", icon: Globe },
+  { href: "/admin/settings/panel-users", label: "کاربران پنل", icon: UserCog },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
