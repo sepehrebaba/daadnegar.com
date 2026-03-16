@@ -3,7 +3,7 @@ import { prisma } from "../db";
 import { getAllSettings, setSettings, SETTING_KEYS, type SettingsMap } from "../lib/settings";
 import { documentToServeUrl } from "./upload";
 import { createAuditLog } from "./audit";
-import { auth } from "@/lib/auth";
+import { auth as authLib } from "@/lib/auth";
 import { getAdminPanelSession } from "./admin-panel-auth";
 
 function mapReportDocuments<T extends { documents?: { id: string; name: string; url: string }[] }>(
@@ -17,7 +17,7 @@ function mapReportDocuments<T extends { documents?: { id: string; name: string; 
 }
 
 async function getSession(headers: Headers) {
-  return auth.api.getSession({ headers });
+  return authLib.api.getSession({ headers });
 }
 
 export type AdminAuth =
@@ -371,6 +371,52 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
     {
       params: t.Object({ id: t.String() }),
       body: t.Object({ role: t.Union([t.Literal("user"), t.Literal("validator")]) }),
+    },
+  )
+  .put(
+    "/users/:id/password",
+    async ({ params, body, request, ip, auth: adminAuth }) => {
+      if (body.password.length < 8) throw new Error("رمز عبور باید حداقل ۸ کاراکتر باشد");
+      if (!/[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(body.password))
+        throw new Error("رمز عبور باید حداقل یک کاراکتر خاص داشته باشد");
+      if (!/[A-Z]/.test(body.password))
+        throw new Error("رمز عبور باید حداقل یک حرف بزرگ داشته باشد");
+      if (!/[a-z]/.test(body.password))
+        throw new Error("رمز عبور باید حداقل یک حرف کوچک داشته باشد");
+      if (!/[0-9]/.test(body.password)) throw new Error("رمز عبور باید حداقل یک عدد داشته باشد");
+
+      const ctx = await authLib.$context;
+      const passkeyHash = await ctx.password.hash(body.password);
+
+      await prisma.$transaction(async (tx) => {
+        await tx.inviteSession.updateMany({
+          where: { userId: params.id },
+          data: { passkeyHash },
+        });
+        await tx.account.updateMany({
+          where: {
+            userId: params.id,
+            password: { not: null },
+          },
+          data: { password: passkeyHash },
+        });
+      });
+
+      await createAuditLog({
+        action: "update",
+        entity: "User",
+        entityId: params.id,
+        details: JSON.stringify({ field: "password" }),
+        ctx: getAuditCtx(adminAuth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
+      });
+      return { success: true };
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({ password: t.String({ minLength: 8 }) }),
     },
   )
   // People - /people/pending must come before /people (so "pending" is not captured as :id)

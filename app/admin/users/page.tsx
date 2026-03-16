@@ -19,9 +19,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import {
   Select,
   SelectContent,
@@ -29,14 +41,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mail, UserPlus } from "lucide-react";
+import {
+  isPasswordSecure,
+  getPasswordStrength,
+  generateRandomPassword,
+  PASSWORD_RULES,
+} from "@/lib/password-utils";
+import {
+  UserPlus,
+  MoreHorizontal,
+  Key,
+  Eye,
+  EyeOff,
+  Check,
+  Circle,
+  RefreshCcw,
+} from "lucide-react";
+
+const PASSWORD_REQUIREMENTS = [
+  {
+    key: "minLength" as const,
+    label: "حداقل ۸ کاراکتر",
+    check: (p: string) => p.length >= PASSWORD_RULES.minLength,
+  },
+  {
+    key: "hasUppercase" as const,
+    label: "یک حرف بزرگ (A-Z)",
+    check: (p: string) => /[A-Z]/.test(p),
+  },
+  {
+    key: "hasLowercase" as const,
+    label: "یک حرف کوچک (a-z)",
+    check: (p: string) => /[a-z]/.test(p),
+  },
+  {
+    key: "hasNumber" as const,
+    label: "یک عدد (0-9)",
+    check: (p: string) => /[0-9]/.test(p),
+  },
+  {
+    key: "hasSpecial" as const,
+    label: "یک کاراکتر خاص (!@#$%)",
+    check: (p: string) => /[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(p),
+  },
+];
 
 type User = {
   id: string;
   name: string;
   email: string;
   role?: string;
-  createdAt: string;
+  createdAt: string | Date;
   _count: { reports: number };
 };
 
@@ -48,10 +103,16 @@ export default function AdminUsersPage() {
   const [inviteName, setInviteName] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState("");
+  const [passwordModalUser, setPasswordModalUser] = useState<User | null>(null);
+  const [pwPassword, setPwPassword] = useState("");
+  const [pwConfirm, setPwConfirm] = useState("");
+  const [pwShow, setPwShow] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState("");
 
   const load = async () => {
     const { data, error } = await api.admin.users.get();
-    if (!error && data?.data) setUsers(data.data);
+    if (!error && data?.data) setUsers(data.data as User[]);
     setLoading(false);
   };
 
@@ -71,7 +132,7 @@ export default function AdminUsersPage() {
     const { data, error } = await api.admin.invitations.post(body);
     setInviteLoading(false);
     if (error) {
-      setInviteSuccess(`خطا: ${error.message}`);
+      setInviteSuccess(`خطا: ${(error as { message?: string })?.message ?? "خطای ناشناخته"}`);
       return;
     }
     const code = (data as { code?: string })?.code;
@@ -88,6 +149,53 @@ export default function AdminUsersPage() {
   const handleRoleChange = async (userId: string, role: "user" | "validator") => {
     const { error } = await api.admin.users({ id: userId }).role.put({ role });
     if (!error) load();
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordModalUser) return;
+    if (!isPasswordSecure(pwPassword)) {
+      setPwError("لطفاً رمز عبوری امن انتخاب کنید و تمام قوانین را رعایت کنید.");
+      return;
+    }
+    if (pwPassword !== pwConfirm) {
+      setPwError("رمز عبور با تکرار آن یکسان نیست.");
+      return;
+    }
+    setPwLoading(true);
+    setPwError("");
+    const usersApi = api.admin.users as (p: { id: string }) => {
+      password: {
+        put: (b: { password: string }) => Promise<{ error?: unknown }>;
+      };
+    };
+    const { error } = await usersApi({ id: passwordModalUser.id }).password.put({
+      password: pwPassword,
+    });
+    setPwLoading(false);
+    if (error) {
+      setPwError((error as { message?: string })?.message ?? "خطا در تغییر رمز عبور");
+      return;
+    }
+    setPasswordModalUser(null);
+    setPwPassword("");
+    setPwConfirm("");
+    setPwError("");
+  };
+
+  const handleGenerateRandomPassword = () => {
+    const pwd = generateRandomPassword(14);
+    setPwPassword(pwd);
+    setPwConfirm(pwd);
+    setPwShow(true);
+  };
+
+  const openChangePasswordModal = (user: User) => {
+    setPasswordModalUser(user);
+    setPwPassword("");
+    setPwConfirm("");
+    setPwShow(false);
+    setPwError("");
   };
 
   if (loading) return <div className="p-6">در حال بارگذاری...</div>;
@@ -179,13 +287,150 @@ export default function AdminUsersPage() {
                   <TableCell>
                     {u.createdAt ? new Date(u.createdAt).toLocaleDateString("fa-IR") : "-"}
                   </TableCell>
-                  <TableCell>-</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="xs" className="text-xs">
+                          <MoreHorizontal className="h-2 w-2" />
+                          گزینه‌ها
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openChangePasswordModal(u)}>
+                          <Key className="ml-2 h-2 w-2" />
+                          تغییر رمزعبور
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog
+        open={!!passwordModalUser}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPasswordModalUser(null);
+            setPwPassword("");
+            setPwConfirm("");
+            setPwError("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>تغییر رمز عبور</DialogTitle>
+          </DialogHeader>
+          {passwordModalUser && (
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <p className="text-muted-foreground text-xs">
+                شما در حال تغییر رمز عبور برای کاربر:
+                <span className="font-bold">{passwordModalUser.name}</span> (
+                {passwordModalUser.email}) هستید.
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="pw-password">رمز عبور جدید</Label>
+                <InputGroup>
+                  <InputGroupInput
+                    id="pw-password"
+                    type={pwShow ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={pwPassword}
+                    onChange={(e) => setPwPassword(e.target.value)}
+                    className="text-center"
+                    dir="ltr"
+                    minLength={PASSWORD_RULES.minLength}
+                    required
+                    aria-invalid={pwPassword.length > 0 && !isPasswordSecure(pwPassword)}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="button"
+                      size="icon-xs"
+                      variant="ghost"
+                      onClick={() => setPwShow((p) => !p)}
+                      aria-label={pwShow ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                    >
+                      {pwShow ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+                {pwPassword.length > 0 && (
+                  <div className="space-y-1.5">
+                    <Progress value={getPasswordStrength(pwPassword)} className="h-1.5" />
+                    <ul className="text-muted-foreground space-y-0.5 text-xs">
+                      {PASSWORD_REQUIREMENTS.map(({ key, label, check }) => (
+                        <li key={key} className="flex items-center gap-2">
+                          {check(pwPassword) ? (
+                            <Check className="size-3.5 shrink-0 text-green-600 dark:text-green-500" />
+                          ) : (
+                            <Circle className="size-3 shrink-0 opacity-40" />
+                          )}
+                          {label}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="pw-confirm">تکرار رمز عبور</Label>
+                <InputGroup>
+                  <InputGroupInput
+                    id="pw-confirm"
+                    type={pwShow ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={pwConfirm}
+                    onChange={(e) => setPwConfirm(e.target.value)}
+                    className="text-center"
+                    dir="ltr"
+                    required
+                    aria-invalid={pwConfirm.length > 0 && pwPassword !== pwConfirm}
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton
+                      type="button"
+                      size="icon-xs"
+                      variant="ghost"
+                      onClick={() => setPwShow((p) => !p)}
+                      aria-label={pwShow ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                    >
+                      {pwShow ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+                {pwConfirm.length > 0 && pwPassword !== pwConfirm && (
+                  <p className="text-destructive text-xs">رمز عبور با تکرار آن یکسان نیست</p>
+                )}
+              </div>
+              {pwError && <p className="text-destructive text-sm">{pwError}</p>}
+
+              <div className="flex w-full justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateRandomPassword}
+                >
+                  <RefreshCcw className="h-2 w-2" /> تولید رمز تصادفی
+                </Button>
+                <Button
+                  type="submit"
+                  className="ml-auto w-auto"
+                  size="sm"
+                  disabled={!isPasswordSecure(pwPassword) || pwPassword !== pwConfirm || pwLoading}
+                >
+                  {pwLoading ? "در حال تغییر..." : "تغییر رمز عبور"}
+                </Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
