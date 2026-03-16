@@ -1302,6 +1302,47 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
     { params: t.Object({ id: t.String() }) },
   )
   // Reports
+  .get("/reports/pending-count", async () => {
+    const count = await prisma.report.count({ where: { status: "pending" } });
+    return { count };
+  })
+  .get("/reports/queue", async ({ query }) => {
+    const page = Number(query.page ?? 1);
+    const perPage = Math.min(Number(query.perPage ?? 25), 100);
+    const skip = (page - 1) * perPage;
+    const { getSettingNumber, SETTING_KEYS } = await import("../lib/settings");
+    const minApproved = await getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL);
+    const [data, total] = await Promise.all([
+      prisma.report.findMany({
+        where: { status: "pending" },
+        include: {
+          person: true,
+          user: { select: { id: true, name: true, email: true } },
+          reviews: { orderBy: { createdAt: "desc" } },
+        },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: perPage,
+      }),
+      prisma.report.count({ where: { status: "pending" } }),
+    ]);
+    return {
+      data: data.map((r) => {
+        const accepted = r.reviews.filter((rev) => rev.action === "accepted").length;
+        const rejected = r.reviews.filter((rev) => rev.action === "rejected").length;
+        return mapReportDocuments({
+          ...r,
+          acceptedCount: accepted,
+          rejectedCount: rejected,
+          inProgressCount: Math.max(0, minApproved - accepted - rejected),
+        });
+      }),
+      total,
+      page,
+      perPage,
+      minApproved,
+    };
+  })
   .get(
     "/reports/:id",
     async ({ params }) => {
