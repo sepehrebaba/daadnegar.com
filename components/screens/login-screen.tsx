@@ -77,14 +77,14 @@ export function LoginScreen() {
             <LogIn className="text-primary h-8 w-8" />
           </div>
           <CardTitle className="text-foreground text-xl font-bold">ورود به حساب کاربری</CardTitle>
-          <CardDescription>
-            ایمیل و رمز عبور خود را وارد کنید. برای عضویت نیاز به دعوت‌نامه دارید.
+          <CardDescription className="text-xs">
+            نام کاربری/ایمیل و رمز عبور خود را وارد کنید. برای عضویت نیاز به دعوت‌نامه دارید.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">ایمیل</Label>
+              <Label htmlFor="email">ایمیل/نام کاربری</Label>
               <Input
                 id="email"
                 type="email"

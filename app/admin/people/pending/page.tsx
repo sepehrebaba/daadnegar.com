@@ -312,22 +312,22 @@ export default function AdminPendingPeoplePage() {
                   <span className="text-muted-foreground">تلفن:</span> {selectedPerson.phone ?? "—"}
                 </div>
               </div>
-              <DialogFooter className="gap-2 pt-4">
+              <DialogFooter className="gap-2 pt-8">
                 <Button
                   onClick={handleApprove}
                   disabled={actionLoading}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  <Check className="ml-2 h-4 w-4" />
-                  تایید
-                </Button>
-                <Button variant="destructive" onClick={handleReject} disabled={actionLoading}>
-                  <X className="ml-2 h-4 w-4" />
-                  رد
+                  <Check className="ml-0.5 h-4 w-4" />
+                  تایید به عنوان شخص جدید
                 </Button>
                 <Button variant="outline" onClick={openMerge} disabled={actionLoading}>
-                  <Merge className="ml-2 h-4 w-4" />
-                  مرج با شخص موجود
+                  <Merge className="ml-0.5 h-4 w-4" />
+                  ادغام با شخص موجود
+                </Button>
+                <Button variant="destructive" onClick={handleReject} disabled={actionLoading}>
+                  <X className="ml-0.5 h-4 w-4" />
+                  رد
                 </Button>
               </DialogFooter>
             </div>

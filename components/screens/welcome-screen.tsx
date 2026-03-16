@@ -63,7 +63,7 @@ export function WelcomeScreen() {
                 >
                   <Link href={routes.login}>
                     <LogIn className="h-5 w-5 shrink-0" />
-                    ورود با ایمیل
+                    ورود و ثبت گزارش
                   </Link>
                 </Button>
               </div>
