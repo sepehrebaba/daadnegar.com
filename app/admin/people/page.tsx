@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Eye, Clock } from "lucide-react";
 
 function detailValue(value?: string | null): string {
-  return value != null && value !== "" ? value : "نامشخص";
+  return value != null && value !== "" ? value : "-";
 }
 
 type Person = {
@@ -289,7 +289,7 @@ export default function AdminPeoplePage() {
                   </Badge>
                 </div>
               </div>
-              <Table className="border-border [&_td]:border-border w-full border-collapse overflow-hidden rounded-lg border font-sans text-sm [&_td]:border [&_td]:px-4 [&_td]:py-3">
+              <Table className="[&_td]:border-border w-full border-collapse overflow-hidden rounded-lg font-sans text-sm [&_td]:border [&_td]:px-4 [&_td]:py-2">
                 <TableBody>
                   {[
                     ["شناسه", detailValue(detailsPerson.id)],
@@ -326,7 +326,7 @@ export default function AdminPeoplePage() {
                       ),
                     ],
                   ].map(([label, value]) => (
-                    <TableRow key={label} className="hover:bg-transparent">
+                    <TableRow key={label}>
                       <TableCell className="text-muted-foreground bg-muted/50 border-border w-48 min-w-36 border-r font-medium">
                         {label}
                       </TableCell>
