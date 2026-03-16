@@ -187,7 +187,6 @@ export default function AdminPeoplePage() {
               />
               <label className="flex items-center gap-2 text-sm">
                 <Switch
-                  dir="ltr"
                   checked={famousOnly === true}
                   onCheckedChange={(c) => setFamousOnly(c ? true : null)}
                 />

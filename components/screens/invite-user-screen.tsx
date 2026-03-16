@@ -331,7 +331,7 @@ export function InviteUserScreen() {
                 هنوز کد دعوتی ایجاد نکرده‌اید
               </div>
             ) : (
-              <ScrollArea className="max-h-[280px]">
+              <ScrollArea viewportClassName="max-h-[280px]">
                 <ul className="divide-border divide-y">
                   {myCodes.map((item) => (
                     <li

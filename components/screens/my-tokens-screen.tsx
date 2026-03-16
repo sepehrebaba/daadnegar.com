@@ -100,7 +100,7 @@ export function MyTokensScreen() {
                 تراکنشی ثبت نشده است
               </div>
             ) : (
-              <ScrollArea className="max-h-[280px]">
+              <ScrollArea viewportClassName="max-h-[280px]">
                 <ul className="divide-border divide-y">
                   {transactions.map((tx) => (
                     <li
