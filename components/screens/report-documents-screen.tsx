@@ -7,7 +7,8 @@ import { routes } from "@/lib/routes";
 import { uploadReportFile } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { AlertCircle, FileText, Loader2, Upload, X } from "lucide-react";
+import { AlertCircle, FileText, Info, Loader2, Upload, X } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function ReportDocumentsScreen() {
   const router = useRouter();
@@ -58,6 +59,34 @@ export function ReportDocumentsScreen() {
           <CardDescription>اسناد و مدارک مربوط به گزارش خود را آپلود کنید</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Alert
+            variant="default"
+            className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30"
+          >
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertTitle className="text-blue-800 dark:text-blue-200">
+              درباره متادیتای فایل‌ها
+            </AlertTitle>
+            <AlertDescription className="text-blue-700 dark:text-blue-300">
+              <p>
+                فایل‌ها دارای متادیتا هستند. عکس‌ها (مثلاً JPEG) معمولاً EXIF/IPTC/XMP دارند که شامل
+                اطلاعات دوربین، GPS، زمان ثبت، پروفایل رنگ و… می‌شود. PDF بیشتر روی اطلاعات سند و
+                نرم‌افزار تمرکز دارد. ZIP به‌طور پیش‌فرض فقط یک comment متنی و اطلاعات فایل‌ها را دارد.
+              </p>
+              <p className="mt-2">
+                ما این موارد را پاک می‌کنیم، ولی توصیه می‌کنیم از سایتی مشابه{" "}
+                <a
+                  href="https://www.metadata2go.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:no-underline"
+                >
+                  metadata2go.com
+                </a>{" "}
+                استفاده کنید تا خودتان هم مطمئن شوید از پاک شدن متادیتا.
+              </p>
+            </AlertDescription>
+          </Alert>
           <div className="border-border rounded-lg border-2 border-dashed p-6 text-center">
             <label className="cursor-pointer">
               <div className="bg-primary/10 mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full">

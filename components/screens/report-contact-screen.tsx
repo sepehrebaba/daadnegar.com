@@ -52,11 +52,6 @@ export function ReportContactScreen() {
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
               }`}
             >
-              {wantsContact === "yes" && (
-                <div className="bg-primary absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full">
-                  <Check className="text-primary-foreground h-3 w-3" />
-                </div>
-              )}
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
                   wantsContact === "yes" ? "bg-primary/20" : "bg-muted"
@@ -87,11 +82,6 @@ export function ReportContactScreen() {
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
               }`}
             >
-              {wantsContact === "no" && (
-                <div className="bg-primary absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full">
-                  <Check className="text-primary-foreground h-3 w-3" />
-                </div>
-              )}
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
                   wantsContact === "no" ? "bg-primary/20" : "bg-muted"

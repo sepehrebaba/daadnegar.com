@@ -201,11 +201,6 @@ export function ReportPersonScreen() {
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
               }`}
             >
-              {hasInvolvedPerson === "yes" && (
-                <div className="bg-primary absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full">
-                  <Check className="text-primary-foreground h-3 w-3" />
-                </div>
-              )}
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
                   hasInvolvedPerson === "yes" ? "bg-primary/20" : "bg-muted"
@@ -235,11 +230,6 @@ export function ReportPersonScreen() {
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
               }`}
             >
-              {hasInvolvedPerson === "no" && (
-                <div className="bg-primary absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full">
-                  <Check className="text-primary-foreground h-3 w-3" />
-                </div>
-              )}
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
                   hasInvolvedPerson === "no" ? "bg-primary/20" : "bg-muted"
@@ -346,12 +336,19 @@ export function ReportPersonScreen() {
                 <DialogTitle>افزودن شخص جدید</DialogTitle>
               </DialogHeader>
               <div className="min-h-0 flex-1 overflow-y-auto">
+                <Alert size="sm" variant="default" className="mb-1 border-amber-200 bg-amber-50">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800">
+                    شخص اضافه شده بعد از بررسی توسط مدیران سامانه تایید خواهد شد.
+                  </AlertDescription>
+                </Alert>
                 <Alert size="sm" variant="default" className="border-amber-200 bg-amber-50">
                   <AlertTriangle className="h-4 w-4 text-amber-600" />
                   <AlertDescription className="text-amber-800">
                     لطفا ابتدا از موجود نبودن شخص در لیست افراد معروف مطمئن شوید.
                   </AlertDescription>
                 </Alert>
+
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="modal-firstName">

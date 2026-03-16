@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   AlertCircle,
   FileCheck,
+  Info,
   Loader2,
   Upload,
   X,
@@ -27,6 +28,7 @@ import {
 import { uploadReportFile } from "@/lib/edyen";
 import { EVIDENCE_TYPES, type EvidenceType } from "@/types";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function ReportEvidenceScreen() {
   const router = useRouter();
@@ -121,11 +123,6 @@ export function ReportEvidenceScreen() {
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
               }`}
             >
-              {hasEvidence === "yes" && (
-                <div className="bg-primary absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full">
-                  <Check className="text-primary-foreground h-3 w-3" />
-                </div>
-              )}
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
                   hasEvidence === "yes" ? "bg-primary/20" : "bg-muted"
@@ -156,11 +153,6 @@ export function ReportEvidenceScreen() {
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
               }`}
             >
-              {hasEvidence === "no" && (
-                <div className="bg-primary absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full">
-                  <Check className="text-primary-foreground h-3 w-3" />
-                </div>
-              )}
               <div
                 className={`flex h-12 w-12 items-center justify-center rounded-full ${
                   hasEvidence === "no" ? "bg-primary/20" : "bg-muted"
@@ -245,6 +237,35 @@ export function ReportEvidenceScreen() {
 
               <div className="space-y-3">
                 <Label>بارگذاری مدارک (اختیاری)</Label>
+                <Alert
+                  variant="default"
+                  className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30"
+                >
+                  <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <AlertTitle className="text-blue-800 dark:text-blue-200">
+                    درباره متادیتای فایل‌ها
+                  </AlertTitle>
+                  <AlertDescription className="text-blue-700 dark:text-blue-300">
+                    <p>
+                      فایل‌ها دارای متادیتا هستند. عکس‌ها (مثلاً JPEG) معمولاً EXIF/IPTC/XMP دارند که شامل
+                      اطلاعات دوربین، GPS، زمان ثبت، پروفایل رنگ و… می‌شود. PDF بیشتر روی اطلاعات سند و
+                      نرم‌افزار تمرکز دارد. ZIP به‌طور پیش‌فرض فقط یک comment متنی و اطلاعات فایل‌ها را
+                      دارد.
+                    </p>
+                    <p className="mt-2">
+                      ما این موارد را پاک می‌کنیم، ولی توصیه می‌کنیم از سایتی مشابه{" "}
+                      <a
+                        href="https://www.metadata2go.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline hover:no-underline"
+                      >
+                        metadata2go.com
+                      </a>{" "}
+                      استفاده کنید تا خودتان هم مطمئن شوید از پاک شدن متادیتا.
+                    </p>
+                  </AlertDescription>
+                </Alert>
                 {uploadError && (
                   <div className="text-destructive bg-destructive/10 flex items-center gap-2 rounded-lg p-3 text-sm">
                     <AlertCircle className="h-4 w-4 shrink-0" />
@@ -274,12 +295,6 @@ export function ReportEvidenceScreen() {
                     />
                   </label>
                 </Button>
-                {uploadError && (
-                  <div className="text-destructive bg-destructive/10 flex items-center gap-2 rounded-lg p-3 text-sm">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    {uploadError}
-                  </div>
-                )}
                 {evidenceFiles.length > 0 && (
                   <div className="space-y-2">
                     {evidenceFiles.map((file, idx) => (
