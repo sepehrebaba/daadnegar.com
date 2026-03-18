@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { routes } from "@/lib/routes";
-import { api, daadnegar_INVITE_TOKEN_KEY, setInviteTokenStorage } from "@/lib/edyen";
+import { api, DAADNEGAR_INVITE_TOKEN_KEY, setInviteTokenStorage } from "@/lib/edyen";
 
 const ChevronDown = () => (
   <svg
@@ -65,7 +65,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Sync invite token from localStorage to cookie (for middleware) when token exists
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const token = localStorage.getItem(daadnegar_INVITE_TOKEN_KEY);
+    const token = localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY);
     if (token) setInviteTokenStorage(token);
   }, []);
 
@@ -74,7 +74,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (user) return;
     const hasAuth =
       typeof window !== "undefined" &&
-      (localStorage.getItem(daadnegar_INVITE_TOKEN_KEY) || document.cookie.includes("better-auth"));
+      (localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) || document.cookie.includes("better-auth"));
     if (!hasAuth) return;
     let cancelled = false;
     api.me.get().then(({ data, error }) => {

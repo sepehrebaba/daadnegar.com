@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useCallback, type ReactNode } from
 import type { AppState, AppScreen, Language, User, ReportCase, Person } from "@/types";
 import {
   api,
-  daadnegar_INVITE_TOKEN_KEY,
+  DAADNEGAR_INVITE_TOKEN_KEY,
   setInviteTokenStorage,
   clearInviteTokenStorage,
 } from "@/lib/edyen";
@@ -98,7 +98,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const registerPasskey = useCallback(async (passkey: string): Promise<PasskeyResult> => {
     const token =
-      typeof window !== "undefined" ? localStorage.getItem(daadnegar_INVITE_TOKEN_KEY) : null;
+      typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
     if (!token) {
       return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
     }
@@ -126,7 +126,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const verifyPasskey = useCallback(async (passkey: string): Promise<PasskeyResult> => {
     const token =
-      typeof window !== "undefined" ? localStorage.getItem(daadnegar_INVITE_TOKEN_KEY) : null;
+      typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
     if (!token) {
       return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
     }
@@ -281,7 +281,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     const token =
-      typeof window !== "undefined" ? localStorage.getItem(daadnegar_INVITE_TOKEN_KEY) : null;
+      typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
     if (token) {
       await fetch("/api/me/logout", {
         method: "POST",

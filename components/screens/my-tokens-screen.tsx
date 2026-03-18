@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { api } from "@/lib/edyen";
 import { formatTimeAgo, toPersianNum } from "@/lib/utils";
-import { daadnegar_INVITE_TOKEN_KEY } from "@/lib/edyen";
+import { DAADNEGAR_INVITE_TOKEN_KEY } from "@/lib/edyen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +39,7 @@ export function MyTokensScreen() {
     if (user) return;
     const hasAuth =
       typeof window !== "undefined" &&
-      (localStorage.getItem(daadnegar_INVITE_TOKEN_KEY) || document.cookie.includes("better-auth"));
+      (localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) || document.cookie.includes("better-auth"));
     if (!hasAuth) return;
     let cancelled = false;
     api.me.get().then(({ data, error }) => {

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { api, daadnegar_INVITE_TOKEN_KEY } from "@/lib/edyen";
+import { api, DAADNEGAR_INVITE_TOKEN_KEY } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -112,7 +112,7 @@ export function InviteUserScreen() {
         ? { type: "personal" as const, email: trimmedEmail }
         : { type: "public" as const };
     const token =
-      typeof window !== "undefined" ? localStorage.getItem(daadnegar_INVITE_TOKEN_KEY) : null;
+      typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
     const opts = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
     const { data, error: inviteError } = await api.invite["invite-user"].post(body, opts);
 
