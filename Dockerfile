@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma Client (no DB needed)
-RUN corepack enable && pnpm run db:generate
+RUN corepack enable && pnpm run prisma:generate
 # Build Next.js (standalone output)
 RUN pnpm build
 
