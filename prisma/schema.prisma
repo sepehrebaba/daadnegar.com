@@ -25,6 +25,7 @@ model User {
   sessions        Session[]
   accounts        Account[]
   reports         Report[]
+  assignedReports Report[] @relation("ReportAssignedTo")
   auditLogs       AuditLog[]
   admin           Admin?
   inviteSessions     InviteSession[]
@@ -202,6 +203,7 @@ model Report {
   contactPhone     String?
   contactSocial    String?
   status           String    @default("pending")
+  assignedTo       String?   // Validator userId - round-robin assigned for validator queue
   rejectionReason  String?   // "false" | "problematic" when status=rejected
   reviewedBy       String?
   reviewedAt       DateTime?
@@ -209,6 +211,7 @@ model Report {
   updatedAt        DateTime  @updatedAt
 
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedToUser User?  @relation("ReportAssignedTo", fields: [assignedTo], references: [id], onDelete: SetNull)
   person      Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
   category    Category? @relation("ReportCategory", fields: [categoryId], references: [id], onDelete: SetNull)
   subcategory Category? @relation("ReportSubcategory", fields: [subcategoryId], references: [id], onDelete: SetNull)

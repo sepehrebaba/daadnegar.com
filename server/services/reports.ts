@@ -2,6 +2,7 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { createAuditLog } from "./audit";
 import { auth } from "@/lib/auth";
+import { inngest } from "@/inngest/client";
 import { resolveInviteToken } from "../lib/auth-invite";
 import { getSettingBool, getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { documentToServeUrl } from "./upload";
@@ -97,6 +98,14 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
+      try {
+        await inngest.send({
+          name: "app/report.submitted",
+          data: { reportId: report.id },
+        });
+      } catch (err) {
+        console.error("[reports] Failed to enqueue report for assignment:", err);
+      }
       const isInviteUser =
         reportCountBefore === 0 &&
         (await prisma.inviteSession.findFirst({ where: { userId: session.user.id } }));
@@ -180,8 +189,12 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     if (!canApprove) {
       throw new Error("Forbidden: نیاز به نقش اعتبارسنج یا حداقل گزارش‌های تاییدشده");
     }
+    const isValidator = dbUser?.role === "validator";
     const reports = await prisma.report.findMany({
-      where: { status: "pending" },
+      where: {
+        status: "pending",
+        ...(isValidator ? { assignedTo: session.user.id } : {}),
+      },
       include: { person: true, user: { select: { id: true, name: true, email: true } } },
       orderBy: { createdAt: "desc" },
     });
@@ -191,28 +204,31 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     "/pending/:id",
     async ({ params, session, request }) => {
       if (!session?.user?.id) throw new Error("Unauthorized");
-      const report = await prisma.report.findFirst({
-        where: { id: params.id, status: "pending" },
-        include: {
-          person: true,
-          user: { select: { id: true, name: true, email: true } },
-          category: true,
-          subcategory: true,
-          documents: true,
-        },
-      });
-      if (!report) throw new Error("Not found");
       const admin = await prisma.admin.findUnique({
         where: { userId: session.user.id },
       });
+      const [report, dbUser, approvedCount, minRequired] = await Promise.all([
+        prisma.report.findFirst({
+          where: { id: params.id, status: "pending" },
+          include: {
+            person: true,
+            user: { select: { id: true, name: true, email: true } },
+            category: true,
+            subcategory: true,
+            documents: true,
+          },
+        }),
+        prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
+        prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
+        getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
+      ]);
+      if (!report) throw new Error("Not found");
       let canView = !!admin;
       if (!canView) {
-        const [dbUser, approvedCount, minRequired] = await Promise.all([
-          prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
-          prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
-          getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
-        ]);
         canView = dbUser?.role === "validator" || approvedCount >= minRequired;
+        if (canView && dbUser?.role === "validator" && report.assignedTo !== session.user.id) {
+          canView = false;
+        }
       }
       if (!canView) throw new Error("Forbidden");
       return mapReportDocuments(report);
@@ -250,12 +266,14 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         where: { userId: session.user.id },
       });
       let canApprove = !!admin;
+      let dbUser: { role: string | null } | null = null;
       if (!canApprove) {
-        const [dbUser, approvedCount, minRequired] = await Promise.all([
+        const [user, approvedCount, minRequired] = await Promise.all([
           prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
           prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
           getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
         ]);
+        dbUser = user;
         canApprove = dbUser?.role === "validator" || approvedCount >= minRequired;
       }
       if (!canApprove) {
@@ -268,6 +286,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       });
       if (!existing || existing.status !== "pending")
         throw new Error("Not found or already reviewed");
+      if (!admin && dbUser?.role === "validator" && existing.assignedTo !== session.user.id) {
+        throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
+      }
 
       const report = await prisma.$transaction(async (tx) => {
         const r = await tx.report.update({
@@ -321,12 +342,14 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         where: { userId: session.user.id },
       });
       let canApprove = !!admin;
+      let dbUser: { role: string | null } | null = null;
       if (!canApprove) {
-        const [dbUser, approvedCount, minRequired] = await Promise.all([
+        const [user, approvedCount, minRequired] = await Promise.all([
           prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
           prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
           getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
         ]);
+        dbUser = user;
         canApprove = dbUser?.role === "validator" || approvedCount >= minRequired;
       }
       if (!canApprove) {
@@ -339,6 +362,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       });
       if (!existing || existing.status !== "pending")
         throw new Error("Not found or already reviewed");
+      if (!admin && dbUser?.role === "validator" && existing.assignedTo !== session.user.id) {
+        throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
+      }
 
       const report = await prisma.$transaction(async (tx) => {
         const r = await tx.report.update({

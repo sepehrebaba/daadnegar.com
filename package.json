@@ -76,6 +76,7 @@
     "embla-carousel-react": "8.6.0",
     "exif-be-gone": "^1.5.1",
     "file-type": "^21.3.2",
+    "inngest": "^4.0.0",
     "input-otp": "1.4.2",
     "lucide-react": "^0.564.0",
     "minio": "^8.0.7",
