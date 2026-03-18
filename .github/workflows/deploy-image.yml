@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE: ${{ github.repository_owner }}/reactive-resume
+  IMAGE: ${{ github.repository_owner }}/daadnegar
   NODE_OPTIONS: "--max-old-space-size=8192"
 
 jobs:
@@ -118,7 +118,7 @@ jobs:
 
       - name: Deploy to Kubernetes with Helm Secrets
         run: |
-          helm secrets upgrade --install reactive-resume ./reactive-resume-chart \
+          helm secrets upgrade --install daadnegar ./daadnegar-chart \
             --set image.tag=v${{ steps.version.outputs.version }} \
-            -f reactive-resume-chart/secrets.yaml \
+            -f daadnegar-chart/secrets.yaml \
             --wait --timeout 5m
