@@ -34,10 +34,13 @@ service:
 
 ingress:
   enabled: true
-  className: nginx
   # cert-manager + Let's Encrypt (requires cert-manager installed and ClusterIssuer "letsencrypt-prod")
   annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+    {
+      cert-manager.io/cluster-issuer: "letsencrypt-prod",
+      traefik.ingress.kubernetes.io/router.tls: "true",
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure",
+    }
   hosts:
     - host: daadnegar.com
       paths:
