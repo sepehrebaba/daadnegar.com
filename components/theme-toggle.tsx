@@ -1,8 +1,10 @@
 "use client";
 
+import * as React from "react";
 import { Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,17 +14,26 @@ import {
 
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const Icon =
-    theme === "system" || (!resolvedTheme && !theme)
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // SSR + first client paint: next-themes has no stored theme yet; avoid Monitor vs Sun mismatch.
+  const Icon = !mounted
+    ? Sun
+    : theme === "system" || (!resolvedTheme && !theme)
       ? Monitor
       : resolvedTheme === "dark"
         ? Moon
         : Sun;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="size-8 shrink-0" aria-label="تغییر تم">
-          <Icon className="size-4" />
+          <Icon className={cn("size-4", !mounted && "opacity-0")} aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="bottom" align="end">
