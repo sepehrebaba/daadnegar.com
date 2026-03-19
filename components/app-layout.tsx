@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Languages, House, UserCircle, Settings, Shield, HelpCircle, LogOut } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,65 +106,72 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <Image src="/logo.png" alt="دادنگار" width={36} height={36} className="h-9 w-9" />
             <span className="text-foreground text-lg font-bold">دادنگار</span>
           </Link>
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <UserCircle className="h-4 w-4" />
-                  پنل کاربری
-                  <ChevronDown />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="bottom" align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={routes.mainMenu} className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
                     <UserCircle className="h-4 w-4" />
                     پنل کاربری
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    href={
-                      pathname ? `${pathname}?settings=open` : routes.mainMenu + "?settings=open"
-                    }
-                    className="flex items-center gap-2"
+                    <ChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="end">
+                  <DropdownMenuItem asChild>
+                    <Link href={routes.mainMenu} className="flex items-center gap-2">
+                      <UserCircle className="h-4 w-4" />
+                      پنل کاربری
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href={
+                        pathname ? `${pathname}?settings=open` : routes.mainMenu + "?settings=open"
+                      }
+                      className="flex items-center gap-2"
+                    >
+                      <Settings className="h-4 w-4" />
+                      تنظیمات
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => logout()}
+                    className="gap-2"
                   >
-                    <Settings className="h-4 w-4" />
-                    تنظیمات
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onClick={() => logout()} className="gap-2">
-                  <LogOut className="h-4 w-4" />
-                  خروج
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Languages className="h-4 w-4" />
-                  {state.language === "fa" ? "فارسی" : "English"}
-                  <ChevronDown />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent side="bottom">
-                <DropdownMenuCheckboxItem
-                  checked={state.language === "fa"}
-                  onCheckedChange={() => setLanguage("fa")}
-                >
-                  فارسی
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={state.language === "en"}
-                  onCheckedChange={() => setLanguage("en")}
-                >
-                  English
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                    <LogOut className="h-4 w-4" />
+                    خروج
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <Languages className="h-4 w-4" />
+                    {state.language === "fa" ? "فارسی" : "English"}
+                    <ChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom">
+                  <DropdownMenuCheckboxItem
+                    checked={state.language === "fa"}
+                    onCheckedChange={() => setLanguage("fa")}
+                  >
+                    فارسی
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={state.language === "en"}
+                    onCheckedChange={() => setLanguage("en")}
+                  >
+                    English
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </div>
       </header>
 
