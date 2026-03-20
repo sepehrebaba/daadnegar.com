@@ -7,28 +7,28 @@
 -- -----------------------------------------------------------------------------
 -- 1. Invite Codes (base 3 from seed.ts + extras)
 -- -----------------------------------------------------------------------------
-INSERT IGNORE INTO invite_code (id, code, isActive, usedById, inviterId, invitedUsername, createdAt) VALUES
-('ic_invite2024', 'INVITE2024', 1, NULL, NULL, NULL, NOW()),
-('ic_test123', 'TEST123', 1, NULL, NULL, NULL, NOW()),
-('ic_demo456', 'DEMO456', 1, NULL, NULL, NULL, NOW()),
-('ic_dev001', 'DEV001', 1, NULL, NULL, NULL, NOW()),
-('ic_dev002', 'DEV002', 1, NULL, NULL, NULL, NOW()),
-('ic_dev003', 'DEV003', 1, NULL, NULL, NULL, NOW()),
-('ic_beta2024', 'BETA2024', 1, NULL, NULL, NULL, NOW()),
-('ic_alpha2024', 'ALPHA2024', 1, NULL, NULL, NULL, NOW()),
-('ic_staging1', 'STAGING1', 1, NULL, NULL, NULL, NOW()),
-('ic_staging2', 'STAGING2', 1, NULL, NULL, NULL, NOW()),
-('ic_prod001', 'PROD001', 1, NULL, NULL, NULL, NOW()),
-('ic_prod002', 'PROD002', 1, NULL, NULL, NULL, NOW()),
-('ic_team01', 'TEAM01', 1, NULL, NULL, NULL, NOW()),
-('ic_team02', 'TEAM02', 1, NULL, NULL, NULL, NOW()),
-('ic_team03', 'TEAM03', 1, NULL, NULL, NULL, NOW()),
-('ic_partner1', 'PARTNER1', 1, NULL, NULL, NULL, NOW()),
-('ic_partner2', 'PARTNER2', 1, NULL, NULL, NULL, NOW()),
-('ic_vip001', 'VIP001', 1, NULL, NULL, NULL, NOW()),
-('ic_vip002', 'VIP002', 1, NULL, NULL, NULL, NOW()),
-('ic_welcome1', 'WELCOME1', 1, NULL, NULL, NULL, NOW()),
-('ic_welcome2', 'WELCOME2', 1, NULL, NULL, NULL, NOW());
+INSERT IGNORE INTO invite_code (id, code, isActive, usedById, inviterId, createdAt) VALUES
+('ic_invite2024', 'INVITE2024', 1, NULL, NULL, NOW()),
+('ic_test123', 'TEST123', 1, NULL, NULL, NOW()),
+('ic_demo456', 'DEMO456', 1, NULL, NULL, NOW()),
+('ic_dev001', 'DEV001', 1, NULL, NULL, NOW()),
+('ic_dev002', 'DEV002', 1, NULL, NULL, NOW()),
+('ic_dev003', 'DEV003', 1, NULL, NULL, NOW()),
+('ic_beta2024', 'BETA2024', 1, NULL, NULL, NOW()),
+('ic_alpha2024', 'ALPHA2024', 1, NULL, NULL, NOW()),
+('ic_staging1', 'STAGING1', 1, NULL, NULL, NOW()),
+('ic_staging2', 'STAGING2', 1, NULL, NULL, NOW()),
+('ic_prod001', 'PROD001', 1, NULL, NULL, NOW()),
+('ic_prod002', 'PROD002', 1, NULL, NULL, NOW()),
+('ic_team01', 'TEAM01', 1, NULL, NULL, NOW()),
+('ic_team02', 'TEAM02', 1, NULL, NULL, NOW()),
+('ic_team03', 'TEAM03', 1, NULL, NULL, NOW()),
+('ic_partner1', 'PARTNER1', 1, NULL, NULL, NOW()),
+('ic_partner2', 'PARTNER2', 1, NULL, NULL, NOW()),
+('ic_vip001', 'VIP001', 1, NULL, NULL, NOW()),
+('ic_vip002', 'VIP002', 1, NULL, NULL, NOW()),
+('ic_welcome1', 'WELCOME1', 1, NULL, NULL, NOW()),
+('ic_welcome2', 'WELCOME2', 1, NULL, NULL, NOW());
 
 -- -----------------------------------------------------------------------------
 -- 2. Settings

@@ -33,7 +33,6 @@ type InviteCodeItem = {
   id: string;
   code: string;
   used: boolean;
-  invitedUsername: string | null;
   isActive: boolean;
   createdAt: string;
 };
@@ -304,29 +303,12 @@ export function InviteUserScreen() {
                           )}
                         </Button>
 
-                        {item.invitedUsername ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p
-                                className="text-muted-foreground col-span-2 mr-auto ml-2 truncate text-xs"
-                                dir="ltr"
-                                title={item.invitedUsername}
-                              >
-                                مخصوص
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{item.invitedUsername}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <p
-                            dir="ltr"
-                            className="text-muted-foreground col-span-2 mr-auto ml-2 truncate text-xs"
-                          >
-                            عمومی
-                          </p>
-                        )}
+                        <p
+                          dir="ltr"
+                          className="text-muted-foreground col-span-2 mr-auto ml-2 truncate text-xs"
+                        >
+                          عمومی
+                        </p>
                       </div>
                       <div className="flex items-center gap-3 self-center">
                         <span

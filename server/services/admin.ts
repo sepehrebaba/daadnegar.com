@@ -50,11 +50,16 @@ function getAuditCtx(
 const adminGuard = new Elysia({ name: "adminGuard" }).derive(async ({ request }) => {
   const session = await getSession(request.headers);
   if (session?.user?.id) {
-    const admin = await prisma.admin.findUnique({ where: { userId: session.user.id } });
+    const admin = await prisma.admin.findUnique({
+      where: { userId: session.user.id },
+    });
     if (admin) return { auth: { type: "user", session, admin } };
   }
   const panel = await getAdminPanelSession(request);
-  if (panel) return { auth: { type: "panel" as const, adminPanelUser: panel.adminPanelUser } };
+  if (panel)
+    return {
+      auth: { type: "panel" as const, adminPanelUser: panel.adminPanelUser },
+    };
   throw new Error("Unauthorized");
 });
 
@@ -80,7 +85,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Setting",
         entityId: "system",
         details: JSON.stringify(toSet),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { data: await getAllSettings() };
     },
@@ -123,7 +131,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Category",
         entityId: cat.id,
         details: JSON.stringify({ name: cat.name, slug: cat.slug }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return cat;
     },
@@ -159,7 +170,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Category",
         entityId: cat.id,
         details: JSON.stringify(body),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return cat;
     },
@@ -184,7 +198,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "Category",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -212,7 +229,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Province",
         entityId: province.id,
         details: JSON.stringify({ name: province.name }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return province;
     },
@@ -233,13 +253,19 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Province",
         entityId: province.id,
         details: JSON.stringify(body),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return province;
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({ name: t.Optional(t.String()), sortOrder: t.Optional(t.Number()) }),
+      body: t.Object({
+        name: t.Optional(t.String()),
+        sortOrder: t.Optional(t.Number()),
+      }),
     },
   )
   .delete(
@@ -250,7 +276,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "Province",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -281,8 +310,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "create",
         entity: "City",
         entityId: city.id,
-        details: JSON.stringify({ name: city.name, provinceId: city.provinceId }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          name: city.name,
+          provinceId: city.provinceId,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return city;
     },
@@ -310,7 +345,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "City",
         entityId: city.id,
         details: JSON.stringify(body),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return city;
     },
@@ -331,7 +369,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "City",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -364,13 +405,18 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "User",
         entityId: user.id,
         details: JSON.stringify({ role: body.role }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return user;
     },
     {
       params: t.Object({ id: t.String() }),
-      body: t.Object({ role: t.Union([t.Literal("user"), t.Literal("validator")]) }),
+      body: t.Object({
+        role: t.Union([t.Literal("user"), t.Literal("validator")]),
+      }),
     },
   )
   .put(
@@ -423,7 +469,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .get(
     "/people/pending",
     async ({ query }) => {
-      const where: { status: "pending"; OR?: unknown[] } = { status: "pending" };
+      const where: { status: "pending"; OR?: unknown[] } = {
+        status: "pending",
+      };
       const s = query.search?.trim();
       if (s) {
         const searchPattern = `%${s}%`;
@@ -441,7 +489,12 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
       });
       return { data };
     },
-    { query: t.Object({ search: t.Optional(t.String()), limit: t.Optional(t.String()) }) },
+    {
+      query: t.Object({
+        search: t.Optional(t.String()),
+        limit: t.Optional(t.String()),
+      }),
+    },
   )
   .get("/people", async ({ query }) => {
     const where: Record<string, unknown> = {};
@@ -485,8 +538,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "create",
         entity: "Person",
         entityId: person.id,
-        details: JSON.stringify({ firstName: person.firstName, lastName: person.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: person.firstName,
+          lastName: person.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -519,7 +578,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Person",
         entityId: person.id,
         details: JSON.stringify({ status: "approved" }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -534,7 +596,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Person",
         entityId: params.id,
         details: "pending person rejected and deleted",
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -543,9 +608,13 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Pending person not found");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target || target.status !== "approved") throw new Error("Target person not found");
 
       await prisma.report.updateMany({
@@ -563,7 +632,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
           ...(body.imageUrl != null && { imageUrl: body.imageUrl }),
           ...(body.title != null && { title: body.title }),
           ...(body.organization != null && { organization: body.organization }),
-          ...(body.dateOfBirth != null && { dateOfBirth: new Date(body.dateOfBirth) }),
+          ...(body.dateOfBirth != null && {
+            dateOfBirth: new Date(body.dateOfBirth),
+          }),
           ...(body.address != null && { address: body.address }),
           ...(body.mobile != null && { mobile: body.mobile }),
           ...(body.phone != null && { phone: body.phone }),
@@ -579,7 +650,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
           mergedInto: body.targetPersonId,
           data: body,
         }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return merged;
     },
@@ -614,8 +688,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "approve",
         entity: "Person",
         entityId: person.id,
-        details: JSON.stringify({ firstName: person.firstName, lastName: person.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: person.firstName,
+          lastName: person.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -631,8 +711,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "reject",
         entity: "Person",
         entityId: params.id,
-        details: JSON.stringify({ firstName: p.firstName, lastName: p.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: p.firstName,
+          lastName: p.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -641,9 +727,13 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Not found or not pending");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target || target.status !== "approved") throw new Error("Target person not found");
 
       const merged = {
@@ -681,7 +771,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
           mergedFrom: params.id,
           pendingName: `${pending.firstName} ${pending.lastName}`,
         }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
 
       return prisma.person.findUnique({ where: { id: body.targetPersonId } });
@@ -717,8 +810,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "approve",
         entity: "Person",
         entityId: person.id,
-        details: JSON.stringify({ firstName: person.firstName, lastName: person.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: person.firstName,
+          lastName: person.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -734,8 +833,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "reject",
         entity: "Person",
         entityId: params.id,
-        details: JSON.stringify({ firstName: p.firstName, lastName: p.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: p.firstName,
+          lastName: p.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -744,9 +849,13 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Not found or not pending");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target || target.status !== "approved")
         throw new Error("Target person not found or not approved");
 
@@ -775,13 +884,18 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         prisma.person.delete({ where: { id: pending.id } }),
       ]);
 
-      const updated = await prisma.person.findUnique({ where: { id: target.id } });
+      const updated = await prisma.person.findUnique({
+        where: { id: target.id },
+      });
       await createAuditLog({
         action: "merge",
         entity: "Person",
         entityId: target.id,
         details: JSON.stringify({ mergedFrom: pending.id, merged }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return updated!;
     },
@@ -816,8 +930,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "approve",
         entity: "Person",
         entityId: person.id,
-        details: JSON.stringify({ firstName: person.firstName, lastName: person.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: person.firstName,
+          lastName: person.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -833,8 +953,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "reject",
         entity: "Person",
         entityId: params.id,
-        details: JSON.stringify({ firstName: p.firstName, lastName: p.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: p.firstName,
+          lastName: p.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -843,9 +969,13 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Not found or not pending");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target || target.status !== "approved")
         throw new Error("Target person not found or not approved");
       const merged = await prisma.person.update({
@@ -858,7 +988,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
           ...(body.imageUrl != null && { imageUrl: body.imageUrl }),
           ...(body.title != null && { title: body.title }),
           ...(body.organization != null && { organization: body.organization }),
-          ...(body.dateOfBirth != null && { dateOfBirth: new Date(body.dateOfBirth) }),
+          ...(body.dateOfBirth != null && {
+            dateOfBirth: new Date(body.dateOfBirth),
+          }),
           ...(body.address != null && { address: body.address }),
           ...(body.mobile != null && { mobile: body.mobile }),
           ...(body.phone != null && { phone: body.phone }),
@@ -874,7 +1006,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Person",
         entityId: params.id,
         details: JSON.stringify({ into: body.targetPersonId, merged: body }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return merged;
     },
@@ -910,8 +1045,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "approve",
         entity: "Person",
         entityId: person.id,
-        details: JSON.stringify({ firstName: person.firstName, lastName: person.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: person.firstName,
+          lastName: person.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -928,8 +1069,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "reject",
         entity: "Person",
         entityId: params.id,
-        details: JSON.stringify({ firstName: p.firstName, lastName: p.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: p.firstName,
+          lastName: p.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -938,10 +1085,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending) throw new Error("Pending person not found");
       if (pending.status !== "pending") throw new Error("Person is not pending");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target) throw new Error("Target person not found");
       if (target.status !== "approved") throw new Error("Target must be approved");
       const merged = { ...target, ...body.mergedData } as typeof target;
@@ -975,7 +1126,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
           into: body.targetPersonId,
           mergedData: body.mergedData,
         }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1001,8 +1155,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "approve",
         entity: "Person",
         entityId: person.id,
-        details: JSON.stringify({ firstName: person.firstName, lastName: person.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: person.firstName,
+          lastName: person.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -1014,7 +1174,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
       const p = await prisma.person.findUnique({ where: { id: params.id } });
       if (!p) throw new Error("Not found");
       if (p.status !== "pending") throw new Error("Person is not pending");
-      const reportCount = await prisma.report.count({ where: { personId: params.id } });
+      const reportCount = await prisma.report.count({
+        where: { personId: params.id },
+      });
       if (reportCount > 0)
         throw new Error("Cannot reject: این شخص در گزارش‌ها استفاده شده. از مرج استفاده کنید.");
       await prisma.person.delete({ where: { id: params.id } });
@@ -1022,8 +1184,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "reject",
         entity: "Person",
         entityId: params.id,
-        details: JSON.stringify({ firstName: p.firstName, lastName: p.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: p.firstName,
+          lastName: p.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1032,10 +1200,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending) throw new Error("Not found");
       if (pending.status !== "pending") throw new Error("Person is not pending");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target) throw new Error("Target person not found");
       if (target.status !== "approved") throw new Error("Target must be approved");
       if (target.id === pending.id) throw new Error("Cannot merge with self");
@@ -1074,7 +1246,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
           targetId: target.id,
           merged,
         }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return updated;
     },
@@ -1108,7 +1283,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Person",
         entityId: person.id,
         details: JSON.stringify({ status: "approved" }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -1123,7 +1301,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Person",
         entityId: params.id,
         details: "pending person rejected",
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1132,9 +1313,13 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Pending person not found");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target) throw new Error("Target person not found");
       if (target.status !== "approved") throw new Error("Target must be approved");
       const update: Record<string, unknown> = {
@@ -1165,8 +1350,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "merge",
         entity: "Person",
         entityId: target.id,
-        details: JSON.stringify({ mergedFrom: pending.id, mergedInto: target.id }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          mergedFrom: pending.id,
+          mergedInto: target.id,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return merged;
     },
@@ -1191,7 +1382,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .put(
     "/people/:id/approve",
     async ({ params, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Not found or not pending");
       const person = await prisma.person.update({
         where: { id: params.id },
@@ -1201,8 +1394,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "approve",
         entity: "Person",
         entityId: person.id,
-        details: JSON.stringify({ firstName: person.firstName, lastName: person.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: person.firstName,
+          lastName: person.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -1211,15 +1410,23 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .put(
     "/people/:id/reject",
     async ({ params, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Not found or not pending");
       await prisma.person.delete({ where: { id: params.id } });
       await createAuditLog({
         action: "reject",
         entity: "Person",
         entityId: params.id,
-        details: JSON.stringify({ firstName: pending.firstName, lastName: pending.lastName }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          firstName: pending.firstName,
+          lastName: pending.lastName,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1228,9 +1435,13 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   .post(
     "/people/:id/merge",
     async ({ params, body, request, ip, auth }) => {
-      const pending = await prisma.person.findUnique({ where: { id: params.id } });
+      const pending = await prisma.person.findUnique({
+        where: { id: params.id },
+      });
       if (!pending || pending.status !== "pending") throw new Error("Not found or not pending");
-      const target = await prisma.person.findUnique({ where: { id: body.targetPersonId } });
+      const target = await prisma.person.findUnique({
+        where: { id: body.targetPersonId },
+      });
       if (!target || target.status !== "approved")
         throw new Error("Target person not found or not approved");
       if (target.id === pending.id) throw new Error("Cannot merge person with itself");
@@ -1243,7 +1454,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         ...(body.imageUrl != null && { imageUrl: body.imageUrl }),
         ...(body.title != null && { title: body.title }),
         ...(body.organization != null && { organization: body.organization }),
-        ...(body.dateOfBirth != null && { dateOfBirth: new Date(body.dateOfBirth) }),
+        ...(body.dateOfBirth != null && {
+          dateOfBirth: new Date(body.dateOfBirth),
+        }),
         ...(body.address != null && { address: body.address }),
         ...(body.mobile != null && { mobile: body.mobile }),
         ...(body.phone != null && { phone: body.phone }),
@@ -1258,13 +1471,18 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         await tx.person.delete({ where: { id: pending.id } });
       });
 
-      const updated = await prisma.person.findUnique({ where: { id: target.id } });
+      const updated = await prisma.person.findUnique({
+        where: { id: target.id },
+      });
       await createAuditLog({
         action: "merge",
         entity: "Person",
         entityId: target.id,
         details: JSON.stringify({ fromId: pending.id, merged }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return updated;
     },
@@ -1299,7 +1517,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
           ...(body.imageUrl != null && { imageUrl: body.imageUrl }),
           ...(body.title != null && { title: body.title }),
           ...(body.organization != null && { organization: body.organization }),
-          ...(body.dateOfBirth != null && { dateOfBirth: new Date(body.dateOfBirth) }),
+          ...(body.dateOfBirth != null && {
+            dateOfBirth: new Date(body.dateOfBirth),
+          }),
           ...(body.address != null && { address: body.address }),
           ...(body.mobile != null && { mobile: body.mobile }),
           ...(body.phone != null && { phone: body.phone }),
@@ -1311,7 +1531,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Person",
         entityId: person.id,
         details: JSON.stringify(body),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return person;
     },
@@ -1341,7 +1564,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "Person",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1417,7 +1643,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
     const [data, total] = await Promise.all([
       prisma.report.findMany({
         where,
-        include: { person: true, user: { select: { id: true, name: true, username: true } } },
+        include: {
+          person: true,
+          user: { select: { id: true, name: true, username: true } },
+        },
         orderBy: { createdAt: "desc" },
         skip,
         take: perPage,
@@ -1495,7 +1724,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "Report",
         entityId: report.id,
         details: JSON.stringify({ status: body.status, rejectionReason }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return report;
     },
@@ -1525,7 +1757,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelIpWhitelist",
         entityId: row.id,
         details: JSON.stringify({ ipAddress: body.ipAddress }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return row;
     },
@@ -1539,7 +1774,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "AdminPanelIpWhitelist",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1558,15 +1796,19 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         data: {
           code,
           inviterId,
-          invitedUsername: body.username?.trim() ? body.username.trim().toLowerCase() : null,
         },
       });
       await createAuditLog({
         action: "create",
         entity: "InviteCode",
         entityId: invite.id,
-        details: JSON.stringify({ code: invite.code, invitedUsername: invite.invitedUsername }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        details: JSON.stringify({
+          code: invite.code,
+        }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       const baseURL =
         process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -1604,7 +1846,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelIpWhitelist",
         entityId: row.id,
         details: JSON.stringify({ ipAddress: row.ipAddress }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return row;
     },
@@ -1618,7 +1863,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "AdminPanelIpWhitelist",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1646,9 +1894,16 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelUser",
         entityId: user.id,
         details: JSON.stringify({ username: user.username }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
-      return { id: user.id, username: user.username, createdAt: user.createdAt };
+      return {
+        id: user.id,
+        username: user.username,
+        createdAt: user.createdAt,
+      };
     },
     {
       body: t.Object({
@@ -1659,7 +1914,9 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
   )
   // IP whitelist
   .get("/ip-whitelist", async () => {
-    const data = await prisma.adminPanelIpWhitelist.findMany({ orderBy: { createdAt: "desc" } });
+    const data = await prisma.adminPanelIpWhitelist.findMany({
+      orderBy: { createdAt: "desc" },
+    });
     return { data };
   })
   .post(
@@ -1673,7 +1930,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelIpWhitelist",
         entityId: row.id,
         details: JSON.stringify({ ipAddress: row.ipAddress }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return row;
     },
@@ -1687,7 +1947,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "AdminPanelIpWhitelist",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1711,7 +1974,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelIpWhitelist",
         entityId: row.id,
         details: JSON.stringify({ ipAddress: row.ipAddress }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return row;
     },
@@ -1725,7 +1991,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "AdminPanelIpWhitelist",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1749,7 +2018,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelIpWhitelist",
         entityId: row.id,
         details: JSON.stringify({ ipAddress: row.ipAddress }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return row;
     },
@@ -1763,7 +2035,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "AdminPanelIpWhitelist",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },
@@ -1791,15 +2066,24 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelUser",
         entityId: user.id,
         details: JSON.stringify({ username: user.username }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
-      return { id: user.id, username: user.username, createdAt: user.createdAt };
+      return {
+        id: user.id,
+        username: user.username,
+        createdAt: user.createdAt,
+      };
     },
     { body: t.Object({ username: t.String(), password: t.String() }) },
   )
   // IP whitelist (admin panel)
   .get("/ip-whitelist", async () => {
-    const data = await prisma.adminPanelIpWhitelist.findMany({ orderBy: { createdAt: "desc" } });
+    const data = await prisma.adminPanelIpWhitelist.findMany({
+      orderBy: { createdAt: "desc" },
+    });
     return { data };
   })
   .post(
@@ -1813,7 +2097,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         entity: "AdminPanelIpWhitelist",
         entityId: row.id,
         details: JSON.stringify({ ipAddress: row.ipAddress }),
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return row;
     },
@@ -1827,7 +2114,10 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         action: "delete",
         entity: "AdminPanelIpWhitelist",
         entityId: params.id,
-        ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
+        ctx: getAuditCtx(auth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
       });
       return { success: true };
     },

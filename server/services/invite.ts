@@ -69,7 +69,10 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         entity: "InviteCode",
         entityId: inviteCode.id,
         details: JSON.stringify({ code: inviteCode.code }),
-        ctx: { ipAddress: ip?.address, userAgent: request.headers.get("user-agent") ?? undefined },
+        ctx: {
+          ipAddress: ip?.address,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        },
       });
 
       const hasPasskey = !!session.passkeyHash;
@@ -316,14 +319,10 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       }
 
       const code = await ensureUniqueInviteCode();
-      const invitedUsername =
-        body.type === "personal" ? normalizeUsername(body.username ?? "") : null;
-
       const inviteCodeRecord = await prisma.inviteCode.create({
         data: {
           code,
           ...(inviterId ? { inviter: { connect: { id: inviterId } } } : {}),
-          invitedUsername,
         },
       });
 
@@ -331,7 +330,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         action: "create",
         entity: "InviteCode",
         entityId: inviteCodeRecord.id,
-        details: JSON.stringify({ code, type: body.type, invitedUsername }),
+        details: JSON.stringify({ code, type: body.type }),
         ctx: {
           userId: inviterId ?? undefined,
           ipAddress: ip?.address,
@@ -378,7 +377,6 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         id: true,
         code: true,
         usedById: true,
-        invitedUsername: true,
         isActive: true,
         createdAt: true,
       },
@@ -388,7 +386,6 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       id: c.id,
       code: c.code,
       used: !!c.usedById,
-      invitedUsername: c.invitedUsername,
       isActive: c.isActive,
       createdAt: c.createdAt.toISOString(),
     }));
@@ -422,11 +419,20 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       if (body.passkey.length < 8)
         return { ok: false, error: "رمز عبور باید حداقل ۸ کاراکتر باشد" };
       if (!/[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(body.passkey))
-        return { ok: false, error: "رمز عبور باید حداقل یک کاراکتر خاص داشته باشد" };
+        return {
+          ok: false,
+          error: "رمز عبور باید حداقل یک کاراکتر خاص داشته باشد",
+        };
       if (!/[A-Z]/.test(body.passkey))
-        return { ok: false, error: "رمز عبور باید حداقل یک حرف بزرگ داشته باشد" };
+        return {
+          ok: false,
+          error: "رمز عبور باید حداقل یک حرف بزرگ داشته باشد",
+        };
       if (!/[a-z]/.test(body.passkey))
-        return { ok: false, error: "رمز عبور باید حداقل یک حرف کوچک داشته باشد" };
+        return {
+          ok: false,
+          error: "رمز عبور باید حداقل یک حرف کوچک داشته باشد",
+        };
       if (!/[0-9]/.test(body.passkey))
         return { ok: false, error: "رمز عبور باید حداقل یک عدد داشته باشد" };
 
@@ -436,13 +442,6 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       });
       if (!inviteCode || inviteCode.usedById) {
         return { ok: false, error: "کد دعوت نامعتبر یا قبلاً استفاده شده است" };
-      }
-
-      if (inviteCode.invitedUsername) {
-        const expected = normalizeUsername(inviteCode.invitedUsername);
-        if (expected && usernameRaw !== expected) {
-          return { ok: false, error: "این کد دعوت مختص نام کاربری دیگری است." };
-        }
       }
 
       const email = usernameToInternalEmail(usernameRaw);
@@ -505,7 +504,10 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         action: "register",
         entity: "User",
         entityId: user.id,
-        details: JSON.stringify({ inviteCode: normalizedCode, username: usernameRaw }),
+        details: JSON.stringify({
+          inviteCode: normalizedCode,
+          username: usernameRaw,
+        }),
         ctx: {
           userId: user.id,
           ipAddress: ip?.address,

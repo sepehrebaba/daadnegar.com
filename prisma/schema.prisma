@@ -277,7 +277,6 @@ model InviteCode {
   isActive     Boolean  @default(true)
   usedById     String?  // one code = one person; set when user registers
   inviterId    String?  // for user-created invites; null = seed codes (e.g. DEMO456)
-  invitedUsername String?  // for personal invites — reserved target username (optional)
   createdAt    DateTime @default(now())
 
   inviter  User?     @relation("InviteCodeInviter", fields: [inviterId], references: [id], onDelete: SetNull)

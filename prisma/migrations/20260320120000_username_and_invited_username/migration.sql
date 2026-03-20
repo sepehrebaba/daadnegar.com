@@ -1,10 +1,5 @@
 -- Rename invite column
-ALTER TABLE `invite_code` CHANGE `invitedEmail` `invitedUsername` VARCHAR(191) NULL;
-
--- Old personal invites stored an email; keep as username-like local part
-UPDATE `invite_code`
-SET `invitedUsername` = LOWER(REPLACE(SUBSTRING_INDEX(`invitedUsername`, '@', 1), '.', '_'))
-WHERE `invitedUsername` LIKE '%@%';
+ALTER TABLE `invite_code` DROP COLUMN `invitedEmail`;
 
 -- Add username (nullable first for backfill)
 ALTER TABLE `User` ADD COLUMN `username` VARCHAR(191) NULL;

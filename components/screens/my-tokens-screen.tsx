@@ -145,13 +145,16 @@ export function MyTokensScreen() {
                   هر گزارش تایید شده: <span className="font-bold">+10</span> توکن
                 </li>
                 <li>
-                  هر گزارش رد شده: <span className="font-bold">-5</span> توکن
+                  ثبت هر گزارش جدید: <span className="font-bold">-5</span> توکن وثیقه
                 </li>
                 <li>
-                  هر گزارش مسئله‌دار: <span className="font-bold">-10</span> توکن
+                  هر گزارش رد شده: <span className="font-bold">-2</span> توکن
                 </li>
                 <li>
-                  هر گزارش اطلاعات نادرست: <span className="font-bold">-10</span> توکن
+                  هر گزارش مسئله‌دار: <span className="font-bold">-1</span> توکن
+                </li>
+                <li>
+                  هر گزارش اطلاعات نادرست: <span className="font-bold">-2</span> توکن
                 </li>
               </ul>
             </div>
