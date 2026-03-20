@@ -27,14 +27,14 @@ RUN DATABASE_URL=${DATABASE_URL} pnpm run prisma:generate
 
 # --- Public website image (no /admin UI, no admin API) ---
 FROM build-prep AS build-web
-RUN rm -rf app/admin && \
+RUN rm -rf app/admin && rm -f app/page.tsx && \
     cp docker/build/app-entry-web.ts server/app.ts && \
     cp docker/build/proxy-web.ts proxy.ts
 RUN pnpm run build
 
 # --- Admin-only image (no public site routes; / → /admin) ---
 FROM build-prep AS build-admin
-RUN rm -rf "app/(dadban)" "app/accept-invitation" && \
+RUN rm -rf "app/(public-website)" && \
     cp docker/build/admin-root-page.tsx app/page.tsx && \
     cp docker/build/app-entry-admin.ts server/app.ts && \
     cp docker/build/proxy-admin.ts proxy.ts
