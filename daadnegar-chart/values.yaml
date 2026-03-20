@@ -91,18 +91,18 @@ resources: {}
   #   cpu: 100m
   #   memory: 256Mi
 
-# Probes for Next.js app
+# Probes: use /api/health (Elysia) not /. Kubelet probes use Pod IP as Host; Next can 404 on / for that.
 livenessProbe:
   httpGet:
-    path: /
+    path: /api/health
     port: http
   initialDelaySeconds: 30
   periodSeconds: 10
 readinessProbe:
   httpGet:
-    path: /
+    path: /api/health
     port: http
-  initialDelaySeconds: 5
+  initialDelaySeconds: 10
   periodSeconds: 10
 
 autoscaling:
