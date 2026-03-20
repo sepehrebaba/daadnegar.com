@@ -27,7 +27,6 @@ import {
   Calendar,
   Check,
   FileText,
-  Mail,
   MapPin,
   MessageSquare,
   User,
@@ -62,7 +61,7 @@ type ReportDetail = {
     title?: string | null;
     isFamous?: boolean;
   };
-  user: { id: string; name: string; email: string };
+  user: { id: string; name: string; username: string };
   category?: { id: string; name: string; slug: string } | null;
   subcategory?: { id: string; name: string; slug: string } | null;
   documents: { id: string; name: string; url: string }[];
@@ -247,7 +246,7 @@ export function ApprovalDetailScreen() {
               </CardHeader>
               <CardContent className="space-y-2">
                 <InfoRow label="نام" value={report.user.name} icon={User} />
-                <InfoRow label="ایمیل" value={report.user.email} icon={Mail} />
+                <InfoRow label="نام کاربری" value={report.user.username} icon={User} />
               </CardContent>
             </Card>
           </div>

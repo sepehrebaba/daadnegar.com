@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Languages, Settings, Sun, Moon, Monitor, Mail } from "lucide-react";
+import { Languages, Settings, Sun, Moon, Monitor, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useApp } from "@/context/app-context";
 
@@ -72,8 +72,8 @@ export function SettingsForm() {
         </div>
         <div className="border-border my-2 border-t" />
         <div className="text-foreground/80 flex items-center justify-center gap-2 text-center text-sm font-medium">
-          <Mail className="text-muted-foreground h-4 w-4" />
-          {state.user?.email ?? "—"}
+          <User className="text-muted-foreground h-4 w-4" />
+          {state.user?.username ?? "—"}
         </div>
       </CardContent>
     </>

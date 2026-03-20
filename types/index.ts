@@ -123,7 +123,7 @@ export interface User {
   approvedRequestsCount: number;
   /** "user" | "validator" - validators can always approve reports */
   role?: string;
-  email?: string;
+  username?: string;
   name?: string;
 }
 

@@ -8,31 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   ArrowRight,
   Building2,
   Calendar,
-  Check,
   FileText,
-  Mail,
   MapPin,
   MessageSquare,
   User,
-  X,
 } from "lucide-react";
 
 type ReportReview = {
@@ -76,7 +58,7 @@ type ReportDetail = {
     title?: string | null;
     isFamous?: boolean;
   };
-  user: { id: string; name: string; email: string };
+  user: { id: string; name: string; username: string };
   category?: { id: string; name: string; slug: string } | null;
   subcategory?: { id: string; name: string; slug: string } | null;
   documents: { id: string; name: string; url: string }[];
@@ -110,9 +92,6 @@ export default function AdminReportDetailPage() {
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState<"false" | "problematic">("problematic");
-  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -134,23 +113,6 @@ export default function AdminReportDetailPage() {
         setLoading(false);
       });
   }, [id]);
-
-  const updateStatus = async (newStatus: string, rejectionReason?: "false" | "problematic") => {
-    if (!id) return;
-    setActionLoading(true);
-    try {
-      await api.admin.reports({ id }).put({
-        status: newStatus,
-        ...(newStatus === "rejected" && rejectionReason && { rejectionReason }),
-      });
-      setRejectDialogOpen(false);
-      const { data } = await api.admin.reports({ id }).get();
-      if (data) setReport(data as ReportDetail);
-    } catch {
-      setError("خطا در بروزرسانی وضعیت");
-    }
-    setActionLoading(false);
-  };
 
   const statusBadge = (s: string) => {
     const v = s === "accepted" ? "default" : s === "rejected" ? "destructive" : "secondary";
@@ -210,23 +172,6 @@ export default function AdminReportDetailPage() {
             </div>
           </div>
         </div>
-        {report.status === "pending" && (
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => updateStatus("accepted")} disabled={actionLoading}>
-              <Check className="ml-1 h-4 w-4" />
-              تأیید
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => setRejectDialogOpen(true)}
-              disabled={actionLoading}
-            >
-              <X className="ml-1 h-4 w-4" />
-              رد
-            </Button>
-          </div>
-        )}
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -268,9 +213,9 @@ export default function AdminReportDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             <InfoRow label="نام" value={report.user.name} icon={User} />
-            <InfoRow label="ایمیل" value={report.user.email} icon={Mail} />
+            <InfoRow label="نام کاربری" value={report.user.username} icon={User} />
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/admin/users?q=${encodeURIComponent(report.user.email)}`}>
+              <Link href={`/admin/users?q=${encodeURIComponent(report.user.username)}`}>
                 مشاهده کاربر
               </Link>
             </Button>
@@ -484,45 +429,6 @@ export default function AdminReportDetailPage() {
           </Card>
         )}
       </div>
-
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>دلیل رد گزارش</DialogTitle>
-            <DialogDescription>
-              لطفاً دلیل رد را انتخاب کنید.
-              <br />
-              <strong>رد نرم (نقص یا افشای اطلاعات):</strong> امتیاز کمتری کسر می‌شود.
-              <br />
-              <strong>رد سخت (گزارش اشتباه یا قصد تخریب):</strong> امتیاز بیشتری کسر می‌شود.
-            </DialogDescription>
-          </DialogHeader>
-          <Select
-            value={rejectReason}
-            onValueChange={(v) => setRejectReason(v as "false" | "problematic")}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="problematic">رد نرم (نقص یا افشای اطلاعات)</SelectItem>
-              <SelectItem value="false">رد سخت (گزارش اشتباه یا قصد تخریب)</SelectItem>
-            </SelectContent>
-          </Select>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              انصراف
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => updateStatus("rejected", rejectReason)}
-              disabled={actionLoading}
-            >
-              رد گزارش
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

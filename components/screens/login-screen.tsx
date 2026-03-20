@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { routes } from "@/lib/routes";
-import { authClient } from "@/lib/auth-client";
+import { getAppBaseUrl } from "@/lib/app-base-url";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ import { api } from "@/lib/edyen";
 export function LoginScreen() {
   const router = useRouter();
   const { setUser } = useApp();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -26,45 +26,49 @@ export function LoginScreen() {
     setError("");
     setIsLoading(true);
 
-    const { data, error: signInError } = await authClient.signIn.email({
-      email,
-      password,
-      rememberMe: true,
+    const res = await fetch(`${getAppBaseUrl()}/api/session/sign-in`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: username.trim().toLowerCase(),
+        password,
+        rememberMe: true,
+      }),
     });
 
-    if (signInError) {
-      setError(signInError.message || "خطا در ورود. لطفاً اطلاعات را بررسی کنید.");
+    if (!res.ok) {
+      let msg = "خطا در ورود. لطفاً اطلاعات را بررسی کنید.";
+      try {
+        const j = (await res.json()) as { message?: string };
+        if (j?.message) msg = j.message;
+      } catch {
+        /* ignore */
+      }
+      setError(msg);
       setIsLoading(false);
       return;
     }
 
-    console.log(data);
+    const { data: me, error: meError } = await api.me.get();
 
-    if (data?.user) {
-      const { data: me, error: meError } = await api.me.get();
-
-      console.log("====me", me);
-      if (meError || !me) {
-        // redirect to login page
-        router.push(routes.login);
-        return;
-      } else {
-        setUser({
-          id: me.id,
-          passkey: "",
-          inviteCode: "",
-          isActivated: true,
-          tokensCount: me.tokensCount ?? 0,
-          approvedRequestsCount: me.approvedRequestsCount ?? 0,
-          email: me.email,
-          name: me.name,
-        });
-      }
-      toast("با موفقیت وارد شدید!");
-      router.push(routes.mainMenu);
-    } else {
-      setError("ورود با خطا مواجه شد. لطفاً دوباره تلاش کنید.");
+    if (meError || !me) {
+      router.push(routes.login);
+      setIsLoading(false);
+      return;
     }
+    setUser({
+      id: me.id,
+      passkey: "",
+      inviteCode: "",
+      isActivated: true,
+      tokensCount: me.tokensCount ?? 0,
+      approvedRequestsCount: me.approvedRequestsCount ?? 0,
+      username: (me as { username?: string }).username,
+      name: me.name,
+    });
+    toast("با موفقیت وارد شدید!");
+    router.push(routes.mainMenu);
 
     setIsLoading(false);
   };
@@ -78,19 +82,20 @@ export function LoginScreen() {
           </div>
           <CardTitle className="text-foreground text-xl font-bold">ورود به حساب کاربری</CardTitle>
           <CardDescription className="text-xs">
-            نام کاربری/ایمیل و رمز عبور خود را وارد کنید. برای عضویت نیاز به دعوت‌نامه دارید.
+            نام کاربری و رمز عبور خود را وارد کنید. برای عضویت نیاز به دعوت‌نامه دارید.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">ایمیل/نام کاربری</Label>
+              <Label htmlFor="username">نام کاربری</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="example@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                autoComplete="username"
+                placeholder="my_username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="text-center"
                 dir="ltr"
                 required
@@ -117,7 +122,11 @@ export function LoginScreen() {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={!email || !password || isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!username.trim() || !password || isLoading}
+            >
               {isLoading ? "در حال ورود..." : "ورود"}
             </Button>
 

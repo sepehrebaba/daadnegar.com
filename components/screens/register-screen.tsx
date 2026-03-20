@@ -50,7 +50,7 @@ export function RegisterScreen() {
   const { setUser } = useApp();
   const codeParam = searchParams.get("code");
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -103,7 +103,7 @@ export function RegisterScreen() {
 
     const { data, error: regError } = await api.invite["register-by-code"].post({
       code: codeParam!,
-      email: email.trim(),
+      username: username.trim().toLowerCase(),
       passkey: password,
     });
 
@@ -120,7 +120,13 @@ export function RegisterScreen() {
     const result = data as {
       ok: boolean;
       token: string;
-      user?: { id: string; name?: string; tokensCount?: number; approvedRequestsCount?: number };
+      user?: {
+        id: string;
+        name?: string;
+        username?: string;
+        tokensCount?: number;
+        approvedRequestsCount?: number;
+      };
     };
     if (result.token) {
       setInviteTokenStorage(result.token);
@@ -129,6 +135,7 @@ export function RegisterScreen() {
       setUser({
         id: result.user.id,
         name: result.user.name ?? "",
+        username: result.user.username ?? "",
         passkey: "",
         inviteCode: "",
         isActivated: true,
@@ -156,20 +163,25 @@ export function RegisterScreen() {
             <UserPlus className="text-primary h-8 w-8" />
           </div>
           <CardTitle className="text-foreground text-xl font-bold">ثبت‌نام</CardTitle>
-          <CardDescription>ایمیل و رمز عبور خود را برای تکمیل ثبت‌نام وارد کنید</CardDescription>
+          <CardDescription>
+            نام کاربری و رمز عبور خود را برای تکمیل ثبت‌نام وارد کنید
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">ایمیل</Label>
+              <Label htmlFor="username">نام کاربری</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="example@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                autoComplete="username"
+                placeholder="فقط حروف کوچک انگلیسی، عدد و _ (۳ تا ۳۲ کاراکتر)"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
                 className="text-center"
                 dir="ltr"
+                minLength={3}
+                maxLength={32}
                 required
               />
             </div>
@@ -261,7 +273,7 @@ export function RegisterScreen() {
               type="submit"
               className="w-full"
               disabled={
-                !email.trim() ||
+                !username.trim() ||
                 !isPasswordSecure(password) ||
                 password !== passwordConfirm ||
                 isLoading

@@ -343,7 +343,7 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
       select: {
         id: true,
         name: true,
-        email: true,
+        username: true,
         role: true,
         createdAt: true,
         _count: { select: { reports: true } },
@@ -1363,7 +1363,7 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         where: { status: "pending" },
         include: {
           person: true,
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: { id: true, name: true, username: true } },
           reviews: { orderBy: { createdAt: "desc" } },
         },
         orderBy: { createdAt: "desc" },
@@ -1396,7 +1396,7 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         where: { id: params.id },
         include: {
           person: true,
-          user: { select: { id: true, name: true, email: true } },
+          user: { select: { id: true, name: true, username: true } },
           category: true,
           subcategory: true,
           documents: true,
@@ -1417,7 +1417,7 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
     const [data, total] = await Promise.all([
       prisma.report.findMany({
         where,
-        include: { person: true, user: { select: { id: true, name: true, email: true } } },
+        include: { person: true, user: { select: { id: true, name: true, username: true } } },
         orderBy: { createdAt: "desc" },
         skip,
         take: perPage,
@@ -1558,14 +1558,14 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
         data: {
           code,
           inviterId,
-          invitedEmail: body.email ?? null,
+          invitedUsername: body.username?.trim() ? body.username.trim().toLowerCase() : null,
         },
       });
       await createAuditLog({
         action: "create",
         entity: "InviteCode",
         entityId: invite.id,
-        details: JSON.stringify({ code: invite.code, email: invite.invitedEmail }),
+        details: JSON.stringify({ code: invite.code, invitedUsername: invite.invitedUsername }),
         ctx: getAuditCtx(auth, { ip, userAgent: request.headers.get("user-agent") ?? undefined }),
       });
       const baseURL =
@@ -1578,7 +1578,7 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
     {
       body: t.Object(
         {
-          email: t.Optional(t.String()),
+          username: t.Optional(t.String()),
           name: t.Optional(t.String()),
           expiresInDays: t.Optional(t.Number()),
         },
@@ -1844,7 +1844,7 @@ export const adminService = new Elysia({ prefix: "/admin", aot: false })
     const [data, total] = await Promise.all([
       prisma.auditLog.findMany({
         where,
-        include: { user: { select: { id: true, name: true, email: true } } },
+        include: { user: { select: { id: true, name: true, username: true } } },
         orderBy: { createdAt: "desc" },
         skip,
         take: perPage,

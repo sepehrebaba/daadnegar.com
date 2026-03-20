@@ -22,7 +22,7 @@ type Log = {
   details?: string | null;
   ipAddress?: string | null;
   createdAt: string;
-  user?: { id: string; name: string; email: string } | null;
+  user?: { id: string; name: string; username: string } | null;
 };
 
 export default function AdminLogsPage() {
@@ -87,7 +87,7 @@ export default function AdminLogsPage() {
                       {l.entity}
                       {l.entityId && ` (${l.entityId.slice(0, 8)}...)`}
                     </TableCell>
-                    <TableCell>{l.user ? `${l.user.name} (${l.user.email})` : "—"}</TableCell>
+                    <TableCell>{l.user ? `${l.user.name} (${l.user.username})` : "—"}</TableCell>
                     <TableCell className="max-w-xs truncate">{l.details ?? "—"}</TableCell>
                   </TableRow>
                 ))}

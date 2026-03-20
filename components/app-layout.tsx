@@ -88,7 +88,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         tokensCount: data.tokensCount ?? 0,
         approvedRequestsCount: data.approvedRequestsCount ?? 0,
         role: data.role ?? "user",
-        email: data.email,
+        username: (data as { username?: string }).username,
         name: data.name,
       } as Parameters<typeof setUser>[0]);
     });

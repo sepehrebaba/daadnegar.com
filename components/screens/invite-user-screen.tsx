@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -34,18 +33,14 @@ type InviteCodeItem = {
   id: string;
   code: string;
   used: boolean;
-  invitedEmail: string | null;
+  invitedUsername: string | null;
   isActive: boolean;
   createdAt: string;
 };
 
-type InviteType = "personal" | "public";
-
 export function InviteUserScreen() {
   const router = useRouter();
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
-  const [inviteType, setInviteType] = useState<InviteType>("personal");
-  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [inviteCode, setInviteCode] = useState("");
@@ -58,7 +53,6 @@ export function InviteUserScreen() {
     setError("");
     setSuccessMessage("");
     setInviteCode("");
-    setEmail("");
   };
 
   const fetchMyCodes = useCallback(async () => {
@@ -131,7 +125,6 @@ export function InviteUserScreen() {
     const code = res?.code ?? "";
     setInviteCode(code);
     setSuccessMessage("کد دعوت با موفقیت ایجاد شد. این کد یک‌بار مصرف است.");
-    setEmail("");
     setIsLoading(false);
     void fetchMyCodes();
   };
@@ -311,19 +304,19 @@ export function InviteUserScreen() {
                           )}
                         </Button>
 
-                        {item.invitedEmail ? (
+                        {item.invitedUsername ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <p
                                 className="text-muted-foreground col-span-2 mr-auto ml-2 truncate text-xs"
                                 dir="ltr"
-                                title={item.invitedEmail}
+                                title={item.invitedUsername}
                               >
                                 مخصوص
                               </p>
                             </TooltipTrigger>
                             <TooltipContent>
-                              <p>{item.invitedEmail}</p>
+                              <p>{item.invitedUsername}</p>
                             </TooltipContent>
                           </Tooltip>
                         ) : (

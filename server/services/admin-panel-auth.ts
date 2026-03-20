@@ -6,7 +6,7 @@ import { randomBytes } from "node:crypto";
 import { isPasswordSecure } from "@/lib/password-utils";
 
 const ADMIN_PANEL_COOKIE = "admin_panel_session";
-const SESSION_MINUTES = 5;
+const SESSION_MINUTES = 10;
 
 function generateToken() {
   return randomBytes(32).toString("hex");

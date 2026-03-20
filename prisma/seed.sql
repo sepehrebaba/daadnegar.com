@@ -7,7 +7,7 @@
 -- -----------------------------------------------------------------------------
 -- 1. Invite Codes (base 3 from seed.ts + extras)
 -- -----------------------------------------------------------------------------
-INSERT IGNORE INTO invite_code (id, code, isActive, usedById, inviterId, invitedEmail, createdAt) VALUES
+INSERT IGNORE INTO invite_code (id, code, isActive, usedById, inviterId, invitedUsername, createdAt) VALUES
 ('ic_invite2024', 'INVITE2024', 1, NULL, NULL, NULL, NOW()),
 ('ic_test123', 'TEST123', 1, NULL, NULL, NULL, NOW()),
 ('ic_demo456', 'DEMO456', 1, NULL, NULL, NULL, NOW()),

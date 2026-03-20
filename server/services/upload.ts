@@ -32,6 +32,7 @@ export const uploadService = new Elysia({ prefix: "/upload", aot: false })
             id: inviteUser.userId,
             name: inviteUser.name,
             email: inviteUser.email,
+            username: inviteUser.username,
             image: null,
             emailVerified: null,
             role: inviteUser.role ?? "user",

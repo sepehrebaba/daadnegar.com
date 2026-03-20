@@ -2,6 +2,7 @@ import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../generated/prisma/client";
 import { hashPassword } from "better-auth/crypto";
+import { usernameToInternalEmail } from "../lib/username";
 
 const adapter = new PrismaMariaDb({
   host: process.env.DATABASE_HOST || "127.0.0.1",
@@ -14,7 +15,9 @@ const adapter = new PrismaMariaDb({
 
 const prisma = new PrismaClient({ adapter });
 
-const FIRST_USER_EMAIL = process.env.SEED_FIRST_USER_EMAIL || "admin@example.com";
+const FIRST_USER_USERNAME = process.env.SEED_FIRST_USER_USERNAME || "admin";
+const FIRST_USER_EMAIL =
+  process.env.SEED_FIRST_USER_EMAIL || usernameToInternalEmail(FIRST_USER_USERNAME);
 const FIRST_USER_NAME = process.env.SEED_FIRST_USER_NAME || "Admin";
 const FIRST_USER_PASSWORD = process.env.SEED_FIRST_USER_PASSWORD || "Admin123!";
 
@@ -263,6 +266,7 @@ async function seedUser() {
   const user = await prisma.user.create({
     data: {
       name: FIRST_USER_NAME,
+      username: FIRST_USER_USERNAME,
       email: FIRST_USER_EMAIL,
       accounts: {
         create: {
@@ -278,7 +282,7 @@ async function seedUser() {
     data: { userId: user.id },
   });
 
-  console.log("First user created as admin:", user.email);
+  console.log("First user created as admin:", user.username, "(login با این نام کاربری)");
 }
 
 async function seedInviteCodes() {
@@ -408,19 +412,21 @@ async function seedDemoToken() {
   const { hashPassword } = await import("better-auth/crypto");
   const passkeyHash = await hashPassword(DEMO_PASSKEY);
 
-  const demoEmail = "invite-demo@daadnegar.local";
+  const demoUsername = "dn_demo456";
+  const demoEmail = usernameToInternalEmail(demoUsername);
   let demoUser = await prisma.user.findUnique({
-    where: { email: demoEmail },
+    where: { username: demoUsername },
   });
   if (!demoUser) {
     demoUser = await prisma.user.create({
       data: {
         name: "کاربر دمو",
+        username: demoUsername,
         email: demoEmail,
         accounts: {
           create: {
             accountId: demoEmail,
-            providerId: "invite-passkey",
+            providerId: "credential",
             password: passkeyHash,
           },
         },

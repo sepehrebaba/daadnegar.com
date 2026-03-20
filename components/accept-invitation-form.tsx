@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ interface AcceptInvitationFormProps {
 export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps) {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,12 +25,17 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const u = normalizeUsername(username);
+    if (u && !isValidPublicUsername(u)) {
+      setError("نام کاربری معتبر وارد کنید (۳–۳۲ کاراکتر، انگلیسی کوچک، عدد و _).");
+      return;
+    }
     setIsLoading(true);
 
     const { data, error: acceptError } = await authClient.acceptInvitation({
       invitationId,
       name: name || undefined,
-      email: email || undefined,
+      email: u ? usernameToInternalEmail(u) : undefined,
       password,
     });
 
@@ -72,13 +78,14 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">ایمیل (برای دعوت عمومی الزامی)</Label>
+              <Label htmlFor="username">نام کاربری (در صورت نیاز دعوت)</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="example@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="username"
+                type="text"
+                autoComplete="username"
+                placeholder="my_username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
                 className="text-center"
                 dir="ltr"
               />

@@ -21,7 +21,7 @@ type QueueReport = {
   description: string;
   createdAt: string;
   person: { firstName: string; lastName: string };
-  user: { name: string; email: string };
+  user: { name: string; username: string };
   reviews: { action: string; createdAt: string; reviewerId?: string | null }[];
   acceptedCount?: number;
   rejectedCount?: number;
@@ -184,7 +184,7 @@ export default function AdminReportsQueuePage() {
                     </TableCell>
                     <TableCell>
                       {r.user.name}
-                      <span className="text-muted-foreground text-sm"> ({r.user.email})</span>
+                      <span className="text-muted-foreground text-sm"> ({r.user.username})</span>
                     </TableCell>
                     <TableCell>{new Date(r.createdAt).toLocaleDateString("fa-IR")}</TableCell>
                     <TableCell>

@@ -6,6 +6,7 @@ import { resolveInviteToken } from "../lib/auth-invite";
 import { getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { TOKEN_TRANSACTION_TYPES } from "../lib/token-transaction";
 import { randomBytes } from "node:crypto";
+import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
 
 const TOKEN_EXPIRY_DAYS = 365;
 const INVITE_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // excluded 0,O,1,I for readability
@@ -108,17 +109,19 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         await getSettingNumber(SETTING_KEYS.DEFAULT_TOKENS_NEW_USER),
       );
 
-      const email = `invite-${session.id}@daadnegar.local`;
+      const username = `dn_${session.inviteCode.code.toLowerCase()}`;
+      const email = usernameToInternalEmail(username);
       const user = await prisma.$transaction(async (tx) => {
         const u = await tx.user.create({
           data: {
             name: `کاربر ${session.inviteCode.code}`,
+            username,
             email,
             tokenBalance: defaultTokens,
             accounts: {
               create: {
                 accountId: email,
-                providerId: "invite-passkey",
+                providerId: "credential",
                 password: passkeyHash,
               },
             },
@@ -160,6 +163,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         user: {
           id: user.id,
           name: user.name,
+          username: user.username,
           passkey: "",
           inviteCode: session.inviteCode.code,
           isActivated: true,
@@ -224,6 +228,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         user: {
           id: user.id,
           name: user.name,
+          username: user.username,
           passkey: "",
           inviteCode: session.inviteCode.code,
           isActivated: true,
@@ -264,6 +269,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       user: {
         id: user.id,
         name: user.name,
+        username: user.username,
         passkey: "",
         inviteCode: session.inviteCode.code,
         isActivated: true,
@@ -288,8 +294,14 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       if (!inviterId) {
         throw status(401, "لطفاً وارد شوید");
       }
-      if (body.type === "personal" && !body.email?.trim()) {
-        throw status(400, "برای دعوت شخصی ایمیل الزامی است");
+      if (body.type === "personal") {
+        const u = normalizeUsername(body.username ?? "");
+        if (!u || !isValidPublicUsername(u)) {
+          throw status(
+            400,
+            "برای دعوت شخصی نام کاربری معتبر (۳–۳۲ کاراکتر، انگلیسی کوچک، عدد و _) الزامی است",
+          );
+        }
       }
 
       const maxUnused = await getSettingNumber(SETTING_KEYS.MAX_INVITE_CODES_UNUSED);
@@ -304,13 +316,14 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       }
 
       const code = await ensureUniqueInviteCode();
-      const invitedEmail = body.type === "personal" ? (body.email?.trim() ?? null) : null;
+      const invitedUsername =
+        body.type === "personal" ? normalizeUsername(body.username ?? "") : null;
 
       const inviteCodeRecord = await prisma.inviteCode.create({
         data: {
           code,
           ...(inviterId ? { inviter: { connect: { id: inviterId } } } : {}),
-          invitedEmail,
+          invitedUsername,
         },
       });
 
@@ -318,7 +331,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         action: "create",
         entity: "InviteCode",
         entityId: inviteCodeRecord.id,
-        details: JSON.stringify({ code, type: body.type, invitedEmail }),
+        details: JSON.stringify({ code, type: body.type, invitedUsername }),
         ctx: {
           userId: inviterId ?? undefined,
           ipAddress: ip?.address,
@@ -330,16 +343,6 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
       const registerLink = `${baseURL}/auth/register?code=${code}`;
 
-      // If email provided, send invitation email (TODO: integrate Resend/SendGrid)
-      if (invitedEmail) {
-        console.log("[invite-user] Send invitation email:", {
-          to: invitedEmail,
-          registerLink,
-          code,
-        });
-        // TODO: await sendEmail({ to: invitedEmail, subject: 'دعوت به دادنگار', body: `لینک ثبت‌نام: ${registerLink}\nکد دعوت: ${code}` });
-      }
-
       return {
         ok: true,
         code,
@@ -349,7 +352,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
     {
       body: t.Object({
         type: t.Union([t.Literal("personal"), t.Literal("public")]),
-        email: t.Optional(t.String()),
+        username: t.Optional(t.String()),
         name: t.Optional(t.String()),
       }),
     },
@@ -375,7 +378,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         id: true,
         code: true,
         usedById: true,
-        invitedEmail: true,
+        invitedUsername: true,
         isActive: true,
         createdAt: true,
       },
@@ -385,7 +388,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       id: c.id,
       code: c.code,
       used: !!c.usedById,
-      invitedEmail: c.invitedEmail,
+      invitedUsername: c.invitedUsername,
       isActive: c.isActive,
       createdAt: c.createdAt.toISOString(),
     }));
@@ -409,7 +412,13 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
   .post(
     "/register-by-code",
     async ({ body, request, ip }) => {
-      if (!body.email?.trim()) return { ok: false, error: "ایمیل الزامی است" };
+      const usernameRaw = normalizeUsername(body.username ?? "");
+      if (!usernameRaw || !isValidPublicUsername(usernameRaw)) {
+        return {
+          ok: false,
+          error: "نام کاربری معتبر (۳–۳۲ کاراکتر، انگلیسی کوچک، عدد و _) الزامی است",
+        };
+      }
       if (body.passkey.length < 8)
         return { ok: false, error: "رمز عبور باید حداقل ۸ کاراکتر باشد" };
       if (!/[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(body.passkey))
@@ -429,9 +438,18 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         return { ok: false, error: "کد دعوت نامعتبر یا قبلاً استفاده شده است" };
       }
 
-      const email = body.email.trim();
-      const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) return { ok: false, error: "این ایمیل قبلاً ثبت شده است" };
+      if (inviteCode.invitedUsername) {
+        const expected = normalizeUsername(inviteCode.invitedUsername);
+        if (expected && usernameRaw !== expected) {
+          return { ok: false, error: "این کد دعوت مختص نام کاربری دیگری است." };
+        }
+      }
+
+      const email = usernameToInternalEmail(usernameRaw);
+      const existingUser =
+        (await prisma.user.findUnique({ where: { username: usernameRaw } })) ??
+        (await prisma.user.findUnique({ where: { email } }));
+      if (existingUser) return { ok: false, error: "این نام کاربری قبلاً ثبت شده است" };
 
       const ctx = await auth.$context;
       const passkeyHash = await ctx.password.hash(body.passkey);
@@ -447,7 +465,8 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       const user = await prisma.$transaction(async (tx) => {
         const u = await tx.user.create({
           data: {
-            name: email.split("@")[0] ?? "کاربر",
+            name: usernameRaw,
+            username: usernameRaw,
             email,
             tokenBalance: defaultTokens,
             accounts: {
@@ -486,7 +505,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         action: "register",
         entity: "User",
         entityId: user.id,
-        details: JSON.stringify({ inviteCode: normalizedCode, email: body.email }),
+        details: JSON.stringify({ inviteCode: normalizedCode, username: usernameRaw }),
         ctx: {
           userId: user.id,
           ipAddress: ip?.address,
@@ -506,6 +525,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         user: {
           id: user.id,
           name: user.name,
+          username: user.username,
           passkey: "",
           inviteCode: normalizedCode,
           isActivated: true,
@@ -518,7 +538,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
     {
       body: t.Object({
         code: t.String(),
-        email: t.String(),
+        username: t.String(),
         passkey: t.String(),
       }),
     },

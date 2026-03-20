@@ -47,6 +47,7 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
             id: inviteUser.userId,
             name: inviteUser.name,
             email: inviteUser.email,
+            username: inviteUser.username,
             image: null,
             emailVerified: null,
             role: inviteUser.role ?? "user",
@@ -66,7 +67,7 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
     const [user, approvedRequestsCount, minApprovedReportsForApproval] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { tokenBalance: true, role: true },
+        select: { tokenBalance: true, role: true, username: true },
       }),
       prisma.report.count({
         where: { userId: session.user.id, status: "accepted" },
@@ -76,7 +77,7 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
     return {
       id: session.user.id,
       name: session.user.name,
-      email: session.user.email,
+      username: user?.username ?? "",
       image: session.user.image,
       passkey: "",
       inviteCode: "",

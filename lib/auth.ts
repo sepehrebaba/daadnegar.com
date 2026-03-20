@@ -32,11 +32,15 @@ export const auth = betterAuth({
       if (ctx.path === "/sign-in/email") {
         const newSession = ctx.context.newSession;
         if (newSession?.user?.id) {
+          const u = await client.user.findUnique({
+            where: { id: newSession.user.id },
+            select: { username: true },
+          });
           await createAuditLog({
             action: "login",
             entity: "User",
             entityId: newSession.user.id,
-            details: JSON.stringify({ email: newSession.user.email }),
+            details: JSON.stringify({ username: u?.username ?? null }),
             ctx: {
               userId: newSession.user.id,
               ipAddress:

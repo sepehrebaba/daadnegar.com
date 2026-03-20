@@ -89,7 +89,7 @@ const PASSWORD_REQUIREMENTS = [
 type User = {
   id: string;
   name: string;
-  email: string;
+  username: string;
   role?: string;
   createdAt: string | Date;
   _count: { reports: number };
@@ -99,7 +99,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteUsername, setInviteUsername] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState("");
@@ -124,10 +124,10 @@ export default function AdminUsersPage() {
     e.preventDefault();
     setInviteLoading(true);
     setInviteSuccess("");
-    const body: { email?: string; name?: string; expiresInDays?: number } = {
+    const body: { username?: string; name?: string; expiresInDays?: number } = {
       expiresInDays: 7,
     };
-    if (inviteEmail?.trim()) body.email = inviteEmail.trim();
+    if (inviteUsername?.trim()) body.username = inviteUsername.trim().toLowerCase();
     if (inviteName?.trim()) body.name = inviteName.trim();
     const { data, error } = await api.admin.invitations.post(body);
     setInviteLoading(false);
@@ -219,12 +219,12 @@ export default function AdminUsersPage() {
               </DialogHeader>
               <form onSubmit={handleInvite} className="space-y-4">
                 <div>
-                  <Label>ایمیل (اختیاری - برای دعوت عمومی خالی بگذارید)</Label>
+                  <Label>نام کاربری مقصد (اختیاری — برای دعوت عمومی خالی بگذارید)</Label>
                   <Input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="user@example.com"
+                    type="text"
+                    value={inviteUsername}
+                    onChange={(e) => setInviteUsername(e.target.value.toLowerCase())}
+                    placeholder="username"
                     dir="ltr"
                   />
                 </div>
@@ -267,7 +267,7 @@ export default function AdminUsersPage() {
                 <TableRow key={u.id}>
                   <TableCell>{u.name}</TableCell>
                   <TableCell>
-                    <span dir="ltr">{u.email}</span>
+                    <span dir="ltr">{u.username}</span>
                   </TableCell>
                   <TableCell>
                     <Select
@@ -330,7 +330,7 @@ export default function AdminUsersPage() {
               <p className="text-muted-foreground text-xs">
                 شما در حال تغییر رمز عبور برای کاربر:
                 <span className="font-bold">{passwordModalUser.name}</span> (
-                {passwordModalUser.email}) هستید.
+                {passwordModalUser.username}) هستید.
               </p>
               <div className="space-y-2">
                 <Label htmlFor="pw-password">رمز عبور جدید</Label>

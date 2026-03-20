@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Eye } from "lucide-react";
+import { Eye } from "lucide-react";
 import Link from "next/link";
 
 type Report = {
@@ -30,7 +30,7 @@ type Report = {
   status: string;
   createdAt: string;
   person: { id: string; firstName: string; lastName: string };
-  user: { id: string; name: string; email: string };
+  user: { id: string; name: string; username: string };
 };
 
 export default function AdminReportsPage() {
@@ -53,18 +53,6 @@ export default function AdminReportsPage() {
   useEffect(() => {
     fetchReports();
   }, [page, status]);
-
-  const updateStatus = async (
-    id: string,
-    newStatus: string,
-    rejectionReason?: "false" | "problematic",
-  ) => {
-    await api.admin.reports({ id }).put({
-      status: newStatus,
-      ...(newStatus === "rejected" && rejectionReason && { rejectionReason }),
-    });
-    fetchReports();
-  };
 
   const statusBadge = (s: string) => {
     const v = s === "accepted" ? "default" : s === "rejected" ? "destructive" : "secondary";
@@ -115,34 +103,17 @@ export default function AdminReportsPage() {
                     </TableCell>
                     <TableCell>
                       {r.user.name}
-                      <span className="text-muted-foreground text-sm"> ({r.user.email})</span>
+                      <span className="text-muted-foreground text-sm"> ({r.user.username})</span>
                     </TableCell>
                     <TableCell>{new Date(r.createdAt).toLocaleDateString("fa-IR")}</TableCell>
                     <TableCell>{statusBadge(r.status)}</TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="xs" asChild>
-                          <Link className="text-xs" href={`/admin/reports/${r.id}`}>
-                            <Eye className="h-2 w-2" />
-                            مشاهده
-                          </Link>
-                        </Button>
-                        {r.status === "pending" && (
-                          <>
-                            <Button size="xs" onClick={() => updateStatus(r.id, "accepted")}>
-                              <Check className="h-2 w-2" />
-                              <span>تایید</span>
-                            </Button>
-                            <Button
-                              size="xs"
-                              variant="destructive"
-                              onClick={() => updateStatus(r.id, "rejected")}
-                            >
-                              <X className="h-2 w-2" /> رد
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                      <Button variant="outline" size="xs" asChild>
+                        <Link className="text-xs" href={`/admin/reports/${r.id}`}>
+                          <Eye className="h-2 w-2" />
+                          مشاهده
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

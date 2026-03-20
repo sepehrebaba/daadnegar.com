@@ -32,6 +32,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
             id: inviteUser.userId,
             name: inviteUser.name,
             email: inviteUser.email,
+            username: inviteUser.username,
             image: null,
             emailVerified: null,
             role: inviteUser.role ?? "user",
@@ -166,7 +167,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     if (admin) {
       const reports = await prisma.report.findMany({
         where: { status: "pending" },
-        include: { person: true, user: { select: { id: true, name: true, email: true } } },
+        include: { person: true, user: { select: { id: true, name: true, username: true } } },
         orderBy: { createdAt: "desc" },
       });
       return reports;
@@ -191,7 +192,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         status: "pending",
         ...(isValidator ? { assignedTo: session.user.id } : {}),
       },
-      include: { person: true, user: { select: { id: true, name: true, email: true } } },
+      include: { person: true, user: { select: { id: true, name: true, username: true } } },
       orderBy: { createdAt: "desc" },
     });
     return reports;
@@ -208,7 +209,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           where: { id: params.id, status: "pending" },
           include: {
             person: true,
-            user: { select: { id: true, name: true, email: true } },
+            user: { select: { id: true, name: true, username: true } },
             category: true,
             subcategory: true,
             documents: true,
