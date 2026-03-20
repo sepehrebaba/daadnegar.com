@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api, DAADNEGAR_INVITE_TOKEN_KEY } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
@@ -47,11 +47,15 @@ export function InviteUserScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [myCodes, setMyCodes] = useState<InviteCodeItem[]>([]);
   const [myCodesLoading, setMyCodesLoading] = useState(false);
+  /** Incremented on modal reset/close so in-flight invite POST results are ignored. */
+  const inviteModalGenerationRef = useRef(0);
 
   const resetModalState = () => {
+    inviteModalGenerationRef.current += 1;
     setError("");
     setSuccessMessage("");
     setInviteCode("");
+    setIsLoading(false);
   };
 
   const fetchMyCodes = useCallback(async () => {
@@ -89,6 +93,7 @@ export function InviteUserScreen() {
 
   const handleCreateInvite = async (e: React.FormEvent) => {
     e.preventDefault();
+    const generation = inviteModalGenerationRef.current;
     setError("");
     setSuccessMessage("");
     setInviteCode("");
@@ -99,6 +104,8 @@ export function InviteUserScreen() {
       typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
     const opts = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
     const { data, error: inviteError } = await api.invite["invite-user"].post(body, opts);
+
+    if (generation !== inviteModalGenerationRef.current) return;
 
     if (inviteError) {
       const errObj = inviteError as {
