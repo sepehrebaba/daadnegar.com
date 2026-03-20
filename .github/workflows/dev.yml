@@ -71,12 +71,26 @@ jobs:
           images: |
             ghcr.io/${{ env.IMAGE }}
 
-      - name: Build and Push
+      - name: Build and Push (public website image)
         uses: docker/build-push-action@v5.3.0
         with:
           context: .
+          target: release-web
           platforms: linux/amd64
           tags: ghcr.io/${{ env.IMAGE }}:v${{ steps.version.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
+          build-args: |
+            NX_CLOUD_ACCESS_TOKEN=${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+            NODE_OPTIONS="--max-old-space-size=8192"
+
+      - name: Build and Push (admin-only image)
+        uses: docker/build-push-action@v5.3.0
+        with:
+          context: .
+          target: release-admin
+          platforms: linux/amd64
+          tags: ghcr.io/${{ env.IMAGE }}:v${{ steps.version.outputs.version }}-admin
           labels: ${{ steps.meta.outputs.labels }}
           push: true
           build-args: |
@@ -123,5 +137,8 @@ jobs:
           helm secrets upgrade --install daadnegar ./daadnegar-chart \
             --set image.repository=ghcr.io/${{ env.IMAGE }} \
             --set image.tag=v${{ steps.version.outputs.version }} \
+            --set adminPanel.enabled=true \
+            --set adminPanel.image.repository=ghcr.io/${{ env.IMAGE }} \
+            --set adminPanel.image.tag=v${{ steps.version.outputs.version }}-admin \
             -f daadnegar-chart/secrets.yaml \
             --wait --timeout 5m

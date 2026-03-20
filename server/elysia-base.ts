@@ -1,0 +1,105 @@
+import { Elysia } from "elysia";
+import { DefaultContext, type Generator, rateLimit } from "elysia-rate-limit";
+import { elysiaHelmet } from "elysiajs-helmet";
+import { ip } from "elysia-ip";
+import { cors } from "@elysiajs/cors";
+import { serverTiming } from "@elysiajs/server-timing";
+
+const ipGenerator: Generator<{ ip: { address: string } }> = (_r, _s, { ip }) =>
+  ip?.address ?? "unknown";
+
+/** Shared middleware stack for all API bundles (public web, admin-only, full dev). */
+export function createBaseElysia() {
+  return new Elysia({ prefix: "/api", aot: false })
+    .trace(async ({ onBeforeHandle, onAfterHandle, onError }) => {
+      onBeforeHandle(({ begin, onStop }) => {
+        onStop(({ set, end }) => {
+          console.info("BeforeHandle took", { duration: end - begin });
+        });
+      });
+      onAfterHandle(({ begin, onStop }) => {
+        onStop(({ end }) => {
+          console.info("AfterHandle took", { duration: end - begin });
+        });
+      });
+      onError(({ begin, onStop }) => {
+        onStop(({ end, error }) => {
+          console.error("Error occurred after trace", error, { duration: end - begin });
+        });
+      });
+    })
+    .use(
+      elysiaHelmet({
+        hsts: {
+          maxAge: 31_536_000,
+          includeSubDomains: true,
+          preload: true,
+        },
+        frameOptions: "DENY",
+        referrerPolicy: "strict-origin-when-cross-origin",
+      }),
+    )
+    .use(ip())
+    .use(
+      serverTiming({
+        trace: {
+          request: true,
+          parse: true,
+          transform: true,
+          beforeHandle: true,
+          handle: true,
+          afterHandle: true,
+          error: true,
+          mapResponse: true,
+          total: true,
+        },
+      }),
+    )
+    .use(
+      cors({
+        origin: process.env.FRONTEND_URL || "http://localhost:3000",
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization"],
+        credentials: true,
+        maxAge: 86_400,
+      }),
+    )
+    .use(
+      rateLimit({
+        duration: 60_000,
+        max: 100,
+        headers: true,
+        scoping: "scoped",
+        countFailedRequest: true,
+        errorResponse: new Response(
+          JSON.stringify({
+            error: "Too many requests",
+          }),
+          { status: 429 },
+        ),
+        generator: ipGenerator,
+        context: new DefaultContext(10_000),
+      }),
+    );
+}
+
+export function withGlobalHandlers<T extends Elysia>(app: T) {
+  return app
+    .get("/health", () => ({ status: "ok", timestamp: new Date().toISOString() }))
+    .onError(({ code, error, set }) => {
+      const msg = error.response;
+      const err = error instanceof Error ? error : new Error(String(error));
+      const message = msg || err.message;
+      const name = err.name;
+      console.error("API error handler", { name, message, code });
+      set.status = code === "NOT_FOUND" ? 404 : err.message === "Unauthorized" ? 401 : 500;
+
+      set.headers["Content-Type"] = `charset=utf-8`;
+
+      return {
+        error: { name, message },
+        status: set.status,
+        code,
+      };
+    });
+}

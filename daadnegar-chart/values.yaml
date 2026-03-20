@@ -10,6 +10,33 @@ image:
   pullPolicy: IfNotPresent
   tag: ""
 
+# =============================================================================
+# Admin panel — separate image (Docker target release-admin, tag usually vX.Y.Z-admin).
+# ClusterIP only; no Ingress. Access example:
+#   kubectl port-forward svc/<release>-daadnegar-chart-admin 30443:3000 -n <ns>
+# CI sets adminPanel.enabled=true when both images are pushed. Set false if you only deploy the public image.
+# =============================================================================
+adminPanel:
+  enabled: false
+  replicas: 1
+  image:
+    repository: ""
+    tag: ""
+  podLabels: {}
+  resources: {}
+  livenessProbe:
+    httpGet:
+      path: /api/health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /api/health
+      port: http
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
 imagePullSecrets:
   - name: ghcr-secret
 nameOverride: ""

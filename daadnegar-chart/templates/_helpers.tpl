@@ -60,3 +60,67 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Shared env list entries for Next.js app containers (main web + admin-only).
+Use under `env:` with: {{- include "daadnegar-chart.appEnv" . | nindent 12 }}
+*/}}
+{{- define "daadnegar-chart.appEnv" -}}
+{{- if .Values.database.enabled }}
+- name: DATABASE_HOST
+  value: {{ include "daadnegar-chart.fullname" . }}-mysql
+- name: DATABASE_PORT
+  value: "3306"
+- name: DATABASE_USER
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.database.existingSecret | default (printf "%s-mysql" (include "daadnegar-chart.fullname" .)) }}
+      key: mysql-user
+- name: DATABASE_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.database.existingSecret | default (printf "%s-mysql" (include "daadnegar-chart.fullname" .)) }}
+      key: mysql-password
+- name: DATABASE_NAME
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.database.existingSecret | default (printf "%s-mysql" (include "daadnegar-chart.fullname" .)) }}
+      key: mysql-database
+- name: DATABASE_URL
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.database.existingSecret | default (printf "%s-mysql" (include "daadnegar-chart.fullname" .)) }}
+      key: mysql-url
+{{- end }}
+{{- if .Values.minio.enabled }}
+- name: MINIO_ENDPOINT
+  value: {{ include "daadnegar-chart.fullname" . }}-minio
+- name: MINIO_PORT
+  value: "9000"
+- name: MINIO_USE_SSL
+  value: "false"
+- name: MINIO_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.minio.existingSecret | default (printf "%s-minio-secrets" (include "daadnegar-chart.fullname" .)) }}
+      key: MINIO_ROOT_USER
+- name: MINIO_SECRET_KEY
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.minio.existingSecret | default (printf "%s-minio-secrets" (include "daadnegar-chart.fullname" .)) }}
+      key: MINIO_ROOT_PASSWORD
+- name: MINIO_BUCKET
+  value: "daadnegar-uploads"
+{{- end }}
+{{- if .Values.rabbitmq.enabled }}
+- name: RABBITMQ_URL
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Values.rabbitmq.existingSecret | default (printf "%s-rabbitmq" (include "daadnegar-chart.fullname" .)) }}
+      key: RABBITMQ_URL
+{{- end }}
+{{- range $key, $val := .Values.env }}
+- name: {{ $key }}
+  value: {{ $val | quote }}
+{{- end }}
+{{- end }}

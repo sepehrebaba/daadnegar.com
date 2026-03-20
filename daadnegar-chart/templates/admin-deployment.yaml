@@ -1,0 +1,61 @@
+{{- if .Values.adminPanel.enabled }}
+{{- $repo := .Values.adminPanel.image.repository | default .Values.image.repository }}
+{{- $mainTag := .Values.image.tag | default .Chart.AppVersion | toString }}
+{{- $admTag := .Values.adminPanel.image.tag | default (printf "%s-admin" $mainTag) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "daadnegar-chart.fullname" . }}-admin
+  labels:
+    {{- include "daadnegar-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: admin
+spec:
+  replicas: {{ .Values.adminPanel.replicas }}
+  selector:
+    matchLabels:
+      {{- include "daadnegar-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: admin
+  template:
+    metadata:
+      labels:
+        {{- include "daadnegar-chart.labels" . | nindent 8 }}
+        app.kubernetes.io/component: admin
+        {{- with .Values.adminPanel.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "daadnegar-chart.serviceAccountName" . }}
+      containers:
+        - name: admin
+          image: "{{ $repo }}:{{ $admTag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- if or .Values.database.enabled .Values.minio.enabled .Values.rabbitmq.enabled (ne (len .Values.env) 0) .Values.existingEnvSecret }}
+          env:
+{{ include "daadnegar-chart.appEnv" . | nindent 12 }}
+          {{- if .Values.existingEnvSecret }}
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingEnvSecret }}
+          {{- end }}
+          {{- end }}
+          {{- with .Values.adminPanel.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.adminPanel.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.adminPanel.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}

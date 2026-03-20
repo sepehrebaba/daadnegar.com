@@ -50,7 +50,7 @@ sudo chmod +x /usr/local/bin/sops
 ```bash
 gpg --gen-key
 gpg --list-keys
-gpg --armor --export KEY_ID | base64
+gpg --export-secret-keys --armor KEY_ID | base64
 ```
 
 ### 3. Configure SOPS
