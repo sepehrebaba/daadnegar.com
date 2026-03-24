@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Coins,
@@ -25,11 +26,13 @@ export function MainMenuScreen() {
   const { state, startReport, setUser, logout } = useApp();
   const user = state.user;
   const [minApprovedForApproval, setMinApprovedForApproval] = useState(5);
+  const [pendingReviewCount, setPendingReviewCount] = useState<number | null>(null);
 
   // بارگذاری کاربر از سرور و تنظیمات (رفرش، ورود مستقیم، یا به‌روزرسانی)
   useEffect(() => {
     let cancelled = false;
-    api.me.get().then(({ data, error }) => {
+    api.me.get().then((result: Awaited<ReturnType<typeof api.me.get>>) => {
+      const { data, error } = result;
       if (cancelled || error || !data) return;
       setUser({
         id: data.id,
@@ -56,7 +59,28 @@ export function MainMenuScreen() {
 
   // نمایش بخش تایید برای: کاربر validator یا کاربر با حداقل گزارش‌های تاییدشده
   const showApprovalSection =
-    user && (user.role === "validator" || user.approvedRequestsCount >= minApprovedForApproval);
+    user != null &&
+    (user.role === "validator" || user.approvedRequestsCount >= minApprovedForApproval);
+
+  useEffect(() => {
+    if (!showApprovalSection) {
+      setPendingReviewCount(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await api.reports.pending.count.get();
+      if (cancelled) return;
+      if (error || !data || typeof data.count !== "number") {
+        setPendingReviewCount(0);
+        return;
+      }
+      setPendingReviewCount(data.count);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [showApprovalSection, user?.id, minApprovedForApproval]);
 
   return (
     <div className="bg-background flex flex-col items-center justify-center gap-4 p-4">
@@ -113,7 +137,13 @@ export function MainMenuScreen() {
               variant="outline"
             >
               <ClipboardCheck className="h-5 w-5" />
-              لیست انتظار تایید
+              لیست انتظار بررسی
+              <Badge
+                variant="secondary"
+                className="mr-auto h-5 min-w-5 rounded-full border-amber-400/60 bg-amber-200/90 px-1.5 text-[11px] font-bold text-amber-950 tabular-nums dark:border-amber-600 dark:bg-amber-800/90 dark:text-amber-50"
+              >
+                {pendingReviewCount === null ? "…" : toPersianNum(pendingReviewCount)}
+              </Badge>
             </Button>
           )}
 

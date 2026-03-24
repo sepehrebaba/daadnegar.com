@@ -37,7 +37,7 @@ export function ApprovalListScreen() {
       <Card className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <CardHeader>
           <CardTitle className="text-foreground text-center text-xl font-bold">
-            لیست انتظار تایید
+            لیست انتظار بررسی
           </CardTitle>
           <p className="text-muted-foreground mt-1 text-center text-sm">
             درخواست‌های در انتظار بررسی

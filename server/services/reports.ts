@@ -213,6 +213,51 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     });
     return reports;
   })
+  .get("/pending/count", async ({ session }) => {
+    if (!session?.user?.id) {
+      throw new Error("Unauthorized");
+    }
+    const admin = await prisma.admin.findUnique({
+      where: { userId: session.user.id },
+    });
+    if (admin) {
+      const count = await prisma.report.count({ where: { status: "pending" } });
+      return { count };
+    }
+    const [dbUser, approvedCount, minRequired] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      }),
+      prisma.report.count({
+        where: { userId: session.user.id, status: "accepted" },
+      }),
+      getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
+    ]);
+    const canApprove = dbUser?.role === "validator" || approvedCount >= minRequired;
+    if (!canApprove) {
+      throw new Error("Forbidden: نیاز به نقش اعتبارسنج یا حداقل گزارش‌های تاییدشده");
+    }
+    const isValidator = dbUser?.role === "validator";
+    const count = await prisma.report.count({
+      where: {
+        status: "pending",
+        ...(isValidator
+          ? {
+              OR: [
+                {
+                  validatorAssignments: {
+                    some: { validatorId: session.user.id, replacedAt: null },
+                  },
+                },
+                { assignedTo: session.user.id },
+              ],
+            }
+          : {}),
+      },
+    });
+    return { count };
+  })
   .get(
     "/pending/:id",
     async ({ params, session, request }) => {
