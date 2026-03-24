@@ -16,16 +16,40 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, ChevronRight } from "lucide-react";
 
+type AssignmentRow = {
+  assignedAt: string;
+  reason: string;
+  validator: { id: string; name: string; username: string };
+};
+
 type QueueReport = {
   id: string;
   description: string;
   createdAt: string;
+  assignedAt?: string | null;
   person: { firstName: string; lastName: string };
   user: { name: string; username: string };
+  assignedToUser?: { id: string; name: string; username: string } | null;
+  validatorAssignments?: AssignmentRow[];
   reviews: { action: string; createdAt: string; reviewerId?: string | null }[];
   acceptedCount?: number;
   rejectedCount?: number;
 };
+
+function assignmentReasonLabel(reason: string): string {
+  if (reason === "stale_reassign") return "انتقال (اتمام مهلت)";
+  return "اختصاص اولیه";
+}
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleDateString("fa-IR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 function ReviewProgressBar({
   accepted,
@@ -100,8 +124,11 @@ export default function AdminReportsQueuePage() {
   const [reportDetail, setReportDetail] = useState<{
     id: string;
     createdAt: string;
+    assignedAt?: string | null;
     reviewedAt?: string | null;
     reviews: { action: string; createdAt: string }[];
+    validatorAssignments?: AssignmentRow[];
+    assignedToUser?: { name: string; username: string } | null;
   } | null>(null);
 
   const fetchQueue = async () => {
@@ -130,9 +157,14 @@ export default function AdminReportsQueuePage() {
         ? {
             id: (data as { id: string }).id,
             createdAt: (data as { createdAt: string }).createdAt,
+            assignedAt: (data as { assignedAt?: string | null }).assignedAt,
             reviewedAt: (data as { reviewedAt?: string | null }).reviewedAt,
             reviews: ((data as { reviews?: { action: string; createdAt: string }[] }).reviews ??
               []) as { action: string; createdAt: string }[],
+            validatorAssignments: (data as { validatorAssignments?: AssignmentRow[] })
+              .validatorAssignments,
+            assignedToUser: (data as { assignedToUser?: { name: string; username: string } | null })
+              .assignedToUser,
           }
         : null,
     );
@@ -172,6 +204,8 @@ export default function AdminReportsQueuePage() {
                   <TableHead>شخص</TableHead>
                   <TableHead>کاربر</TableHead>
                   <TableHead>تاریخ ثبت</TableHead>
+                  <TableHead>اعتبارسنج فعلی</TableHead>
+                  <TableHead>زمان اختصاص فعلی</TableHead>
                   <TableHead>تایید / رد / در انتظار</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -187,6 +221,26 @@ export default function AdminReportsQueuePage() {
                       <span className="text-muted-foreground text-sm"> ({r.user.username})</span>
                     </TableCell>
                     <TableCell>{new Date(r.createdAt).toLocaleDateString("fa-IR")}</TableCell>
+                    <TableCell>
+                      {r.assignedToUser ? (
+                        <span>
+                          {r.assignedToUser.name}
+                          <span className="text-muted-foreground text-sm">
+                            {" "}
+                            ({r.assignedToUser.username})
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">در انتظار ورکر</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {r.assignedAt ? (
+                        <span className="text-sm">{formatDateTime(r.assignedAt)}</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <ReviewProgressBar
@@ -240,27 +294,25 @@ export default function AdminReportsQueuePage() {
               <div className="space-y-4">
                 <TimelineItem label="ثبت" date={reportDetail.createdAt} active />
                 <TimelineItem
-                  label="اساین به اعتبارسنج"
-                  date={
-                    reportDetail.reviews.length > 0
-                      ? (
-                          reportDetail.reviews[reportDetail.reviews.length - 1] as {
-                            createdAt: string;
-                          }
-                        )?.createdAt
-                      : undefined
-                  }
-                  active={reportDetail.reviews.length > 0}
+                  label="آخرین اختصاص به اعتبارسنج"
+                  date={reportDetail.assignedAt ?? undefined}
+                  active={!!reportDetail.assignedAt}
                 />
+                {reportDetail.assignedToUser && (
+                  <p className="text-muted-foreground text-sm">
+                    فعلی: {reportDetail.assignedToUser.name} ({reportDetail.assignedToUser.username}
+                    )
+                  </p>
+                )}
                 <TimelineItem
-                  label="در حال بررسی"
+                  label="اولین بررسی ثبت‌شده"
                   date={
                     reportDetail.reviews.length > 0 ? reportDetail.reviews[0]?.createdAt : undefined
                   }
                   active={reportDetail.reviews.length > 0}
                 />
                 <TimelineItem
-                  label="بررسی"
+                  label="تکمیل بررسی (وضعیت نهایی)"
                   date={
                     reportDetail.reviewedAt ??
                     (reportDetail.reviews.length > 0
@@ -270,6 +322,27 @@ export default function AdminReportsQueuePage() {
                   active={!!reportDetail.reviewedAt || reportDetail.reviews.length > 0}
                 />
               </div>
+              {reportDetail.validatorAssignments &&
+                reportDetail.validatorAssignments.length > 0 && (
+                  <div className="border-border rounded-lg border p-3">
+                    <p className="mb-2 text-sm font-medium">تاریخچه اختصاص به اعتبارسنج‌ها</p>
+                    <ul className="space-y-2 text-sm">
+                      {reportDetail.validatorAssignments.map((a, i) => (
+                        <li
+                          key={`${a.validator.id}-${a.assignedAt}-${i}`}
+                          className="text-muted-foreground border-border/60 flex flex-col gap-0.5 border-b pb-2 last:border-0 last:pb-0"
+                        >
+                          <span className="text-foreground font-medium">
+                            {a.validator.name}{" "}
+                            <span className="font-normal">({a.validator.username})</span>
+                          </span>
+                          <span>{formatDateTime(a.assignedAt)}</span>
+                          <span className="text-xs">{assignmentReasonLabel(a.reason)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               {reportDetail.reviews.length > 0 && (
                 <div className="border-border mt-4 rounded-lg border p-3">
                   <p className="mb-2 text-sm font-medium">بررسی‌های انجام شده</p>

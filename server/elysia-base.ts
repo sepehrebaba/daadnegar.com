@@ -104,11 +104,30 @@ export function withGlobalHandlers<T extends Elysia>(app: T) {
       const message = msg || err.message;
       const name = err.name;
       console.error("API error handler", { name, message, code });
-      set.status = code === "NOT_FOUND" ? 404 : err.message === "Unauthorized" ? 401 : 500;
+      set.status =
+        code === "NOT_FOUND"
+          ? 404
+          : err.message === "Unauthorized"
+            ? 401
+            : err.message === "MUST_CHANGE_PASSWORD"
+              ? 403
+              : 500;
 
       set.headers["Content-Type"] = `charset=utf-8`;
 
       if (code === "VALIDATION") return error.detail(error.message);
+
+      if (err.message === "MUST_CHANGE_PASSWORD") {
+        return {
+          error: {
+            name: "Forbidden",
+            message: "برای ادامه باید رمز عبور خود را تغییر دهید.",
+            code: "MUST_CHANGE_PASSWORD",
+          },
+          status: 403,
+          code,
+        };
+      }
 
       return {
         error: { name, message },

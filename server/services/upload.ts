@@ -6,6 +6,7 @@ import { resolveInviteToken } from "../lib/auth-invite";
 import { getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { minioClient, UPLOAD_BUCKET } from "../lib/minio";
 import { processUploadedFile } from "../lib/upload-processor";
+import { assertPasswordChangeNotRequired } from "../lib/must-change-password";
 
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
@@ -42,6 +43,9 @@ export const uploadService = new Elysia({ prefix: "/upload", aot: false })
           session: null,
         };
       }
+    }
+    if (session?.user?.id) {
+      await assertPasswordChangeNotRequired(session.user.id);
     }
     return { session };
   })

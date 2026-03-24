@@ -3,6 +3,10 @@ import { prisma } from "../../db";
 import { auth as authLib } from "@/lib/auth";
 import { createAuditLog } from "../audit";
 import { getAuditCtx } from "./shared";
+import { addTokenTransaction, TOKEN_TRANSACTION_TYPES } from "../../lib/token-transaction";
+import { getSettingNumber, SETTING_KEYS } from "../../lib/settings";
+import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
+import { generateRandomPassword } from "@/lib/password-utils";
 
 export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
   .get("/users", async () => {
@@ -12,6 +16,7 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
         name: true,
         username: true,
         role: true,
+        tokenBalance: true,
         createdAt: true,
         _count: { select: { reports: true } },
       },
@@ -61,6 +66,10 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
       const passkeyHash = await ctx.password.hash(body.password);
 
       await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: params.id },
+          data: { mustChangePassword: false },
+        });
         await tx.inviteSession.updateMany({
           where: { userId: params.id },
           data: { passkeyHash },
@@ -89,5 +98,169 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
     {
       params: t.Object({ id: t.String() }),
       body: t.Object({ password: t.String({ minLength: 8 }) }),
+    },
+  )
+  .post(
+    "/users/provision",
+    async ({ body, request, ip, auth: adminAuth }) => {
+      const role = body.role === "validator" ? "validator" : "user";
+      const username = normalizeUsername(body.username);
+      if (!username || !isValidPublicUsername(username)) {
+        throw new Error(
+          "نام کاربری معتبر نیست: ۳ تا ۳۲ کاراکتر، حروف کوچک انگلیسی، عدد و زیرخط؛ پیشوند dn_ مجاز نیست.",
+        );
+      }
+
+      const email = usernameToInternalEmail(username);
+      const taken = await prisma.user.findFirst({
+        where: { OR: [{ username }, { email }] },
+        select: { id: true },
+      });
+      if (taken) {
+        throw new Error("این نام کاربری قبلاً ثبت شده است.");
+      }
+
+      const displayName = body.name?.trim() || username;
+
+      const ctx = await authLib.$context;
+      const password = generateRandomPassword(16);
+      const passkeyHash = await ctx.password.hash(password);
+
+      const defaultTokens = Math.max(
+        0,
+        await getSettingNumber(SETTING_KEYS.DEFAULT_TOKENS_NEW_USER),
+      );
+
+      let created: { id: string };
+      try {
+        created = await prisma.$transaction(async (tx) => {
+          const row = await tx.user.create({
+            data: {
+              name: displayName,
+              username,
+              email,
+              role,
+              tokenBalance: defaultTokens,
+              mustChangePassword: true,
+              accounts: {
+                create: {
+                  accountId: email,
+                  providerId: "credential",
+                  password: passkeyHash,
+                },
+              },
+            },
+          });
+          if (defaultTokens > 0) {
+            await tx.tokenTransaction.create({
+              data: {
+                userId: row.id,
+                amount: defaultTokens,
+                type: TOKEN_TRANSACTION_TYPES.registration,
+              },
+            });
+          }
+          return row;
+        });
+      } catch (err: unknown) {
+        console.error("[admin /users/provision] prisma transaction failed", err);
+        const raw = err instanceof Error ? err.message : String(err);
+        const lower = raw.toLowerCase();
+
+        if (raw.includes("P2002") || lower.includes("unique constraint")) {
+          throw new Error("این نام کاربری یا ایمیل داخلی قبلاً ثبت شده است.");
+        }
+        if (
+          lower.includes("unknown column") ||
+          raw.includes("1054") ||
+          raw.includes("mustChangePassword") ||
+          (lower.includes("column") && lower.includes("does not exist"))
+        ) {
+          throw new Error(
+            "جدول User در دیتابیس ستون mustChangePassword ندارد. migration را اجرا کنید: pnpm prisma migrate deploy",
+          );
+        }
+
+        throw new Error(
+          process.env.NODE_ENV === "production"
+            ? "ایجاد کاربر ناموفق بود. جزئیات در لاگ سرور ثبت شده است."
+            : `ایجاد کاربر ناموفق: ${raw}`,
+        );
+      }
+
+      await createAuditLog({
+        action: "create",
+        entity: "User",
+        entityId: created.id,
+        details: JSON.stringify({
+          source: "admin_provision",
+          username,
+          role,
+          mustChangePassword: true,
+        }),
+        ctx: getAuditCtx(adminAuth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
+      });
+
+      return {
+        userId: created.id,
+        username,
+        password,
+        name: displayName,
+        role,
+      };
+    },
+    {
+      body: t.Object({
+        username: t.String(),
+        name: t.Optional(t.String()),
+        role: t.Optional(t.Union([t.Literal("user"), t.Literal("validator")])),
+      }),
+    },
+  )
+  .post(
+    "/users/:id/tokens",
+    async ({ params, body, request, ip, auth: adminAuth }) => {
+      const amount = Math.trunc(body.amount);
+      if (!Number.isFinite(amount) || amount !== body.amount || amount < 1 || amount > 1_000_000) {
+        throw new Error("تعداد توکن باید عدد صحیح بین ۱ تا ۱٬۰۰۰٬۰۰۰ باشد");
+      }
+
+      const exists = await prisma.user.findUnique({
+        where: { id: params.id },
+        select: { id: true },
+      });
+      if (!exists) throw new Error("کاربر یافت نشد");
+
+      await addTokenTransaction(params.id, amount, TOKEN_TRANSACTION_TYPES.admin_reward);
+
+      const user = await prisma.user.findUnique({
+        where: { id: params.id },
+        select: { tokenBalance: true },
+      });
+
+      await createAuditLog({
+        action: "update",
+        entity: "User",
+        entityId: params.id,
+        details: JSON.stringify({
+          tokenGrant: amount,
+          type: TOKEN_TRANSACTION_TYPES.admin_reward,
+        }),
+        ctx: getAuditCtx(adminAuth, {
+          ip,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        }),
+      });
+
+      return { tokenBalance: user?.tokenBalance ?? 0 };
+    },
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Object({
+        amount: t.Number({ minimum: 1, maximum: 1_000_000 }),
+      }),
     },
   );

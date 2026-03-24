@@ -125,6 +125,8 @@ export interface User {
   role?: string;
   username?: string;
   name?: string;
+  /** true تا کاربر رمز اولیه را عوض نکند */
+  mustChangePassword?: boolean;
 }
 
 export interface Person {

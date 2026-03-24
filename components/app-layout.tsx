@@ -90,12 +90,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         role: data.role ?? "user",
         username: (data as { username?: string }).username,
         name: data.name,
+        mustChangePassword: (data as { mustChangePassword?: boolean }).mustChangePassword ?? false,
       } as Parameters<typeof setUser>[0]);
     });
     return () => {
       cancelled = true;
     };
   }, [user, setUser]);
+
+  useEffect(() => {
+    if (!user?.mustChangePassword || !pathname) return;
+    if (pathname.startsWith("/panel")) {
+      router.replace(routes.changePasswordRequired);
+    }
+  }, [user?.mustChangePassword, pathname, router]);
 
   return (
     <div className="bg-background flex min-h-screen flex-col">

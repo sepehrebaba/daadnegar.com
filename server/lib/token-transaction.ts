@@ -7,6 +7,8 @@ export const TOKEN_TRANSACTION_TYPES = {
   report_false: "report_false",
   report_problematic: "report_problematic",
   invite_activity: "invite_activity",
+  /** واریز دستی از پنل ادمین؛ در سابقه به‌عنوان پاداش نمایش داده می‌شود */
+  admin_reward: "admin_reward",
 } as const;
 
 export type TokenTransactionType =

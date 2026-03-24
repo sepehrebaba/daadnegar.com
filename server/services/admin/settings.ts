@@ -39,6 +39,8 @@ export const adminSettingsRoutes = new Elysia({ name: "adminSettings" })
         tokens_reward_invited_activity: t.Optional(t.Number()),
         max_invite_codes_unused: t.Optional(t.Number()),
         min_approved_reports_for_approval: t.Optional(t.Number()),
+        report_validator_sla_hours: t.Optional(t.Number()),
+        report_unassigned_grace_minutes: t.Optional(t.Number()),
       }),
     },
   );

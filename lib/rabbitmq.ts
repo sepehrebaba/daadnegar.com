@@ -10,6 +10,11 @@ export const QUEUE_NAMES = {
   SLACK_NOTIFICATION: "slack.notification",
 } as const;
 
+/** Payload shape on `report.submitted`: new report vs periodic SLA scan (CronJob → worker). */
+export const REPORT_SUBMITTED_MESSAGE_TYPE = {
+  STALE_SCAN: "stale_scan",
+} as const;
+
 async function getChannel(): Promise<Channel> {
   if (channel?.connection) return channel;
   connection = await amqp.connect(RABBITMQ_URL);
@@ -46,6 +51,13 @@ export async function publish(queueName: string, message: object): Promise<boole
  */
 export async function publishReportSubmitted(reportId: string): Promise<boolean> {
   return publish(QUEUE_NAMES.REPORT_SUBMITTED, { reportId });
+}
+
+/** Kubernetes CronJob (or scheduler) calls the internal HTTP route, which publishes this; worker runs SLA scan. */
+export async function publishReportQueueStaleScan(): Promise<boolean> {
+  return publish(QUEUE_NAMES.REPORT_SUBMITTED, {
+    type: REPORT_SUBMITTED_MESSAGE_TYPE.STALE_SCAN,
+  });
 }
 
 /**

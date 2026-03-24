@@ -20,7 +20,14 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
         include: {
           person: true,
           user: { select: { id: true, name: true, username: true } },
+          assignedToUser: { select: { id: true, name: true, username: true } },
           reviews: { orderBy: { createdAt: "desc" } },
+          validatorAssignments: {
+            orderBy: { assignedAt: "asc" },
+            include: {
+              validator: { select: { id: true, name: true, username: true } },
+            },
+          },
         },
         orderBy: { createdAt: "desc" },
         skip,
@@ -53,10 +60,17 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
         include: {
           person: true,
           user: { select: { id: true, name: true, username: true } },
+          assignedToUser: { select: { id: true, name: true, username: true } },
           category: true,
           subcategory: true,
           documents: true,
           reviews: { orderBy: { createdAt: "desc" } },
+          validatorAssignments: {
+            orderBy: { assignedAt: "asc" },
+            include: {
+              validator: { select: { id: true, name: true, username: true } },
+            },
+          },
         },
       });
       if (!report) throw new Error("Not found");

@@ -39,6 +39,9 @@ export function MainMenuScreen() {
         tokensCount: data.tokensCount ?? 0,
         approvedRequestsCount: data.approvedRequestsCount ?? 0,
         role: data.role ?? "user",
+        username: (data as { username?: string }).username,
+        name: data.name,
+        mustChangePassword: (data as { mustChangePassword?: boolean }).mustChangePassword ?? false,
       } as Parameters<typeof setUser>[0]);
       setMinApprovedForApproval(
         typeof data.minApprovedReportsForApproval === "number"

@@ -18,6 +18,10 @@ export const SETTING_KEYS = {
   MAX_INVITE_CODES_UNUSED: "max_invite_codes_unused",
   /** Min approved reports required for user to see approval section (approve others) */
   MIN_APPROVED_REPORTS_FOR_APPROVAL: "min_approved_reports_for_approval",
+  /** Hours after assignment before Cron/worker may reassign to another validator */
+  REPORT_VALIDATOR_SLA_HOURS: "report_validator_sla_hours",
+  /** Minutes to wait before assigning pending reports that never got a worker assignment */
+  REPORT_UNASSIGNED_GRACE_MINUTES: "report_unassigned_grace_minutes",
 } as const;
 
 export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING_KEYS], string> = {
@@ -29,6 +33,8 @@ export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING
   [SETTING_KEYS.TOKENS_REWARD_INVITED_ACTIVITY]: "2",
   [SETTING_KEYS.MAX_INVITE_CODES_UNUSED]: "5",
   [SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL]: "5",
+  [SETTING_KEYS.REPORT_VALIDATOR_SLA_HOURS]: "48",
+  [SETTING_KEYS.REPORT_UNASSIGNED_GRACE_MINUTES]: "5",
 };
 
 export type SettingsMap = Record<string, string | number | boolean>;

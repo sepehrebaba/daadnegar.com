@@ -1,34 +1,15 @@
-import { prisma } from "@/server/db";
-
-const LAST_ASSIGNED_INDEX_KEY = "last_assigned_validator_index";
+import {
+  assignReportFromQueue,
+  scanAndReassignStaleReports,
+} from "@/server/lib/report-validator-assignment";
 
 export async function handleReportAssign(reportId: string): Promise<void> {
-  if (!reportId) return;
+  await assignReportFromQueue(reportId);
+}
 
-  const validators = await prisma.user.findMany({
-    where: { role: "validator" },
-    select: { id: true },
-    orderBy: { id: "asc" },
-  });
-
-  if (validators.length === 0) return;
-
-  const setting = await prisma.setting.findUnique({
-    where: { key: LAST_ASSIGNED_INDEX_KEY },
-  });
-  const lastIndex = setting ? Number.parseInt(setting.value, 10) : -1;
-  const nextIndex = (lastIndex + 1) % validators.length;
-  const assignedValidator = validators[nextIndex];
-
-  await prisma.$transaction([
-    prisma.report.update({
-      where: { id: reportId },
-      data: { assignedTo: assignedValidator.id },
-    }),
-    prisma.setting.upsert({
-      where: { key: LAST_ASSIGNED_INDEX_KEY },
-      create: { key: LAST_ASSIGNED_INDEX_KEY, value: String(nextIndex) },
-      update: { value: String(nextIndex) },
-    }),
-  ]);
+export async function handleReportQueueStaleScan(): Promise<void> {
+  const { slaReassigned, unassignedAssigned } = await scanAndReassignStaleReports();
+  if (slaReassigned > 0 || unassignedAssigned > 0) {
+    console.info("[worker] stale scan:", { slaReassigned, unassignedAssigned });
+  }
 }

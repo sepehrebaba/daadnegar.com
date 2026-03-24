@@ -17,6 +17,8 @@ type SettingsData = {
   tokens_reward_invited_activity: number;
   max_invite_codes_unused: number;
   min_approved_reports_for_approval: number;
+  report_validator_sla_hours: number;
+  report_unassigned_grace_minutes: number;
 };
 
 const LABELS: Record<keyof SettingsData, string> = {
@@ -28,6 +30,10 @@ const LABELS: Record<keyof SettingsData, string> = {
   tokens_reward_invited_activity: "تعداد توکن هدیه در صورت فعالیت کاربر دعوت‌شده",
   max_invite_codes_unused: "حداکثر کد دعوت مجاز (استفاده‌نشده)",
   min_approved_reports_for_approval: "حداقل تعداد گزارش تاییدشده برای مجوز تایید گزارش‌های دیگران",
+  report_validator_sla_hours:
+    "مهلت بررسی اعتبارسنج (ساعت) — پس از آن Cron می‌تواند گزارش را به نفر بعد بدهد",
+  report_unassigned_grace_minutes:
+    "تاخیر اختصاص خودکار (دقیقه) اگر ورکر هنوز گزارش را به کسی نداده باشد",
 };
 
 const defaults: SettingsData = {
@@ -39,6 +45,8 @@ const defaults: SettingsData = {
   tokens_reward_invited_activity: 2,
   max_invite_codes_unused: 5,
   min_approved_reports_for_approval: 5,
+  report_validator_sla_hours: 48,
+  report_unassigned_grace_minutes: 5,
 };
 
 export default function AdminSystemSettingsPage() {
@@ -68,6 +76,10 @@ export default function AdminSystemSettingsPage() {
         Number(raw.max_invite_codes_unused) ?? defaults.max_invite_codes_unused,
       min_approved_reports_for_approval:
         Number(raw.min_approved_reports_for_approval) ?? defaults.min_approved_reports_for_approval,
+      report_validator_sla_hours:
+        Number(raw.report_validator_sla_hours) || defaults.report_validator_sla_hours,
+      report_unassigned_grace_minutes:
+        Number(raw.report_unassigned_grace_minutes) || defaults.report_unassigned_grace_minutes,
     });
   };
 
@@ -88,6 +100,8 @@ export default function AdminSystemSettingsPage() {
         tokens_reward_invited_activity: settings.tokens_reward_invited_activity,
         max_invite_codes_unused: settings.max_invite_codes_unused,
         min_approved_reports_for_approval: settings.min_approved_reports_for_approval,
+        report_validator_sla_hours: settings.report_validator_sla_hours,
+        report_unassigned_grace_minutes: settings.report_unassigned_grace_minutes,
       });
     } finally {
       setSaving(false);
@@ -272,6 +286,48 @@ export default function AdminSystemSettingsPage() {
                   کاربران با نقش اعتبارسنج یا با حداقل این تعداد گزارش تاییدشده می‌توانند گزارش‌های
                   دیگران را تایید کنند.
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="report_validator_sla_hours">
+                  {LABELS.report_validator_sla_hours}
+                </Label>
+                <Input
+                  id="report_validator_sla_hours"
+                  type="number"
+                  min={1}
+                  value={settings.report_validator_sla_hours}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      report_validator_sla_hours: Math.max(
+                        1,
+                        Number.parseInt(e.target.value, 10) || 1,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="report_unassigned_grace_minutes">
+                  {LABELS.report_unassigned_grace_minutes}
+                </Label>
+                <Input
+                  id="report_unassigned_grace_minutes"
+                  type="number"
+                  min={1}
+                  value={settings.report_unassigned_grace_minutes}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      report_unassigned_grace_minutes: Math.max(
+                        1,
+                        Number.parseInt(e.target.value, 10) || 1,
+                      ),
+                    }))
+                  }
+                />
               </div>
 
               <div className="md:col-span-2">

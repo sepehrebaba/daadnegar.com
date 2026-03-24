@@ -57,6 +57,7 @@ export function LoginScreen() {
       setIsLoading(false);
       return;
     }
+    const mustChange = (me as { mustChangePassword?: boolean }).mustChangePassword === true;
     setUser({
       id: me.id,
       passkey: "",
@@ -66,9 +67,10 @@ export function LoginScreen() {
       approvedRequestsCount: me.approvedRequestsCount ?? 0,
       username: (me as { username?: string }).username,
       name: me.name,
+      mustChangePassword: mustChange,
     });
-    toast("با موفقیت وارد شدید!");
-    router.push(routes.mainMenu);
+    toast(mustChange ? "وارد شدید؛ لطفاً رمز عبور خود را عوض کنید." : "با موفقیت وارد شدید!");
+    router.push(mustChange ? routes.changePasswordRequired : routes.mainMenu);
 
     setIsLoading(false);
   };

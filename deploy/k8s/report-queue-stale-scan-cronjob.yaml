@@ -1,0 +1,36 @@
+# Publishes a RabbitMQ message via the app API so workers run SLA reassignment.
+# Set CRON_SECRET in your app (same value as in secretKeyRef below).
+# Workers must be consuming queue `report.submitted` with payload `{ "type": "stale_scan" }`.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: report-queue-stale-scan
+spec:
+  schedule: "0 */6 * * *"
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: trigger
+              image: curlimages/curl:8.10.1
+              env:
+                - name: APP_URL
+                  value: "https://REPLACE_WITH_PUBLIC_APP_URL"
+                - name: CRON_SECRET
+                  valueFrom:
+                    secretKeyRef:
+                      name: app-secrets
+                      key: cron-secret
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  curl -fsS -X POST "${APP_URL}/api/internal/report-queue-stale-scan" \
+                    -H "Authorization: Bearer ${CRON_SECRET}" \
+                    -H "Content-Type: application/json"

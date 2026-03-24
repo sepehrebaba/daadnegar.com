@@ -18,6 +18,7 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   report_false: "رد گزارش (اطلاعات نادرست)",
   report_problematic: "رد گزارش (مسئله‌دار)",
   invite_activity: "اولین گزارش (دعوت‌شده)",
+  admin_reward: "پاداش",
 };
 
 type Transaction = {

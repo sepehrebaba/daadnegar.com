@@ -1,9 +1,10 @@
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { auth } from "@/lib/auth";
 import { createAuditLog } from "./audit";
 import { resolveInviteToken } from "../lib/auth-invite";
 import { getSettingNumber, SETTING_KEYS } from "../lib/settings";
+import { isPasswordSecure } from "@/lib/password-utils";
 
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
@@ -67,7 +68,12 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
     const [user, approvedRequestsCount, minApprovedReportsForApproval] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { tokenBalance: true, role: true, username: true },
+        select: {
+          tokenBalance: true,
+          role: true,
+          username: true,
+          mustChangePassword: true,
+        },
       }),
       prisma.report.count({
         where: { userId: session.user.id, status: "accepted" },
@@ -86,8 +92,78 @@ export const meService = new Elysia({ prefix: "/me", aot: false })
       approvedRequestsCount,
       role: user?.role ?? session.user.role ?? "user",
       minApprovedReportsForApproval,
+      mustChangePassword: user?.mustChangePassword ?? false,
     };
   })
+  .post(
+    "/change-password",
+    async ({ body, request, ip }) => {
+      const ba = await getSession(request.headers);
+      if (!ba?.user?.id || !ba.session) {
+        throw new Error("Unauthorized");
+      }
+
+      if (!isPasswordSecure(body.newPassword)) {
+        throw new Error(
+          "رمز جدید باید حداقل ۸ کاراکتر و شامل حرف بزرگ، حرف کوچک، عدد و کاراکتر خاص باشد",
+        );
+      }
+
+      const cred = await prisma.account.findFirst({
+        where: { userId: ba.user.id, providerId: "credential" },
+        select: { id: true, password: true },
+      });
+      if (!cred?.password) {
+        throw new Error("حساب با رمز عبور یافت نشد");
+      }
+
+      const ctx = await auth.$context;
+      const currentOk = await ctx.password.verify({
+        password: body.currentPassword,
+        hash: cred.password,
+      });
+      if (!currentOk) {
+        throw new Error("رمز عبور فعلی نادرست است");
+      }
+
+      const passkeyHash = await ctx.password.hash(body.newPassword);
+
+      await prisma.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: ba.user.id },
+          data: { mustChangePassword: false },
+        });
+        await tx.inviteSession.updateMany({
+          where: { userId: ba.user.id },
+          data: { passkeyHash },
+        });
+        await tx.account.update({
+          where: { id: cred.id },
+          data: { password: passkeyHash },
+        });
+      });
+
+      await createAuditLog({
+        action: "update",
+        entity: "User",
+        entityId: ba.user.id,
+        details: JSON.stringify({ field: "password", selfService: true }),
+        ctx: {
+          userId: ba.user.id,
+          ipAddress: ip?.address,
+          userAgent: request.headers.get("user-agent") ?? undefined,
+        },
+      });
+
+      return { success: true };
+    },
+    {
+      body: t.Object({
+        currentPassword: t.String(),
+        newPassword: t.String({ minLength: 8 }),
+      }),
+    },
+  )
   .get("/transactions", async ({ session }) => {
     if (!session?.user?.id) {
       throw new Error("Unauthorized");

@@ -26,8 +26,22 @@ export type AdminAuth =
     }
   | { type: "panel"; adminPanelUser: { id: string; username: string } };
 
+/** Resolve admin API auth. Used from `adminService.derive` so `auth` reaches nested `.use()` route plugins (Elysia 1.4). */
+export async function resolveAdminAuth(request: Request): Promise<AdminAuth> {
+  const session = await getSession(request.headers);
+  if (session?.user?.id) {
+    const admin = await prisma.admin.findUnique({
+      where: { userId: session.user.id },
+    });
+    if (admin) return { type: "user", session, admin };
+  }
+  const panel = await getAdminPanelSession(request);
+  if (panel) return { type: "panel", adminPanelUser: panel.adminPanelUser };
+  throw new Error("Unauthorized");
+}
+
 export function getAuditCtx(
-  auth: AdminAuth,
+  auth: AdminAuth | undefined,
   ctx: { ip?: { address?: string }; userAgent?: string },
 ): {
   userId?: string;
@@ -36,6 +50,12 @@ export function getAuditCtx(
   ipAddress?: string;
   userAgent?: string;
 } {
+  if (!auth) {
+    return {
+      ipAddress: ctx.ip?.address,
+      userAgent: ctx.userAgent,
+    };
+  }
   return {
     userId: auth.type === "user" ? auth.session.user.id : undefined,
     adminPanelUserId: auth.type === "panel" ? auth.adminPanelUser.id : undefined,
@@ -45,18 +65,6 @@ export function getAuditCtx(
   };
 }
 
-export const adminGuard = new Elysia({ name: "adminGuard" }).derive(async ({ request }) => {
-  const session = await getSession(request.headers);
-  if (session?.user?.id) {
-    const admin = await prisma.admin.findUnique({
-      where: { userId: session.user.id },
-    });
-    if (admin) return { auth: { type: "user", session, admin } };
-  }
-  const panel = await getAdminPanelSession(request);
-  if (panel)
-    return {
-      auth: { type: "panel" as const, adminPanelUser: panel.adminPanelUser },
-    };
-  throw new Error("Unauthorized");
-});
+export const adminGuard = new Elysia({ name: "adminGuard" }).derive(async ({ request }) => ({
+  auth: await resolveAdminAuth(request),
+}));

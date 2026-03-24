@@ -7,6 +7,7 @@ import { getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { TOKEN_TRANSACTION_TYPES } from "../lib/token-transaction";
 import { randomBytes } from "node:crypto";
 import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
+import { assertPasswordChangeNotRequired } from "../lib/must-change-password";
 
 const TOKEN_EXPIRY_DAYS = 365;
 const INVITE_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // excluded 0,O,1,I for readability
@@ -302,6 +303,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       if (!inviterId) {
         throw status(401, "لطفاً وارد شوید");
       }
+      await assertPasswordChangeNotRequired(inviterId);
       if (body.type === "personal") {
         const u = normalizeUsername(body.username ?? "");
         if (!u || !isValidPublicUsername(u)) {
@@ -373,6 +375,8 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
     if (!inviterId) {
       throw status(401, "لطفاً وارد شوید");
     }
+
+    await assertPasswordChangeNotRequired(inviterId);
 
     const codes = await prisma.inviteCode.findMany({
       where: { inviterId },

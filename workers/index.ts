@@ -1,8 +1,8 @@
 import "dotenv/config";
 import amqp from "amqplib";
 import cron from "node-cron";
-import { QUEUE_NAMES } from "@/lib/rabbitmq";
-import { handleReportAssign } from "./handlers/report-assign";
+import { QUEUE_NAMES, REPORT_SUBMITTED_MESSAGE_TYPE } from "@/lib/rabbitmq";
+import { handleReportAssign, handleReportQueueStaleScan } from "./handlers/report-assign";
 import { handleSlackNotification } from "./handlers/slack-notification";
 import { handleUserReactivation } from "./handlers/user-reactivation";
 
@@ -20,11 +20,18 @@ async function main() {
   channel.consume(QUEUE_NAMES.REPORT_SUBMITTED, async (msg) => {
     if (!msg) return;
     try {
-      const { reportId } = JSON.parse(msg.content.toString()) as { reportId?: string };
-      await handleReportAssign(reportId ?? "");
+      const payload = JSON.parse(msg.content.toString()) as {
+        type?: string;
+        reportId?: string;
+      };
+      if (payload.type === REPORT_SUBMITTED_MESSAGE_TYPE.STALE_SCAN) {
+        await handleReportQueueStaleScan();
+      } else {
+        await handleReportAssign(payload.reportId ?? "");
+      }
       channel.ack(msg);
     } catch (err) {
-      console.error("[worker] report-assign error:", err);
+      console.error("[worker] report queue error:", err);
       channel.nack(msg, false, true);
     }
   });

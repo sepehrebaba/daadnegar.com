@@ -4,6 +4,8 @@ export const routes = {
   security: "/security",
   inviteCode: "/auth/invite-code",
   login: "/auth/login",
+  /** اجبار تغییر رمز پس از ورود (کاربران ایجادشده توسط ادمین) */
+  changePasswordRequired: "/auth/change-password",
   passkeyRegister: "/auth/passkey/register",
   passkeyVerify: "/auth/passkey/verify",
   mainMenu: "/panel",

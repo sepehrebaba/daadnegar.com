@@ -226,13 +226,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     // توکن‌های جدید (مثلاً invite_activity) توسط بک‌اند ثبت می‌شوند؛ کاربر را دوباره بارگذاری کن
     const { data: me } = await api.me.get();
     if (me) {
+      const m = me as {
+        tokensCount?: number;
+        approvedRequestsCount?: number;
+        mustChangePassword?: boolean;
+      };
       setState((prev) => ({
         ...prev,
         user: prev.user
           ? {
               ...prev.user,
-              tokensCount: me.tokensCount ?? 0,
-              approvedRequestsCount: me.approvedRequestsCount ?? 0,
+              tokensCount: m.tokensCount ?? 0,
+              approvedRequestsCount: m.approvedRequestsCount ?? 0,
+              mustChangePassword: m.mustChangePassword ?? prev.user.mustChangePassword,
             }
           : null,
       }));

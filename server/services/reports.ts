@@ -4,6 +4,7 @@ import { createAuditLog } from "./audit";
 import { auth } from "@/lib/auth";
 import { publishReportSubmitted } from "@/lib/rabbitmq";
 import { resolveInviteToken } from "../lib/auth-invite";
+import { assertPasswordChangeNotRequired } from "../lib/must-change-password";
 import { getSettingBool, getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { documentToServeUrl } from "./upload";
 
@@ -42,6 +43,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           session: null,
         };
       }
+    }
+    if (session?.user?.id) {
+      await assertPasswordChangeNotRequired(session.user.id);
     }
     return { session };
   })
