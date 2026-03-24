@@ -12,49 +12,13 @@ function generateToken() {
   return randomBytes(32).toString("hex");
 }
 
-function isIpAllowed(ip: string | undefined, allowedIps: { ipAddress: string }[]): boolean {
-  if (!ip) return false;
-  for (const { ipAddress } of allowedIps) {
-    // Support exact IP or simple prefix (e.g. 192.168.1.)
-    if (ipAddress === ip) return true;
-    if (ipAddress.endsWith(".") && ip.startsWith(ipAddress)) return true;
-    // Simple CIDR: 192.168.1.0/24
-    if (ipAddress.includes("/")) {
-      const [prefix, bits] = ipAddress.split("/");
-      const mask = parseInt(bits ?? "32", 10);
-      const ipParts = ip.split(".").map(Number);
-      const prefixParts = prefix.split(".").map(Number);
-      if (ipParts.length === 4 && prefixParts.length === 4) {
-        let match = true;
-        for (let i = 0; i < 4; i++) {
-          const shift = Math.max(0, 8 - (mask - i * 8));
-          const maskByte = shift >= 8 ? 255 : (255 << shift) & 255;
-          if ((ipParts[i]! & maskByte) !== (prefixParts[i]! & maskByte)) {
-            match = false;
-            break;
-          }
-        }
-        if (match) return true;
-      }
-    }
-  }
-  return false;
-}
-
 export const adminPanelAuthService = new Elysia({
   prefix: "/admin-panel/auth",
   aot: false,
 })
   .post(
     "/login",
-    async ({ body, set, request, ip }) => {
-      const clientIp = ip?.address;
-      const allowedIps = await prisma.adminPanelIpWhitelist.findMany();
-      if (!isIpAllowed(clientIp, allowedIps)) {
-        set.status = 403;
-        return { error: "IP not allowed for admin panel access" };
-      }
-
+    async ({ body, set, request }) => {
       const panelUser = await prisma.adminPanelUser.findUnique({
         where: { username: body.username },
       });
@@ -82,7 +46,6 @@ export const adminPanelAuthService = new Elysia({
           adminPanelUserId: panelUser.id,
           token,
           expiresAt,
-          ipAddress: clientIp,
         },
       });
 
@@ -94,7 +57,6 @@ export const adminPanelAuthService = new Elysia({
         ctx: {
           adminPanelUserId: panelUser.id,
           adminPanelUsername: panelUser.username,
-          ipAddress: clientIp,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -111,7 +73,7 @@ export const adminPanelAuthService = new Elysia({
       }),
     },
   )
-  .post("/logout", async ({ set, request, ip }) => {
+  .post("/logout", async ({ set, request }) => {
     const cookieHeader = request.headers.get("Cookie") ?? "";
     const match = cookieHeader.match(new RegExp(`${ADMIN_PANEL_COOKIE}=([^;]+)`));
     const token = match?.[1];
@@ -125,11 +87,12 @@ export const adminPanelAuthService = new Elysia({
           action: "logout",
           entity: "AdminPanel",
           entityId: session.adminPanelUser.id,
-          details: JSON.stringify({ username: session.adminPanelUser.username }),
+          details: JSON.stringify({
+            username: session.adminPanelUser.username,
+          }),
           ctx: {
             adminPanelUserId: session.adminPanelUser.id,
             adminPanelUsername: session.adminPanelUser.username,
-            ipAddress: ip?.address,
             userAgent: request.headers.get("user-agent") ?? undefined,
           },
         });
@@ -161,7 +124,7 @@ export const adminPanelAuthService = new Elysia({
   })
   .put(
     "/password",
-    async ({ body, request, ip, set }) => {
+    async ({ body, request, set }) => {
       const panel = await getAdminPanelSession(request);
       if (!panel) {
         set.status = 401;
@@ -207,7 +170,6 @@ export const adminPanelAuthService = new Elysia({
         ctx: {
           adminPanelUserId: panelUser.id,
           adminPanelUsername: panelUser.username,
-          ipAddress: ip?.address,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });

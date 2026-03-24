@@ -51,7 +51,11 @@ function LogoutButton() {
 
 const reportsSubItems = [
   { href: "/admin/reports", label: "لیست گزارشات", icon: List },
-  { href: "/admin/reports/queue", label: "صف بررسی گزارشات", icon: ClipboardList },
+  {
+    href: "/admin/reports/queue",
+    label: "صف بررسی گزارشات",
+    icon: ClipboardList,
+  },
 ];
 
 const navItems = [
@@ -64,7 +68,6 @@ const navItems = [
 const settingsSubItems = [
   { href: "/admin/settings", label: "تنظیمات سیستم", icon: Settings },
   { href: "/admin/settings/user", label: "تنظیمات کاربر", icon: UserRound },
-  { href: "/admin/settings/ip-whitelist", label: "IP های مجاز", icon: Globe },
   { href: "/admin/settings/panel-users", label: "کاربران پنل", icon: UserCog },
 ];
 

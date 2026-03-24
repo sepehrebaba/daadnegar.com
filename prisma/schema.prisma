@@ -277,6 +277,7 @@ model InviteCode {
   isActive     Boolean  @default(true)
   usedById     String?  // one code = one person; set when user registers
   inviterId    String?  // for user-created invites; null = seed codes (e.g. DEMO456)
+  assignedRole String   @default("user") // role applied when invite is redeemed: user | validator
   createdAt    DateTime @default(now())
 
   inviter  User?     @relation("InviteCodeInviter", fields: [inviterId], references: [id], onDelete: SetNull)
@@ -306,7 +307,7 @@ model InviteSession {
   @@map("invite_session")
 }
 
-// Admin panel - separate auth (IP whitelist + username/password)
+// Admin panel - separate auth (username/password)
 model AdminPanelUser {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -316,14 +317,6 @@ model AdminPanelUser {
   sessions AdminPanelSession[]
 
   @@map("admin_panel_user")
-}
-
-model AdminPanelIpWhitelist {
-  id        String   @id @default(cuid())
-  ipAddress String   // exact IP or CIDR (e.g. 192.168.1.0/24)
-  createdAt DateTime @default(now())
-
-  @@map("admin_panel_ip_whitelist")
 }
 
 model AdminPanelSession {

@@ -11,6 +11,10 @@ import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } fro
 const TOKEN_EXPIRY_DAYS = 365;
 const INVITE_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // excluded 0,O,1,I for readability
 
+function roleFromAssignedInvite(assignedRole: string | null | undefined): string {
+  return assignedRole === "validator" ? "validator" : "user";
+}
+
 function generateToken() {
   return randomBytes(32).toString("hex");
 }
@@ -120,6 +124,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
             name: `کاربر ${session.inviteCode.code}`,
             username,
             email,
+            role: roleFromAssignedInvite(session.inviteCode.assignedRole),
             tokenBalance: defaultTokens,
             accounts: {
               create: {
@@ -467,6 +472,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
             name: usernameRaw,
             username: usernameRaw,
             email,
+            role: roleFromAssignedInvite(inviteCode.assignedRole),
             tokenBalance: defaultTokens,
             accounts: {
               create: {
@@ -507,6 +513,7 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         details: JSON.stringify({
           inviteCode: normalizedCode,
           username: usernameRaw,
+          role: user.role,
         }),
         ctx: {
           userId: user.id,

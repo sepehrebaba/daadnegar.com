@@ -99,8 +99,8 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteUsername, setInviteUsername] = useState("");
   const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState<"user" | "validator">("user");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState("");
   const [passwordModalUser, setPasswordModalUser] = useState<User | null>(null);
@@ -124,10 +124,15 @@ export default function AdminUsersPage() {
     e.preventDefault();
     setInviteLoading(true);
     setInviteSuccess("");
-    const body: { username?: string; name?: string; expiresInDays?: number } = {
+    const body: {
+      username?: string;
+      name?: string;
+      expiresInDays?: number;
+      role?: "user" | "validator";
+    } = {
       expiresInDays: 7,
+      role: inviteRole,
     };
-    if (inviteUsername?.trim()) body.username = inviteUsername.trim().toLowerCase();
     if (inviteName?.trim()) body.name = inviteName.trim();
     const { data, error } = await api.admin.invitations.post(body);
     setInviteLoading(false);
@@ -206,7 +211,16 @@ export default function AdminUsersPage() {
         <h1 className="mb-6 text-2xl font-bold">کاربران</h1>
 
         <div className="mb-6 flex gap-4">
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+          <Dialog
+            open={inviteOpen}
+            onOpenChange={(open) => {
+              setInviteOpen(open);
+              if (open) {
+                setInviteSuccess("");
+                setInviteRole("user");
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="ml-2 h-4 w-4" />
@@ -219,22 +233,27 @@ export default function AdminUsersPage() {
               </DialogHeader>
               <form onSubmit={handleInvite} className="space-y-4">
                 <div>
-                  <Label>نام کاربری مقصد (اختیاری — برای دعوت عمومی خالی بگذارید)</Label>
-                  <Input
-                    type="text"
-                    value={inviteUsername}
-                    onChange={(e) => setInviteUsername(e.target.value.toLowerCase())}
-                    placeholder="username"
-                    dir="ltr"
-                  />
-                </div>
-                <div>
                   <Label>نام (اختیاری)</Label>
                   <Input
                     value={inviteName}
                     onChange={(e) => setInviteName(e.target.value)}
                     placeholder="نام کاربر"
                   />
+                </div>
+                <div>
+                  <Label>نوع کاربر پس از ثبت‌نام</Label>
+                  <Select
+                    value={inviteRole}
+                    onValueChange={(v) => setInviteRole(v as "user" | "validator")}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">کاربر</SelectItem>
+                      <SelectItem value="validator">اعتبارسنج</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 {inviteSuccess && <p className="text-muted-foreground text-sm">{inviteSuccess}</p>}
                 <Button type="submit" disabled={inviteLoading}>

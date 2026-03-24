@@ -279,20 +279,6 @@ INSERT IGNORE INTO person (id, firstName, lastName, nationalCode, title, isFamou
 ('pers_14', 'احمد', 'جنتی', '0011223357', 'دبیر شورای نگهبان', 1, 'approved', NOW(), NOW()),
 ('pers_15', 'مجتبی', 'خامنه‌ای', '0011223358', 'روحانی و چهره سیاسی', 1, 'approved', NOW(), NOW());
 
--- -----------------------------------------------------------------------------
--- 7. Admin Panel User + IP Whitelist
--- Username: admin | Password: AdminPanel123!
--- NOTE: Password hash must be from better-auth. Run: pnpm run prisma:seed for full seed.
--- -----------------------------------------------------------------------------
-INSERT IGNORE INTO admin_panel_user (id, username, passwordHash, createdAt) VALUES
-(CONCAT('c', SUBSTRING(REPLACE(UUID(), '-', ''), 1, 24)), 'admin',
- '$2a$10$8K1p/a0dL1xYzP5vX8mN.eKqY3rHwJ6sT2uL9fG4bN7cV1xZ0oM',
- NOW());
-
-INSERT IGNORE INTO admin_panel_ip_whitelist (id, ipAddress, createdAt) VALUES
-(REPLACE(UUID(), '-', ''), '127.0.0.1', NOW()),
-(REPLACE(UUID(), '-', ''), '::1', NOW()),
-(REPLACE(UUID(), '-', ''), '::ffff:127.0.0.1', NOW());
 
 -- -----------------------------------------------------------------------------
 -- NOTE: These require password hashes from better-auth/crypto - run pnpm run prisma:seed:

@@ -478,16 +478,13 @@ async function seedAdminPanel() {
   }
   const { hashPassword } = await import("better-auth/crypto");
   const panelPassword = process.env.ADMIN_PANEL_PASSWORD || "AdminPanel123!";
-  const panelUser = await prisma.adminPanelUser.create({
+  await prisma.adminPanelUser.create({
     data: {
       username: "admin",
       passwordHash: await hashPassword(panelPassword),
     },
   });
-  await prisma.adminPanelIpWhitelist.createMany({
-    data: [{ ipAddress: "127.0.0.1" }, { ipAddress: "::1" }, { ipAddress: "::ffff:127.0.0.1" }],
-  });
-  console.log("Admin panel seeded. Username: admin, add your IP to whitelist for access.");
+  console.log("Admin panel seeded. Username: admin.");
 }
 
 async function main() {
