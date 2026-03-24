@@ -13,26 +13,32 @@ async function listValidatorsOrdered() {
   });
 }
 
-/** Round-robin pick; advances global cursor. Used for first-time assignment. */
-async function pickNextValidatorRoundRobin(): Promise<string | null> {
+/** Pick `count` distinct validators in round-robin order; advances global cursor. */
+async function pickNextNValidators(count: number): Promise<string[]> {
   const validators = await listValidatorsOrdered();
-  if (validators.length === 0) return null;
+  if (validators.length === 0 || count < 1) return [];
 
+  const k = Math.min(count, validators.length);
   const setting = await prisma.setting.findUnique({
     where: { key: LAST_ASSIGNED_INDEX_KEY },
   });
   let lastIndex = setting ? Number.parseInt(setting.value, 10) : -1;
   if (Number.isNaN(lastIndex)) lastIndex = -1;
-  const nextIndex = (lastIndex + 1) % validators.length;
-  const chosen = validators[nextIndex];
+
+  const start = (lastIndex + 1) % validators.length;
+  const ids: string[] = [];
+  for (let i = 0; i < k; i++) {
+    ids.push(validators[(start + i) % validators.length].id);
+  }
+  const newLastIndex = (start + k - 1) % validators.length;
 
   await prisma.setting.upsert({
     where: { key: LAST_ASSIGNED_INDEX_KEY },
-    create: { key: LAST_ASSIGNED_INDEX_KEY, value: String(nextIndex) },
-    update: { value: String(nextIndex) },
+    create: { key: LAST_ASSIGNED_INDEX_KEY, value: String(newLastIndex) },
+    update: { value: String(newLastIndex) },
   });
 
-  return chosen.id;
+  return ids;
 }
 
 /** Next validator after current (for SLA reassign); different person when possible. */
@@ -44,74 +50,106 @@ function pickNextAfterCurrent(validators: { id: string }[], currentId: string): 
   return validators[(idx + 1) % validators.length].id;
 }
 
+/** Keeps `Report.assignedTo` / `assignedAt` aligned with oldest active slot (نمایش و سازگاری). */
+export async function syncReportPrimaryAssignee(reportId: string): Promise<void> {
+  const first = await prisma.reportValidatorAssignment.findFirst({
+    where: { reportId, replacedAt: null },
+    orderBy: { assignedAt: "asc" },
+    select: { validatorId: true, assignedAt: true },
+  });
+  await prisma.report.update({
+    where: { id: reportId },
+    data: {
+      assignedTo: first?.validatorId ?? null,
+      assignedAt: first?.assignedAt ?? null,
+    },
+  });
+}
+
+export async function validatorMayActOnReport(
+  reportId: string,
+  validatorUserId: string,
+  assignedToLegacy: string | null,
+): Promise<boolean> {
+  const active = await prisma.reportValidatorAssignment.findFirst({
+    where: { reportId, validatorId: validatorUserId, replacedAt: null },
+  });
+  if (active) return true;
+  return assignedToLegacy === validatorUserId;
+}
+
 /**
- * First-time assignment from report.submitted. Idempotent if already assigned.
+ * First-time assignment: several parallel active slots. Idempotent if any active slot exists.
  */
 export async function assignReportFromQueue(reportId: string): Promise<boolean> {
   if (!reportId) return false;
 
   const report = await prisma.report.findUnique({
     where: { id: reportId },
-    select: { id: true, status: true, assignedTo: true },
+    select: { id: true, status: true },
   });
   if (!report || report.status !== "pending") return false;
-  if (report.assignedTo) return false;
 
-  const validatorId = await pickNextValidatorRoundRobin();
-  if (!validatorId) return false;
+  const activeCount = await prisma.reportValidatorAssignment.count({
+    where: { reportId, replacedAt: null },
+  });
+  if (activeCount > 0) return false;
+
+  const parallel = await getSettingNumber(SETTING_KEYS.REPORT_PARALLEL_VALIDATORS);
+  const n = Math.min(Math.max(1, parallel), 50);
+  const validatorIds = await pickNextNValidators(n);
+  if (validatorIds.length === 0) return false;
 
   const now = new Date();
   await prisma.$transaction([
+    ...validatorIds.map((validatorId) =>
+      prisma.reportValidatorAssignment.create({
+        data: {
+          reportId,
+          validatorId,
+          assignedAt: now,
+          reason: "initial",
+        },
+      }),
+    ),
     prisma.report.update({
       where: { id: reportId },
-      data: { assignedTo: validatorId, assignedAt: now },
-    }),
-    prisma.reportValidatorAssignment.create({
-      data: {
-        reportId,
-        validatorId,
-        assignedAt: now,
-        reason: "initial",
-      },
+      data: { assignedTo: validatorIds[0], assignedAt: now },
     }),
   ]);
   return true;
 }
 
-/**
- * Reassign a pending report to another validator (SLA breach). No-op if not pending / no assignee.
- */
-export async function reassignStaleReport(reportId: string): Promise<boolean> {
-  const report = await prisma.report.findUnique({
-    where: { id: reportId },
-    select: { id: true, status: true, assignedTo: true },
-  });
-  if (!report || report.status !== "pending" || !report.assignedTo) return false;
-
+async function reassignStaleSlot(slot: {
+  id: string;
+  reportId: string;
+  validatorId: string;
+}): Promise<boolean> {
   const validators = await listValidatorsOrdered();
-  const nextId = pickNextAfterCurrent(validators, report.assignedTo);
+  const nextId = pickNextAfterCurrent(validators, slot.validatorId);
   if (!nextId) return false;
 
   const now = new Date();
   await prisma.$transaction([
-    prisma.report.update({
-      where: { id: reportId },
-      data: { assignedTo: nextId, assignedAt: now },
+    prisma.reportValidatorAssignment.update({
+      where: { id: slot.id },
+      data: { replacedAt: now },
     }),
     prisma.reportValidatorAssignment.create({
       data: {
-        reportId,
+        reportId: slot.reportId,
         validatorId: nextId,
         assignedAt: now,
         reason: "stale_reassign",
       },
     }),
   ]);
+  await syncReportPrimaryAssignee(slot.reportId);
   return true;
 }
 
 /**
- * Scan DB for SLA violations and stuck unassigned reports; reassign / assign each.
+ * Scan DB for SLA violations per active slot and stuck reports without any active slot.
  */
 export async function scanAndReassignStaleReports(): Promise<{
   slaReassigned: number;
@@ -124,35 +162,38 @@ export async function scanAndReassignStaleReports(): Promise<{
   const slaCutoff = new Date(Date.now() - slaMs);
   const graceCutoff = new Date(Date.now() - graceMs);
 
-  const staleCandidates = await prisma.report.findMany({
+  const staleSlots = await prisma.reportValidatorAssignment.findMany({
     where: {
-      status: "pending",
-      assignedTo: { not: null },
+      replacedAt: null,
       assignedAt: { lt: slaCutoff },
+      report: { status: "pending" },
     },
-    select: { id: true, assignedTo: true, assignedAt: true },
+    select: { id: true, reportId: true, validatorId: true, assignedAt: true },
   });
 
   let slaReassigned = 0;
-  for (const r of staleCandidates) {
-    if (!r.assignedTo || !r.assignedAt) continue;
+  for (const slot of staleSlots) {
     const reviewed = await prisma.reportReview.findFirst({
       where: {
-        reportId: r.id,
-        reviewerId: r.assignedTo,
-        createdAt: { gte: r.assignedAt },
+        reportId: slot.reportId,
+        reviewerId: slot.validatorId,
+        createdAt: { gte: slot.assignedAt },
       },
     });
     if (reviewed) continue;
-    const ok = await reassignStaleReport(r.id);
+    const ok = await reassignStaleSlot(slot);
     if (ok) slaReassigned += 1;
   }
 
   const stuckUnassigned = await prisma.report.findMany({
     where: {
       status: "pending",
-      assignedTo: null,
       createdAt: { lt: graceCutoff },
+      NOT: {
+        validatorAssignments: {
+          some: { replacedAt: null },
+        },
+      },
     },
     select: { id: true },
   });

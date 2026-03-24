@@ -427,7 +427,7 @@ export default function AdminUsersPage() {
                       <Input
                         readOnly
                         value={addUserCredentials.username}
-                        className="font-mono text-sm"
+                        className="text-sm"
                         dir="ltr"
                       />
                       <Button
@@ -454,7 +454,7 @@ export default function AdminUsersPage() {
                         readOnly
                         value={addUserCredentials.password}
                         type={addUserShowPassword ? "text" : "password"}
-                        className="font-mono text-sm tracking-wide"
+                        className="text-sm tracking-wide"
                         dir="ltr"
                       />
                       <Button
@@ -540,7 +540,7 @@ export default function AdminUsersPage() {
                       value={addUserUsername}
                       onChange={(e) => setAddUserUsername(e.target.value)}
                       placeholder="my_username"
-                      className="text-center font-mono"
+                      className="text-center"
                       dir="ltr"
                       autoComplete="off"
                       required
@@ -803,7 +803,7 @@ export default function AdminUsersPage() {
                 توکن به‌صورت پاداش به کاربر <span className="font-bold">{tokenModalUser.name}</span>{" "}
                 (<span dir="ltr">{tokenModalUser.username}</span>) اضافه می‌شود و در سابقه تراکنش‌های
                 او با عنوان «پاداش» ثبت می‌شود. موجودی فعلی:{" "}
-                <span dir="ltr" className="font-mono tabular-nums">
+                <span dir="ltr" className="tabular-nums">
                   {tokenModalUser.tokenBalance ?? 0}
                 </span>
               </p>
@@ -818,7 +818,7 @@ export default function AdminUsersPage() {
                   placeholder="مثلاً ۱۰"
                   value={tokenAmount}
                   onChange={(e) => setTokenAmount(e.target.value)}
-                  className="text-center font-mono"
+                  className="text-center"
                   dir="ltr"
                   required
                 />

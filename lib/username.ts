@@ -5,6 +5,11 @@ export function normalizeUsername(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
+/** حذف فاصلهٔ نامرئی رایج در کپی/پیست که باعث عدم تطابق نام کاربری در ورود می‌شود. */
+export function sanitizeLoginIdentifier(raw: string): string {
+  return normalizeUsername(raw).replace(/[\u200b-\u200d\ufeff]/g, "");
+}
+
 /** نام کاربری عمومی ثبت‌نام/ورود: ۳ تا ۳۲ کاراکتر، حروف کوچک انگلیسی، عدد و زیرخط. پیشوند dn_ برای کدهای دعوت سیستم رزرو است. */
 export function isValidPublicUsername(normalized: string): boolean {
   if (normalized.startsWith("dn_")) return false;

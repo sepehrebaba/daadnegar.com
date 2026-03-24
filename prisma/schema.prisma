@@ -229,13 +229,14 @@ model Report {
   @@map("report")
 }
 
-/** تاریخچه اختصاص گزارش به اعتبارسنج‌ها (اولیه + انتقال به فرد دیگر پس از SLA) */
+/** هر ردیف = یک «اسلات» بررسی؛ چند ردیف با replacedAt=null یعنی چند اعتبارسنج همزمان. */
 model ReportValidatorAssignment {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   reportId    String
   validatorId String
-  assignedAt  DateTime @default(now())
-  reason      String   @default("initial") // initial | stale_reassign
+  assignedAt  DateTime  @default(now())
+  replacedAt  DateTime? // پایان این اسلات (SLA / جایگزینی); null = هنوز فعال
+  reason      String    @default("initial") // initial | stale_reassign
 
   report    Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   validator User   @relation(fields: [validatorId], references: [id], onDelete: Cascade)
@@ -243,6 +244,7 @@ model ReportValidatorAssignment {
   @@index([reportId])
   @@index([validatorId])
   @@index([assignedAt])
+  @@index([reportId, replacedAt])
   @@map("report_validator_assignment")
 }
 

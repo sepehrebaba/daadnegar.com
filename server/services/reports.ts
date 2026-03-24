@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { publishReportSubmitted } from "@/lib/rabbitmq";
 import { resolveInviteToken } from "../lib/auth-invite";
 import { assertPasswordChangeNotRequired } from "../lib/must-change-password";
+import { validatorMayActOnReport } from "../lib/report-validator-assignment";
 import { getSettingBool, getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { documentToServeUrl } from "./upload";
 
@@ -194,7 +195,18 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     const reports = await prisma.report.findMany({
       where: {
         status: "pending",
-        ...(isValidator ? { assignedTo: session.user.id } : {}),
+        ...(isValidator
+          ? {
+              OR: [
+                {
+                  validatorAssignments: {
+                    some: { validatorId: session.user.id, replacedAt: null },
+                  },
+                },
+                { assignedTo: session.user.id },
+              ],
+            }
+          : {}),
       },
       include: { person: true, user: { select: { id: true, name: true, username: true } } },
       orderBy: { createdAt: "desc" },
@@ -227,8 +239,13 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       let canView = !!admin;
       if (!canView) {
         canView = dbUser?.role === "validator" || approvedCount >= minRequired;
-        if (canView && dbUser?.role === "validator" && report.assignedTo !== session.user.id) {
-          canView = false;
+        if (canView && dbUser?.role === "validator") {
+          const allowed = await validatorMayActOnReport(
+            report.id,
+            session.user.id,
+            report.assignedTo,
+          );
+          if (!allowed) canView = false;
         }
       }
       if (!canView) throw new Error("Forbidden");
@@ -287,8 +304,15 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       });
       if (!existing || existing.status !== "pending")
         throw new Error("Not found or already reviewed");
-      if (!admin && dbUser?.role === "validator" && existing.assignedTo !== session.user.id) {
-        throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
+      if (!admin && dbUser?.role === "validator") {
+        const allowed = await validatorMayActOnReport(
+          existing.id,
+          session.user.id,
+          existing.assignedTo,
+        );
+        if (!allowed) {
+          throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
+        }
       }
 
       const report = await prisma.$transaction(async (tx) => {
@@ -363,8 +387,15 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       });
       if (!existing || existing.status !== "pending")
         throw new Error("Not found or already reviewed");
-      if (!admin && dbUser?.role === "validator" && existing.assignedTo !== session.user.id) {
-        throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
+      if (!admin && dbUser?.role === "validator") {
+        const allowed = await validatorMayActOnReport(
+          existing.id,
+          session.user.id,
+          existing.assignedTo,
+        );
+        if (!allowed) {
+          throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
+        }
       }
 
       const report = await prisma.$transaction(async (tx) => {

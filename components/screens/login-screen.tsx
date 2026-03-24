@@ -40,8 +40,14 @@ export function LoginScreen() {
     if (!res.ok) {
       let msg = "خطا در ورود. لطفاً اطلاعات را بررسی کنید.";
       try {
-        const j = (await res.json()) as { message?: string };
-        if (j?.message) msg = j.message;
+        const j = (await res.json()) as {
+          message?: string;
+          error?: string | { message?: string };
+        };
+        if (typeof j?.message === "string" && j.message) msg = j.message;
+        else if (j?.error && typeof j.error === "object" && typeof j.error.message === "string")
+          msg = j.error.message;
+        else if (typeof j?.error === "string") msg = j.error;
       } catch {
         /* ignore */
       }
@@ -84,18 +90,20 @@ export function LoginScreen() {
           </div>
           <CardTitle className="text-foreground text-xl font-bold">ورود به حساب کاربری</CardTitle>
           <CardDescription className="text-xs">
-            نام کاربری و رمز عبور خود را وارد کنید. برای عضویت نیاز به دعوت‌نامه دارید.
+            نام کاربری یا ایمیل ثبت‌شده و رمز عبور را وارد کنید. اگر حساب قدیمی با دعوت دارید، نام
+            کاربری ممکن است با <span dir="ltr">dn_</span> شروع شود (همان را کامل بنویسید، نه فقط کد
+            دعوت).
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">نام کاربری</Label>
+              <Label htmlFor="username">نام کاربری یا ایمیل</Label>
               <Input
                 id="username"
                 type="text"
                 autoComplete="username"
-                placeholder="my_username"
+                placeholder="my_username یا user@…"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="text-center"

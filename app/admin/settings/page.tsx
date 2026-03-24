@@ -19,6 +19,7 @@ type SettingsData = {
   min_approved_reports_for_approval: number;
   report_validator_sla_hours: number;
   report_unassigned_grace_minutes: number;
+  report_parallel_validators: number;
 };
 
 const LABELS: Record<keyof SettingsData, string> = {
@@ -34,6 +35,7 @@ const LABELS: Record<keyof SettingsData, string> = {
     "مهلت بررسی اعتبارسنج (ساعت) — پس از آن Cron می‌تواند گزارش را به نفر بعد بدهد",
   report_unassigned_grace_minutes:
     "تاخیر اختصاص خودکار (دقیقه) اگر ورکر هنوز گزارش را به کسی نداده باشد",
+  report_parallel_validators: "تعداد اعتبارسنج‌هایی که همزمان یک گزارش جدید به آن‌ها اساین می‌شود",
 };
 
 const defaults: SettingsData = {
@@ -47,6 +49,7 @@ const defaults: SettingsData = {
   min_approved_reports_for_approval: 5,
   report_validator_sla_hours: 48,
   report_unassigned_grace_minutes: 5,
+  report_parallel_validators: 3,
 };
 
 export default function AdminSystemSettingsPage() {
@@ -80,6 +83,8 @@ export default function AdminSystemSettingsPage() {
         Number(raw.report_validator_sla_hours) || defaults.report_validator_sla_hours,
       report_unassigned_grace_minutes:
         Number(raw.report_unassigned_grace_minutes) || defaults.report_unassigned_grace_minutes,
+      report_parallel_validators:
+        Number(raw.report_parallel_validators) || defaults.report_parallel_validators,
     });
   };
 
@@ -102,6 +107,7 @@ export default function AdminSystemSettingsPage() {
         min_approved_reports_for_approval: settings.min_approved_reports_for_approval,
         report_validator_sla_hours: settings.report_validator_sla_hours,
         report_unassigned_grace_minutes: settings.report_unassigned_grace_minutes,
+        report_parallel_validators: settings.report_parallel_validators,
       });
     } finally {
       setSaving(false);
@@ -324,6 +330,28 @@ export default function AdminSystemSettingsPage() {
                       report_unassigned_grace_minutes: Math.max(
                         1,
                         Number.parseInt(e.target.value, 10) || 1,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="report_parallel_validators">
+                  {LABELS.report_parallel_validators}
+                </Label>
+                <Input
+                  id="report_parallel_validators"
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={settings.report_parallel_validators}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      report_parallel_validators: Math.min(
+                        50,
+                        Math.max(1, Number.parseInt(e.target.value, 10) || 1),
                       ),
                     }))
                   }

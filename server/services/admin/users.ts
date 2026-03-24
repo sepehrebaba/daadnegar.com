@@ -66,6 +66,12 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
       const passkeyHash = await ctx.password.hash(body.password);
 
       await prisma.$transaction(async (tx) => {
+        const targetUser = await tx.user.findUnique({
+          where: { id: params.id },
+          select: { id: true, email: true },
+        });
+        if (!targetUser) throw new Error("کاربر یافت نشد");
+
         await tx.user.update({
           where: { id: params.id },
           data: { mustChangePassword: false },
@@ -74,13 +80,25 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
           where: { userId: params.id },
           data: { passkeyHash },
         });
-        await tx.account.updateMany({
-          where: {
-            userId: params.id,
-            password: { not: null },
-          },
+        /*
+         * Better Auth فقط اولین Account با providerId === "credential" را برای ورود ایمیل/رمز چک می‌کند.
+         * فیلتر قبلی password: { not: null } ردیف‌های بدون رمز را رد می‌کرد → گاهی هیچ ردیفی
+         * به‌روز نمی‌شد یا ردیفی که لاگین از آن استفاده می‌کند عوض نمی‌شد.
+         */
+        const updated = await tx.account.updateMany({
+          where: { userId: params.id, providerId: "credential" },
           data: { password: passkeyHash },
         });
+        if (updated.count === 0) {
+          await tx.account.create({
+            data: {
+              userId: targetUser.id,
+              accountId: targetUser.email,
+              providerId: "credential",
+              password: passkeyHash,
+            },
+          });
+        }
       });
 
       await createAuditLog({

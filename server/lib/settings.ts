@@ -22,6 +22,8 @@ export const SETTING_KEYS = {
   REPORT_VALIDATOR_SLA_HOURS: "report_validator_sla_hours",
   /** Minutes to wait before assigning pending reports that never got a worker assignment */
   REPORT_UNASSIGNED_GRACE_MINUTES: "report_unassigned_grace_minutes",
+  /** How many validators receive the same pending report at once (capped by validator count) */
+  REPORT_PARALLEL_VALIDATORS: "report_parallel_validators",
 } as const;
 
 export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING_KEYS], string> = {
@@ -35,6 +37,7 @@ export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING
   [SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL]: "5",
   [SETTING_KEYS.REPORT_VALIDATOR_SLA_HOURS]: "48",
   [SETTING_KEYS.REPORT_UNASSIGNED_GRACE_MINUTES]: "5",
+  [SETTING_KEYS.REPORT_PARALLEL_VALIDATORS]: "3",
 };
 
 export type SettingsMap = Record<string, string | number | boolean>;

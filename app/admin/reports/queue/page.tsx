@@ -19,8 +19,13 @@ import { Eye, ChevronRight } from "lucide-react";
 type AssignmentRow = {
   assignedAt: string;
   reason: string;
+  replacedAt?: string | null;
   validator: { id: string; name: string; username: string };
 };
+
+function activeSlots(list?: AssignmentRow[]) {
+  return (list ?? []).filter((a) => a.replacedAt == null);
+}
 
 type QueueReport = {
   id: string;
@@ -128,7 +133,6 @@ export default function AdminReportsQueuePage() {
     reviewedAt?: string | null;
     reviews: { action: string; createdAt: string }[];
     validatorAssignments?: AssignmentRow[];
-    assignedToUser?: { name: string; username: string } | null;
   } | null>(null);
 
   const fetchQueue = async () => {
@@ -163,8 +167,6 @@ export default function AdminReportsQueuePage() {
               []) as { action: string; createdAt: string }[],
             validatorAssignments: (data as { validatorAssignments?: AssignmentRow[] })
               .validatorAssignments,
-            assignedToUser: (data as { assignedToUser?: { name: string; username: string } | null })
-              .assignedToUser,
           }
         : null,
     );
@@ -204,8 +206,8 @@ export default function AdminReportsQueuePage() {
                   <TableHead>شخص</TableHead>
                   <TableHead>کاربر</TableHead>
                   <TableHead>تاریخ ثبت</TableHead>
-                  <TableHead>اعتبارسنج فعلی</TableHead>
-                  <TableHead>زمان اختصاص فعلی</TableHead>
+                  <TableHead>اعتبارسنج‌های فعال</TableHead>
+                  <TableHead>شروع اسلات فعلی</TableHead>
                   <TableHead>تایید / رد / در انتظار</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
@@ -222,24 +224,42 @@ export default function AdminReportsQueuePage() {
                     </TableCell>
                     <TableCell>{new Date(r.createdAt).toLocaleDateString("fa-IR")}</TableCell>
                     <TableCell>
-                      {r.assignedToUser ? (
-                        <span>
-                          {r.assignedToUser.name}
-                          <span className="text-muted-foreground text-sm">
-                            {" "}
-                            ({r.assignedToUser.username})
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">در انتظار ورکر</span>
-                      )}
+                      {(() => {
+                        const act = activeSlots(r.validatorAssignments);
+                        if (act.length === 0) {
+                          return (
+                            <span className="text-muted-foreground text-sm">در انتظار ورکر</span>
+                          );
+                        }
+                        return (
+                          <ul className="max-w-[200px] list-inside list-disc text-sm">
+                            {act.map((a) => (
+                              <li key={`${a.validator.id}-${a.assignedAt}`}>
+                                {a.validator.name}
+                                <span className="text-muted-foreground">
+                                  {" "}
+                                  ({a.validator.username})
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
-                      {r.assignedAt ? (
-                        <span className="text-sm">{formatDateTime(r.assignedAt)}</span>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
-                      )}
+                      {(() => {
+                        const act = activeSlots(r.validatorAssignments);
+                        const oldest = act.reduce(
+                          (min, a) =>
+                            !min || new Date(a.assignedAt) < new Date(min.assignedAt) ? a : min,
+                          null as AssignmentRow | null,
+                        );
+                        return oldest ? (
+                          <span className="text-sm">{formatDateTime(oldest.assignedAt)}</span>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
@@ -294,15 +314,18 @@ export default function AdminReportsQueuePage() {
               <div className="space-y-4">
                 <TimelineItem label="ثبت" date={reportDetail.createdAt} active />
                 <TimelineItem
-                  label="آخرین اختصاص به اعتبارسنج"
+                  label="اسلات‌های فعال (چند اعتبارسنج)"
                   date={reportDetail.assignedAt ?? undefined}
-                  active={!!reportDetail.assignedAt}
+                  active={activeSlots(reportDetail.validatorAssignments).length > 0}
                 />
-                {reportDetail.assignedToUser && (
-                  <p className="text-muted-foreground text-sm">
-                    فعلی: {reportDetail.assignedToUser.name} ({reportDetail.assignedToUser.username}
-                    )
-                  </p>
+                {activeSlots(reportDetail.validatorAssignments).length > 0 && (
+                  <ul className="text-muted-foreground list-inside list-disc text-sm">
+                    {activeSlots(reportDetail.validatorAssignments).map((a) => (
+                      <li key={`${a.validator.id}-${a.assignedAt}`}>
+                        {a.validator.name} ({a.validator.username})
+                      </li>
+                    ))}
+                  </ul>
                 )}
                 <TimelineItem
                   label="اولین بررسی ثبت‌شده"
@@ -337,7 +360,12 @@ export default function AdminReportsQueuePage() {
                             <span className="font-normal">({a.validator.username})</span>
                           </span>
                           <span>{formatDateTime(a.assignedAt)}</span>
-                          <span className="text-xs">{assignmentReasonLabel(a.reason)}</span>
+                          <span className="text-xs">
+                            {assignmentReasonLabel(a.reason)}
+                            {a.replacedAt == null
+                              ? " · فعال"
+                              : ` · پایان ${formatDateTime(a.replacedAt)}`}
+                          </span>
                         </li>
                       ))}
                     </ul>

@@ -54,7 +54,7 @@ export function TorBanner() {
       <span className="flex-1 text-center">
         برای حریم خصوصی و امنیت بیشتر، از مرورگر تور با آدرس زیر استفاده کنید:
       </span>
-      <code className="bg-background/80 rounded px-2 py-1 font-mono text-xs">{ONION_ADDRESS}</code>
+      <code className="bg-background/80 rounded px-2 py-1 text-xs">{ONION_ADDRESS}</code>
       <Button
         variant="ghost"
         size="sm"
