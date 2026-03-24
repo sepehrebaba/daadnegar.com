@@ -9,6 +9,14 @@ export const TOKEN_TRANSACTION_TYPES = {
   invite_activity: "invite_activity",
   /** واریز دستی از پنل ادمین؛ در سابقه به‌عنوان پاداش نمایش داده می‌شود */
   admin_reward: "admin_reward",
+  /** تسویه اکثریت: پاداش گزارش‌دهنده وقتی گزارش نهایی تأیید شد */
+  consensus_reporter_reward: "consensus_reporter_reward",
+  /** تسویه اکثریت: جریمه گزارش‌دهنده وقتی گزارش نهایی رد شد */
+  consensus_reporter_penalty: "consensus_reporter_penalty",
+  /** تسویه اکثریت: پاداش اعتبارسنج (رأی با نتیجه نهایی هم‌خوان بود) */
+  consensus_validator_correct: "consensus_validator_correct",
+  /** تسویه اکثریت: جریمه اعتبارسنج (رأی با نتیجه نهایی ناهم‌خوان بود) */
+  consensus_validator_wrong: "consensus_validator_wrong",
 } as const;
 
 export type TokenTransactionType =

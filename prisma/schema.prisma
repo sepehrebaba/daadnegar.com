@@ -223,10 +223,24 @@ model Report {
   documents   ReportDocument[]
   reviews     ReportReview[]
   validatorAssignments ReportValidatorAssignment[]
+  tokenSettlement      ReportTokenSettlement?
 
   @@index([userId])
   @@index([status])
   @@map("report")
+}
+
+/** پس از رسیدن به حد نصاب رأی اعتبارسنج‌ها؛ تسویه توکن توسط ورکر انجام می‌شود. */
+model ReportTokenSettlement {
+  id              String   @id @default(cuid())
+  reportId        String   @unique
+  outcome         String // accepted | rejected
+  tokenLedgerDone Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("report_token_settlement")
 }
 
 /** هر ردیف = یک «اسلات» بررسی؛ چند ردیف با replacedAt=null یعنی چند اعتبارسنج همزمان. */

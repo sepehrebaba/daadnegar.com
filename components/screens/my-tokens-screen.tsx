@@ -19,6 +19,10 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   report_problematic: "رد گزارش (مسئله‌دار)",
   invite_activity: "اولین گزارش (دعوت‌شده)",
   admin_reward: "پاداش",
+  consensus_reporter_reward: "پاداش گزارش صحیح (اکثریت)",
+  consensus_reporter_penalty: "جریمه گزارش (اکثریت رد)",
+  consensus_validator_correct: "پاداش بررسی صحیح (اکثریت)",
+  consensus_validator_wrong: "جریمه بررسی نادرست (اکثریت)",
 };
 
 type Transaction = {

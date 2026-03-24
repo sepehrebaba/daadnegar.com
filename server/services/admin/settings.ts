@@ -42,6 +42,11 @@ export const adminSettingsRoutes = new Elysia({ name: "adminSettings" })
         report_validator_sla_hours: t.Optional(t.Number()),
         report_unassigned_grace_minutes: t.Optional(t.Number()),
         report_parallel_validators: t.Optional(t.Number()),
+        report_consensus_min_reviews: t.Optional(t.Number()),
+        tokens_consensus_reporter_accept: t.Optional(t.Number()),
+        tokens_consensus_reporter_reject_penalty: t.Optional(t.Number()),
+        tokens_consensus_validator_correct: t.Optional(t.Number()),
+        tokens_consensus_validator_wrong_penalty: t.Optional(t.Number()),
       }),
     },
   );

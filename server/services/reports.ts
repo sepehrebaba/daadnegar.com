@@ -2,10 +2,18 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { createAuditLog } from "./audit";
 import { auth } from "@/lib/auth";
-import { publishReportSubmitted } from "@/lib/rabbitmq";
+import { publishReportSubmitted, publishReportTokenSettlement } from "@/lib/rabbitmq";
 import { resolveInviteToken } from "../lib/auth-invite";
 import { assertPasswordChangeNotRequired } from "../lib/must-change-password";
-import { validatorMayActOnReport } from "../lib/report-validator-assignment";
+import {
+  releaseValidatorSlotAfterReviewTx,
+  topUpValidatorSlotsForReport,
+  userMayVoteOnConsensusReport,
+  validatorMayViewPendingReport,
+  syncReportPrimaryAssignee,
+} from "../lib/report-validator-assignment";
+import { tryFinalizeConsensusReport } from "../lib/report-consensus-finalize";
+import { processReportTokenSettlement } from "../lib/report-token-settlement";
 import { getSettingBool, getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { documentToServeUrl } from "./upload";
 
@@ -204,6 +212,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
                   },
                 },
                 { assignedTo: session.user.id },
+                {
+                  reviews: { some: { reviewerId: session.user.id } },
+                },
               ],
             }
           : {}),
@@ -251,6 +262,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
                   },
                 },
                 { assignedTo: session.user.id },
+                {
+                  reviews: { some: { reviewerId: session.user.id } },
+                },
               ],
             }
           : {}),
@@ -415,7 +429,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       if (!canView) {
         canView = dbUser?.role === "validator" || approvedCount >= minRequired;
         if (canView && dbUser?.role === "validator") {
-          const allowed = await validatorMayActOnReport(
+          const allowed = await validatorMayViewPendingReport(
             report.id,
             session.user.id,
             report.assignedTo,
@@ -424,7 +438,26 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         }
       }
       if (!canView) throw new Error("Forbidden");
-      return mapReportDocuments(report);
+
+      const consensusMin = await getSettingNumber(SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS);
+      const validatorReviews = await prisma.reportReview.findMany({
+        where: { reportId: report.id, reviewerId: { not: null } },
+        select: { reviewerId: true, action: true },
+      });
+      const acceptedVotes = validatorReviews.filter((r) => r.action === "accepted").length;
+      const rejectedVotes = validatorReviews.filter((r) => r.action === "rejected").length;
+      const myVote = validatorReviews.find((r) => r.reviewerId === session.user.id);
+
+      return {
+        ...mapReportDocuments(report),
+        consensus: {
+          minReviews: consensusMin,
+          acceptedVotes,
+          rejectedVotes,
+          validatorVotesTotal: validatorReviews.length,
+          myReviewAction: myVote?.action ?? null,
+        },
+      };
     },
     { params: t.Object({ id: t.String() }) },
   )
@@ -469,7 +502,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       if (!canApprove) {
         const [user, approvedCount, minRequired] = await Promise.all([
           prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
-          prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
+          prisma.report.count({
+            where: { userId: session.user.id, status: "accepted" },
+          }),
           getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
         ]);
         dbUser = user;
@@ -485,47 +520,93 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       });
       if (!existing || existing.status !== "pending")
         throw new Error("Not found or already reviewed");
-      if (!admin && dbUser?.role === "validator") {
-        const allowed = await validatorMayActOnReport(
-          existing.id,
-          session.user.id,
-          existing.assignedTo,
+
+      if (admin) {
+        const report = await prisma.$transaction(async (tx) => {
+          const r = await tx.report.update({
+            where: { id: params.id },
+            data: { status: "accepted", reviewedBy: session.user.id, reviewedAt: new Date() },
+            include: { person: true },
+          });
+          await tx.reportReview.create({
+            data: {
+              reportId: r.id,
+              reviewerId: session.user.id,
+              action: "accepted",
+            },
+          });
+          return r;
+        });
+        const reward = await getSettingNumber(SETTING_KEYS.TOKENS_REWARD_APPROVED_REPORT);
+        const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
+          await import("../lib/token-transaction");
+        await addTokenTransaction(
+          existing.userId,
+          reward,
+          TOKEN_TRANSACTION_TYPES.report_approved,
+          report.id,
         );
-        if (!allowed) {
-          throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
-        }
+        await createAuditLog({
+          action: "approve",
+          entity: "Report",
+          entityId: report.id,
+          ctx: {
+            userId: session.user.id,
+            ipAddress: ip?.address,
+            userAgent: request.headers.get("user-agent") ?? undefined,
+          },
+        });
+        return report;
       }
 
-      const report = await prisma.$transaction(async (tx) => {
-        const r = await tx.report.update({
-          where: { id: params.id },
-          data: { status: "accepted", reviewedBy: session.user.id, reviewedAt: new Date() },
-          include: { person: true },
+      if (!dbUser) {
+        dbUser = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { role: true },
         });
+      }
+      const mayVote = await userMayVoteOnConsensusReport(
+        existing.id,
+        session.user.id,
+        dbUser?.role ?? null,
+        existing.assignedTo,
+      );
+      if (!mayVote) {
+        throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده یا قبلاً رأی داده‌اید");
+      }
+
+      await prisma.$transaction(async (tx) => {
         await tx.reportReview.create({
           data: {
-            reportId: r.id,
+            reportId: existing.id,
             reviewerId: session.user.id,
             action: "accepted",
           },
         });
-        return r;
+        await releaseValidatorSlotAfterReviewTx(tx, existing.id, session.user.id);
       });
 
-      const reward = await getSettingNumber(SETTING_KEYS.TOKENS_REWARD_APPROVED_REPORT);
-      const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
-        await import("../lib/token-transaction");
-      await addTokenTransaction(
-        existing.userId,
-        reward,
-        TOKEN_TRANSACTION_TYPES.report_approved,
-        report.id,
-      );
+      await syncReportPrimaryAssignee(existing.id);
+      await topUpValidatorSlotsForReport(existing.id);
+
+      const { finalized } = await tryFinalizeConsensusReport(existing.id, session.user.id);
+
+      if (finalized) {
+        const published = await publishReportTokenSettlement(existing.id);
+        if (!published) await processReportTokenSettlement(existing.id);
+      }
+
+      const report = await prisma.report.findUnique({
+        where: { id: existing.id },
+        include: { person: true },
+      });
+      if (!report) throw new Error("Not found");
 
       await createAuditLog({
-        action: "approve",
+        action: finalized ? "approve" : "validator_vote",
         entity: "Report",
         entityId: report.id,
+        details: JSON.stringify({ phase: finalized ? "finalized" : "vote", vote: "accepted" }),
         ctx: {
           userId: session.user.id,
           ipAddress: ip?.address,
@@ -552,7 +633,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       if (!canApprove) {
         const [user, approvedCount, minRequired] = await Promise.all([
           prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
-          prisma.report.count({ where: { userId: session.user.id, status: "accepted" } }),
+          prisma.report.count({
+            where: { userId: session.user.id, status: "accepted" },
+          }),
           getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL),
         ]);
         dbUser = user;
@@ -568,57 +651,108 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       });
       if (!existing || existing.status !== "pending")
         throw new Error("Not found or already reviewed");
-      if (!admin && dbUser?.role === "validator") {
-        const allowed = await validatorMayActOnReport(
-          existing.id,
-          session.user.id,
-          existing.assignedTo,
-        );
-        if (!allowed) {
-          throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده است");
-        }
+
+      if (admin) {
+        const report = await prisma.$transaction(async (tx) => {
+          const r = await tx.report.update({
+            where: { id: params.id },
+            data: {
+              status: "rejected",
+              rejectionReason,
+              reviewedBy: session.user.id,
+              reviewedAt: new Date(),
+            },
+            include: { person: true },
+          });
+          await tx.reportReview.create({
+            data: {
+              reportId: r.id,
+              reviewerId: session.user.id,
+              action: "rejected",
+              rejectionReason,
+            },
+          });
+          return r;
+        });
+        const { getSettingNumber: gsn, SETTING_KEYS: SK } = await import("../lib/settings");
+        const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
+          await import("../lib/token-transaction");
+        const deduct =
+          rejectionReason === "false"
+            ? await gsn(SK.TOKENS_DEDUCT_FALSE_REPORT)
+            : await gsn(SK.TOKENS_DEDUCT_PROBLEMATIC_REPORT);
+        const txType =
+          rejectionReason === "false"
+            ? TOKEN_TRANSACTION_TYPES.report_false
+            : TOKEN_TRANSACTION_TYPES.report_problematic;
+        await addTokenTransaction(existing.userId, -deduct, txType, report.id);
+        await createAuditLog({
+          action: "reject",
+          entity: "Report",
+          entityId: report.id,
+          details: JSON.stringify({ rejectionReason }),
+          ctx: {
+            userId: session.user.id,
+            ipAddress: ip?.address,
+            userAgent: request.headers.get("user-agent") ?? undefined,
+          },
+        });
+        return report;
       }
 
-      const report = await prisma.$transaction(async (tx) => {
-        const r = await tx.report.update({
-          where: { id: params.id },
-          data: {
-            status: "rejected",
-            rejectionReason,
-            reviewedBy: session.user.id,
-            reviewedAt: new Date(),
-          },
-          include: { person: true },
+      if (!dbUser) {
+        dbUser = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { role: true },
         });
+      }
+      const mayVote = await userMayVoteOnConsensusReport(
+        existing.id,
+        session.user.id,
+        dbUser?.role ?? null,
+        existing.assignedTo,
+      );
+      if (!mayVote) {
+        throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده یا قبلاً رأی داده‌اید");
+      }
+
+      await prisma.$transaction(async (tx) => {
         await tx.reportReview.create({
           data: {
-            reportId: r.id,
+            reportId: existing.id,
             reviewerId: session.user.id,
             action: "rejected",
             rejectionReason,
           },
         });
-        return r;
+        await releaseValidatorSlotAfterReviewTx(tx, existing.id, session.user.id);
       });
 
-      const { getSettingNumber: gsn, SETTING_KEYS: SK } = await import("../lib/settings");
-      const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
-        await import("../lib/token-transaction");
-      const deduct =
-        rejectionReason === "false"
-          ? await gsn(SK.TOKENS_DEDUCT_FALSE_REPORT)
-          : await gsn(SK.TOKENS_DEDUCT_PROBLEMATIC_REPORT);
-      const txType =
-        rejectionReason === "false"
-          ? TOKEN_TRANSACTION_TYPES.report_false
-          : TOKEN_TRANSACTION_TYPES.report_problematic;
-      await addTokenTransaction(existing.userId, -deduct, txType, report.id);
+      await syncReportPrimaryAssignee(existing.id);
+      await topUpValidatorSlotsForReport(existing.id);
+
+      const { finalized } = await tryFinalizeConsensusReport(existing.id, session.user.id);
+
+      if (finalized) {
+        const published = await publishReportTokenSettlement(existing.id);
+        if (!published) await processReportTokenSettlement(existing.id);
+      }
+
+      const report = await prisma.report.findUnique({
+        where: { id: existing.id },
+        include: { person: true },
+      });
+      if (!report) throw new Error("Not found");
 
       await createAuditLog({
-        action: "reject",
+        action: finalized ? "reject" : "validator_vote",
         entity: "Report",
         entityId: report.id,
-        details: JSON.stringify({ rejectionReason }),
+        details: JSON.stringify({
+          phase: finalized ? "finalized" : "vote",
+          vote: "rejected",
+          rejectionReason,
+        }),
         ctx: {
           userId: session.user.id,
           ipAddress: ip?.address,

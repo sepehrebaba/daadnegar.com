@@ -6,6 +6,7 @@ import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, ChevronRight, ChevronLeft, User } from "lucide-react";
+import { routes } from "@/lib/routes";
 
 export function ApprovalListScreen() {
   const router = useRouter();
@@ -107,7 +108,11 @@ export function ApprovalListScreen() {
             </div>
           )}
 
-          <Button onClick={() => router.back()} variant="ghost" className="mt-auto">
+          <Button
+            onClick={() => router.replace(routes.mainMenu)}
+            variant="ghost"
+            className="mt-auto"
+          >
             بازگشت
           </Button>
         </CardContent>

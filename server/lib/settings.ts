@@ -24,6 +24,16 @@ export const SETTING_KEYS = {
   REPORT_UNASSIGNED_GRACE_MINUTES: "report_unassigned_grace_minutes",
   /** How many validators receive the same pending report at once (capped by validator count) */
   REPORT_PARALLEL_VALIDATORS: "report_parallel_validators",
+  /** حداقل تعداد رأی اعتبارسنج (با reviewerId) قبل از تعیین وضعیت نهایی گزارش */
+  REPORT_CONSENSUS_MIN_REVIEWS: "report_consensus_min_reviews",
+  /** پاداش گزارش‌دهنده اگر اکثریت تأیید کرد */
+  TOKENS_CONSENSUS_REPORTER_ACCEPT: "tokens_consensus_reporter_accept",
+  /** مقدار کسر از گزارش‌دهنده اگر اکثریت رد کرد (عدد مثبت؛ در تراکنش منفی اعمال می‌شود) */
+  TOKENS_CONSENSUS_REPORTER_REJECT_PENALTY: "tokens_consensus_reporter_reject_penalty",
+  /** پاداش هر اعتبارسنجی که رأی‌اش با نتیجه نهایی یکی بود */
+  TOKENS_CONSENSUS_VALIDATOR_CORRECT: "tokens_consensus_validator_correct",
+  /** مقدار کسر از اعتبارسنج اگر رأی‌اش با نتیجه نهایی ناهم‌خوان بود (عدد مثبت) */
+  TOKENS_CONSENSUS_VALIDATOR_WRONG_PENALTY: "tokens_consensus_validator_wrong_penalty",
 } as const;
 
 export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING_KEYS], string> = {
@@ -38,6 +48,11 @@ export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING
   [SETTING_KEYS.REPORT_VALIDATOR_SLA_HOURS]: "48",
   [SETTING_KEYS.REPORT_UNASSIGNED_GRACE_MINUTES]: "5",
   [SETTING_KEYS.REPORT_PARALLEL_VALIDATORS]: "3",
+  [SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS]: "5",
+  [SETTING_KEYS.TOKENS_CONSENSUS_REPORTER_ACCEPT]: "5",
+  [SETTING_KEYS.TOKENS_CONSENSUS_REPORTER_REJECT_PENALTY]: "3",
+  [SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_CORRECT]: "2",
+  [SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_WRONG_PENALTY]: "2",
 };
 
 export type SettingsMap = Record<string, string | number | boolean>;

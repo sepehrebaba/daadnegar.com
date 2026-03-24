@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api, getPendingReportDetail } from "@/lib/edyen";
+import { toPersianNum } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +32,7 @@ import {
   MessageSquare,
   User,
   X,
+  Mail,
 } from "lucide-react";
 
 type ReportDetail = {
@@ -65,6 +67,13 @@ type ReportDetail = {
   category?: { id: string; name: string; slug: string } | null;
   subcategory?: { id: string; name: string; slug: string } | null;
   documents: { id: string; name: string; url: string }[];
+  consensus?: {
+    minReviews: number;
+    acceptedVotes: number;
+    rejectedVotes: number;
+    validatorVotesTotal: number;
+    myReviewAction: string | null;
+  };
 };
 
 function InfoRow({
@@ -111,12 +120,23 @@ export function ApprovalDetailScreen() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  const reloadDetail = async () => {
+    if (!id) return;
+    try {
+      const data = await getPendingReportDetail(id);
+      setReport(data as ReportDetail);
+      setError(null);
+    } catch {
+      router.push("/panel/approval-list");
+    }
+  };
+
   const handleApprove = async () => {
     if (!id) return;
     setActionLoading(true);
     try {
       await api.reports({ id }).approve.put();
-      router.push("/panel/approval-list");
+      await reloadDetail();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا در تایید");
     }
@@ -129,7 +149,7 @@ export function ApprovalDetailScreen() {
     try {
       await api.reports({ id }).reject.put({ rejectionReason: rejectReason });
       setRejectDialogOpen(false);
-      router.push("/panel/approval-list");
+      await reloadDetail();
     } catch (e) {
       setError(e instanceof Error ? e.message : "خطا در رد");
     }
@@ -160,10 +180,23 @@ export function ApprovalDetailScreen() {
     );
   }
 
+  const c = report.consensus;
+  const userHasReviewed = c?.myReviewAction != null && c.myReviewAction !== "";
+  const readOnly = report.status !== "pending" || userHasReviewed;
+
+  const statusBadgeLabel =
+    report.status === "accepted"
+      ? "تأیید نهایی (اکثریت رأی)"
+      : report.status === "rejected"
+        ? "رد نهایی (اکثریت رأی)"
+        : c != null
+          ? `جمع‌آوری رأی: ${toPersianNum(c.validatorVotesTotal)} از ${toPersianNum(c.minReviews)} — تأیید ${toPersianNum(c.acceptedVotes)}، رد ${toPersianNum(c.rejectedVotes)}`
+          : "در انتظار جمع‌آوری رأی اعتبارسنج‌ها";
+
   return (
     <div className="bg-background flex flex-col p-4">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 flex-1 items-start gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -172,46 +205,59 @@ export function ApprovalDetailScreen() {
           >
             <ArrowRight className="h-5 w-5" />
           </Button>
-          <h1 className="text-foreground min-w-0 flex-1 truncate text-center text-lg font-bold">
-            جزئیات گزارش {report.person.firstName} {report.person.lastName}
-          </h1>
-          <Badge
-            variant={
-              report.status === "accepted"
-                ? "default"
-                : report.status === "rejected"
-                  ? "destructive"
-                  : "secondary"
-            }
-          >
-            {report.status === "accepted"
-              ? `تأیید شده توسط X نفر`
-              : report.status === "rejected"
-                ? `رد شده توسط X نفر`
-                : `در انتظار بررسی توسط X نفر`}
-          </Badge>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-foreground mb-2 text-center text-lg font-bold sm:text-right">
+              جزئیات گزارش {report.person.firstName} {report.person.lastName}
+            </h1>
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+              <Badge
+                variant={
+                  report.status === "accepted"
+                    ? "default"
+                    : report.status === "rejected"
+                      ? "destructive"
+                      : "secondary"
+                }
+                className="max-w-full text-right leading-snug whitespace-normal"
+              >
+                {statusBadgeLabel}
+              </Badge>
+              {userHasReviewed && report.status === "pending" && (
+                <Badge variant="outline" className="border-primary text-primary">
+                  بررسی شده
+                </Badge>
+              )}
+            </div>
+            {readOnly && report.status === "pending" && userHasReviewed && (
+              <p className="text-muted-foreground mt-2 text-center text-xs sm:text-right">
+                رأی شما ثبت شده است؛ تا تکمیل حد نصاب فقط مشاهده.
+              </p>
+            )}
+          </div>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button
-            onClick={handleApprove}
-            disabled={actionLoading}
-            size="sm"
-            className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
-          >
-            <Check className="h-4 w-4" />
-            تایید
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setRejectDialogOpen(true)}
-            disabled={actionLoading}
-            className="gap-1.5"
-          >
-            <X className="h-4 w-4" />
-            رد
-          </Button>
-        </div>
+        {!readOnly && (
+          <div className="flex shrink-0 justify-center gap-2 sm:justify-end">
+            <Button
+              onClick={handleApprove}
+              disabled={actionLoading}
+              size="sm"
+              className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
+            >
+              <Check className="h-4 w-4" />
+              تایید
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setRejectDialogOpen(true)}
+              disabled={actionLoading}
+              className="gap-1.5"
+            >
+              <X className="h-4 w-4" />
+              رد
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">

@@ -20,6 +20,11 @@ type SettingsData = {
   report_validator_sla_hours: number;
   report_unassigned_grace_minutes: number;
   report_parallel_validators: number;
+  report_consensus_min_reviews: number;
+  tokens_consensus_reporter_accept: number;
+  tokens_consensus_reporter_reject_penalty: number;
+  tokens_consensus_validator_correct: number;
+  tokens_consensus_validator_wrong_penalty: number;
 };
 
 const LABELS: Record<keyof SettingsData, string> = {
@@ -36,6 +41,15 @@ const LABELS: Record<keyof SettingsData, string> = {
   report_unassigned_grace_minutes:
     "تاخیر اختصاص خودکار (دقیقه) اگر ورکر هنوز گزارش را به کسی نداده باشد",
   report_parallel_validators: "تعداد اعتبارسنج‌هایی که همزمان یک گزارش جدید به آن‌ها اساین می‌شود",
+  report_consensus_min_reviews:
+    "حداقل تعداد رأی اعتبارسنج (ثبت‌شده در اپ) قبل از تعیین وضعیت نهایی بر اساس اکثریت",
+  tokens_consensus_reporter_accept:
+    "پاداش گزارش‌دهنده وقتی اکثریت گزارش را تأیید کردند (تسویه از طریق صف)",
+  tokens_consensus_reporter_reject_penalty:
+    "مقدار کسر از گزارش‌دهنده وقتی اکثریت رد کردند (عدد مثبت؛ به‌صورت منفی اعمال می‌شود)",
+  tokens_consensus_validator_correct: "پاداش هر اعتبارسنجی که رأی‌اش با نتیجه نهایی یکی بود",
+  tokens_consensus_validator_wrong_penalty:
+    "مقدار کسر از اعتبارسنجی که رأی‌اش با نتیجه نهایی ناهم‌خوان بود (عدد مثبت)",
 };
 
 const defaults: SettingsData = {
@@ -50,6 +64,11 @@ const defaults: SettingsData = {
   report_validator_sla_hours: 48,
   report_unassigned_grace_minutes: 5,
   report_parallel_validators: 3,
+  report_consensus_min_reviews: 5,
+  tokens_consensus_reporter_accept: 5,
+  tokens_consensus_reporter_reject_penalty: 3,
+  tokens_consensus_validator_correct: 2,
+  tokens_consensus_validator_wrong_penalty: 2,
 };
 
 export default function AdminSystemSettingsPage() {
@@ -85,6 +104,19 @@ export default function AdminSystemSettingsPage() {
         Number(raw.report_unassigned_grace_minutes) || defaults.report_unassigned_grace_minutes,
       report_parallel_validators:
         Number(raw.report_parallel_validators) || defaults.report_parallel_validators,
+      report_consensus_min_reviews:
+        Number(raw.report_consensus_min_reviews) || defaults.report_consensus_min_reviews,
+      tokens_consensus_reporter_accept:
+        Number(raw.tokens_consensus_reporter_accept) || defaults.tokens_consensus_reporter_accept,
+      tokens_consensus_reporter_reject_penalty:
+        Number(raw.tokens_consensus_reporter_reject_penalty) ||
+        defaults.tokens_consensus_reporter_reject_penalty,
+      tokens_consensus_validator_correct:
+        Number(raw.tokens_consensus_validator_correct) ||
+        defaults.tokens_consensus_validator_correct,
+      tokens_consensus_validator_wrong_penalty:
+        Number(raw.tokens_consensus_validator_wrong_penalty) ||
+        defaults.tokens_consensus_validator_wrong_penalty,
     });
   };
 
@@ -108,6 +140,11 @@ export default function AdminSystemSettingsPage() {
         report_validator_sla_hours: settings.report_validator_sla_hours,
         report_unassigned_grace_minutes: settings.report_unassigned_grace_minutes,
         report_parallel_validators: settings.report_parallel_validators,
+        report_consensus_min_reviews: settings.report_consensus_min_reviews,
+        tokens_consensus_reporter_accept: settings.tokens_consensus_reporter_accept,
+        tokens_consensus_reporter_reject_penalty: settings.tokens_consensus_reporter_reject_penalty,
+        tokens_consensus_validator_correct: settings.tokens_consensus_validator_correct,
+        tokens_consensus_validator_wrong_penalty: settings.tokens_consensus_validator_wrong_penalty,
       });
     } finally {
       setSaving(false);
@@ -357,15 +394,130 @@ export default function AdminSystemSettingsPage() {
                   }
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="md:col-span-2">
-                <Button type="submit" disabled={saving}>
-                  {saving ? "در حال ذخیره..." : "ذخیره تنظیمات"}
-                </Button>
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>اکثریت رأی و تسویه توکن (صف RabbitMQ)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4 text-sm">
+              پس از رسیدن به حد نصاب رأی، اگر بیش از نصف رأی‌ها «تأیید» باشد گزارش نهایی می‌شود؛ وگرنه
+              رد. پاداش و جریمه‌ها توسط ورکر اعمال می‌شوند.
+            </p>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="report_consensus_min_reviews">
+                  {LABELS.report_consensus_min_reviews}
+                </Label>
+                <Input
+                  id="report_consensus_min_reviews"
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={settings.report_consensus_min_reviews}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      report_consensus_min_reviews: Math.min(
+                        50,
+                        Math.max(1, Number.parseInt(e.target.value, 10) || 1),
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tokens_consensus_reporter_accept">
+                  {LABELS.tokens_consensus_reporter_accept}
+                </Label>
+                <Input
+                  id="tokens_consensus_reporter_accept"
+                  type="number"
+                  min={0}
+                  value={settings.tokens_consensus_reporter_accept}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_consensus_reporter_accept: Math.max(
+                        0,
+                        Number.parseInt(e.target.value, 10) || 0,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tokens_consensus_reporter_reject_penalty">
+                  {LABELS.tokens_consensus_reporter_reject_penalty}
+                </Label>
+                <Input
+                  id="tokens_consensus_reporter_reject_penalty"
+                  type="number"
+                  min={0}
+                  value={settings.tokens_consensus_reporter_reject_penalty}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_consensus_reporter_reject_penalty: Math.max(
+                        0,
+                        Number.parseInt(e.target.value, 10) || 0,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tokens_consensus_validator_correct">
+                  {LABELS.tokens_consensus_validator_correct}
+                </Label>
+                <Input
+                  id="tokens_consensus_validator_correct"
+                  type="number"
+                  min={0}
+                  value={settings.tokens_consensus_validator_correct}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_consensus_validator_correct: Math.max(
+                        0,
+                        Number.parseInt(e.target.value, 10) || 0,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tokens_consensus_validator_wrong_penalty">
+                  {LABELS.tokens_consensus_validator_wrong_penalty}
+                </Label>
+                <Input
+                  id="tokens_consensus_validator_wrong_penalty"
+                  type="number"
+                  min={0}
+                  value={settings.tokens_consensus_validator_wrong_penalty}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_consensus_validator_wrong_penalty: Math.max(
+                        0,
+                        Number.parseInt(e.target.value, 10) || 0,
+                      ),
+                    }))
+                  }
+                />
               </div>
             </div>
           </CardContent>
         </Card>
+
+        <div className="mt-6">
+          <Button type="submit" disabled={saving}>
+            {saving ? "در حال ذخیره..." : "ذخیره تنظیمات"}
+          </Button>
+        </div>
       </form>
     </div>
   );

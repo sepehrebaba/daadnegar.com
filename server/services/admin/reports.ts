@@ -13,7 +13,7 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
     const perPage = Math.min(Number(query.perPage ?? 25), 100);
     const skip = (page - 1) * perPage;
     const { getSettingNumber, SETTING_KEYS } = await import("../../lib/settings");
-    const minApproved = await getSettingNumber(SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL);
+    const consensusMin = await getSettingNumber(SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS);
     const [data, total] = await Promise.all([
       prisma.report.findMany({
         where: { status: "pending" },
@@ -37,19 +37,20 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
     ]);
     return {
       data: data.map((r) => {
-        const accepted = r.reviews.filter((rev) => rev.action === "accepted").length;
-        const rejected = r.reviews.filter((rev) => rev.action === "rejected").length;
+        const validatorReviews = r.reviews.filter((rev) => rev.reviewerId != null);
+        const accepted = validatorReviews.filter((rev) => rev.action === "accepted").length;
+        const rejected = validatorReviews.filter((rev) => rev.action === "rejected").length;
         return mapReportDocuments({
           ...r,
           acceptedCount: accepted,
           rejectedCount: rejected,
-          inProgressCount: Math.max(0, minApproved - accepted - rejected),
+          inProgressCount: Math.max(0, consensusMin - accepted - rejected),
         });
       }),
       total,
       page,
       perPage,
-      minApproved,
+      minApproved: consensusMin,
     };
   })
   .get(

@@ -197,7 +197,7 @@ export default function AdminReportsQueuePage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>وضعیت بررسی توسط اعتبارسنج‌ها</CardTitle>
+            <CardTitle>وضعیت بررسی (اکثریت رأی پس از حد نصاب)</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
@@ -208,7 +208,7 @@ export default function AdminReportsQueuePage() {
                   <TableHead>تاریخ ثبت</TableHead>
                   <TableHead>اعتبارسنج‌های فعال</TableHead>
                   <TableHead>شروع اسلات فعلی</TableHead>
-                  <TableHead>تایید / رد / در انتظار</TableHead>
+                  <TableHead>رأی‌ها تا حد نصاب (تأیید / رد / مانده)</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>

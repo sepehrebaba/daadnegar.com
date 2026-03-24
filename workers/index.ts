@@ -2,6 +2,7 @@ import "dotenv/config";
 import amqp from "amqplib";
 import { QUEUE_NAMES, REPORT_SUBMITTED_MESSAGE_TYPE } from "@/lib/rabbitmq";
 import { handleReportAssign, handleReportQueueStaleScan } from "./handlers/report-assign";
+import { handleReportTokenSettlement } from "./handlers/report-token-settlement";
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL ?? "amqp://guest:guest@localhost:5672";
 
@@ -11,10 +12,11 @@ async function main() {
 
   await channel.assertQueue(QUEUE_NAMES.REPORT_SUBMITTED, { durable: true });
   await channel.assertQueue(QUEUE_NAMES.SLACK_NOTIFICATION, { durable: true });
+  await channel.assertQueue(QUEUE_NAMES.REPORT_TOKEN_SETTLEMENT, { durable: true });
 
-  channel.prefetch(1);
+  void channel.prefetch(1);
 
-  channel.consume(QUEUE_NAMES.REPORT_SUBMITTED, async (msg) => {
+  void channel.consume(QUEUE_NAMES.REPORT_SUBMITTED, async (msg) => {
     if (!msg) return;
     try {
       const payload = JSON.parse(msg.content.toString()) as {
@@ -33,7 +35,19 @@ async function main() {
     }
   });
 
-  console.log("[worker] RabbitMQ consumer running.");
+  void channel.consume(QUEUE_NAMES.REPORT_TOKEN_SETTLEMENT, async (msg) => {
+    if (!msg) return;
+    try {
+      const payload = JSON.parse(msg.content.toString()) as { reportId?: string };
+      await handleReportTokenSettlement(payload.reportId ?? "");
+      channel.ack(msg);
+    } catch (err) {
+      console.error("[worker] report token settlement error:", err);
+      channel.nack(msg, false, true);
+    }
+  });
+
+  console.log("[worker] RabbitMQ consumers running (report queue + token settlement).");
 
   process.on("SIGTERM", async () => {
     await channel.close();

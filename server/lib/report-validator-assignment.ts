@@ -3,6 +3,8 @@ import { getSettingNumber, SETTING_KEYS } from "./settings";
 
 const LAST_ASSIGNED_INDEX_KEY = "last_assigned_validator_index";
 
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
 export type ReportAssignmentReason = "initial" | "stale_reassign";
 
 async function listValidatorsOrdered() {
@@ -41,6 +43,40 @@ async function pickNextNValidators(count: number): Promise<string[]> {
   return ids;
 }
 
+/** Round-robin among validators not in `exclude`. */
+async function pickNextNValidatorsAvoiding(count: number, exclude: Set<string>): Promise<string[]> {
+  const validators = await listValidatorsOrdered();
+  if (validators.length === 0 || count < 1) return [];
+
+  const setting = await prisma.setting.findUnique({
+    where: { key: LAST_ASSIGNED_INDEX_KEY },
+  });
+  let lastIndex = setting ? Number.parseInt(setting.value, 10) : -1;
+  if (Number.isNaN(lastIndex)) lastIndex = -1;
+
+  const picked: string[] = [];
+  let steps = 0;
+  const maxSteps = validators.length * 2;
+  while (picked.length < count && steps < maxSteps) {
+    lastIndex = (lastIndex + 1) % validators.length;
+    steps++;
+    const v = validators[lastIndex].id;
+    if (exclude.has(v) || picked.includes(v)) continue;
+    picked.push(v);
+  }
+
+  await prisma.setting.upsert({
+    where: { key: LAST_ASSIGNED_INDEX_KEY },
+    create: {
+      key: LAST_ASSIGNED_INDEX_KEY,
+      value: String(lastIndex % Math.max(1, validators.length)),
+    },
+    update: { value: String(lastIndex % Math.max(1, validators.length)) },
+  });
+
+  return picked;
+}
+
 /** Next validator after current (for SLA reassign); different person when possible. */
 function pickNextAfterCurrent(validators: { id: string }[], currentId: string): string | null {
   if (validators.length === 0) return null;
@@ -66,16 +102,114 @@ export async function syncReportPrimaryAssignee(reportId: string): Promise<void>
   });
 }
 
-export async function validatorMayActOnReport(
+export async function releaseValidatorSlotAfterReviewTx(
+  tx: TxClient,
+  reportId: string,
+  validatorUserId: string,
+): Promise<void> {
+  await tx.reportValidatorAssignment.updateMany({
+    where: { reportId, validatorId: validatorUserId, replacedAt: null },
+    data: { replacedAt: new Date() },
+  });
+}
+
+/** افزودن اسلات برای اعتبارسنج‌هایی که هنوز رأی نداده‌اند تا به حد نصاب برسیم. */
+export async function topUpValidatorSlotsForReport(reportId: string): Promise<void> {
+  const report = await prisma.report.findUnique({
+    where: { id: reportId },
+    select: { status: true },
+  });
+  if (report?.status !== "pending") return;
+
+  const minR = await getSettingNumber(SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS);
+  const reviewed = await prisma.reportReview.findMany({
+    where: { reportId, reviewerId: { not: null } },
+    select: { reviewerId: true },
+  });
+  const done = new Set(reviewed.map((r) => r.reviewerId!));
+  const stillNeedVotes = minR - done.size;
+  if (stillNeedVotes <= 0) return;
+
+  const activeSlots = await prisma.reportValidatorAssignment.findMany({
+    where: { reportId, replacedAt: null },
+    select: { validatorId: true },
+  });
+  const activeNotVoted = activeSlots.filter((s) => !done.has(s.validatorId)).length;
+  const slotsToCreate = stillNeedVotes - activeNotVoted;
+  if (slotsToCreate <= 0) return;
+
+  const exclude = new Set<string>([...done, ...activeSlots.map((s) => s.validatorId)]);
+  const validators = await listValidatorsOrdered();
+  const available = validators.filter((v) => !exclude.has(v.id)).length;
+  const pickCount = Math.min(slotsToCreate, available);
+  if (pickCount < 1) return;
+
+  const ids = await pickNextNValidatorsAvoiding(pickCount, exclude);
+  if (ids.length === 0) return;
+
+  const now = new Date();
+  await prisma.$transaction(
+    ids.map((validatorId) =>
+      prisma.reportValidatorAssignment.create({
+        data: {
+          reportId,
+          validatorId,
+          assignedAt: now,
+          reason: "initial",
+        },
+      }),
+    ),
+  );
+  await syncReportPrimaryAssignee(reportId);
+}
+
+/** رأی دادن: اسلات فعال یا assignedTo قدیمی، و فقط یک‌بار رأی. */
+export async function validatorMayVoteOnReport(
   reportId: string,
   validatorUserId: string,
   assignedToLegacy: string | null,
 ): Promise<boolean> {
+  const already = await prisma.reportReview.findFirst({
+    where: { reportId, reviewerId: validatorUserId },
+  });
+  if (already) return false;
+
   const active = await prisma.reportValidatorAssignment.findFirst({
     where: { reportId, validatorId: validatorUserId, replacedAt: null },
   });
   if (active) return true;
   return assignedToLegacy === validatorUserId;
+}
+
+/** مشاهده گزارش در انتظار: اگر قبلاً رأی داده یا اسلات دارد. */
+export async function validatorMayViewPendingReport(
+  reportId: string,
+  validatorUserId: string,
+  assignedToLegacy: string | null,
+): Promise<boolean> {
+  const already = await prisma.reportReview.findFirst({
+    where: { reportId, reviewerId: validatorUserId },
+  });
+  if (already) return true;
+
+  return validatorMayVoteOnReport(reportId, validatorUserId, assignedToLegacy);
+}
+
+/** اعتبارسنج باید اسلات داشته باشد؛ کاربر با حداقل گزارش تأییدشده بدون محدودیت اسلات. */
+export async function userMayVoteOnConsensusReport(
+  reportId: string,
+  userId: string,
+  role: string | null,
+  assignedToLegacy: string | null,
+): Promise<boolean> {
+  const already = await prisma.reportReview.findFirst({
+    where: { reportId, reviewerId: userId },
+  });
+  if (already) return false;
+  if (role === "validator") {
+    return validatorMayVoteOnReport(reportId, userId, assignedToLegacy);
+  }
+  return true;
 }
 
 /**
@@ -96,8 +230,12 @@ export async function assignReportFromQueue(reportId: string): Promise<boolean> 
   if (activeCount > 0) return false;
 
   const parallel = await getSettingNumber(SETTING_KEYS.REPORT_PARALLEL_VALIDATORS);
-  const n = Math.min(Math.max(1, parallel), 50);
-  const validatorIds = await pickNextNValidators(n);
+  const minConsensus = await getSettingNumber(SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS);
+  const validators = await listValidatorsOrdered();
+  if (validators.length === 0) return false;
+
+  const want = Math.min(validators.length, Math.min(50, Math.max(1, parallel, minConsensus)));
+  const validatorIds = await pickNextNValidators(want);
   if (validatorIds.length === 0) return false;
 
   const now = new Date();
@@ -173,14 +311,10 @@ export async function scanAndReassignStaleReports(): Promise<{
 
   let slaReassigned = 0;
   for (const slot of staleSlots) {
-    const reviewed = await prisma.reportReview.findFirst({
-      where: {
-        reportId: slot.reportId,
-        reviewerId: slot.validatorId,
-        createdAt: { gte: slot.assignedAt },
-      },
+    const anyReview = await prisma.reportReview.findFirst({
+      where: { reportId: slot.reportId, reviewerId: slot.validatorId },
     });
-    if (reviewed) continue;
+    if (anyReview) continue;
     const ok = await reassignStaleSlot(slot);
     if (ok) slaReassigned += 1;
   }

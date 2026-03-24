@@ -8,6 +8,7 @@ let channel: Channel | null = null;
 export const QUEUE_NAMES = {
   REPORT_SUBMITTED: "report.submitted",
   SLACK_NOTIFICATION: "slack.notification",
+  REPORT_TOKEN_SETTLEMENT: "report.token_settlement",
 } as const;
 
 /** Payload shape on `report.submitted`: new report vs periodic SLA scan (CronJob → worker). */
@@ -58,6 +59,10 @@ export async function publishReportQueueStaleScan(): Promise<boolean> {
   return publish(QUEUE_NAMES.REPORT_SUBMITTED, {
     type: REPORT_SUBMITTED_MESSAGE_TYPE.STALE_SCAN,
   });
+}
+
+export async function publishReportTokenSettlement(reportId: string): Promise<boolean> {
+  return publish(QUEUE_NAMES.REPORT_TOKEN_SETTLEMENT, { reportId });
 }
 
 /**
