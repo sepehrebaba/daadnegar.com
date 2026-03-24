@@ -259,6 +259,136 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     return { count };
   })
   .get(
+    "/search",
+    async ({ query, session }) => {
+      if (!session?.user?.id) throw new Error("Unauthorized");
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+      if (dbUser?.role !== "validator") {
+        throw new Error("Forbidden: فقط اعتبارسنج به جستجو دسترسی دارد");
+      }
+
+      const page = Math.max(1, Number(query.page) || 1);
+      const perPage = Math.min(50, Math.max(1, Number(query.perPage) || 20));
+      const parseOptInt = (v: string | undefined) => {
+        if (v == null || v === "") return undefined;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : undefined;
+      };
+
+      const personQ = query.personQ?.trim() ?? "";
+      const textQ = query.text?.trim() ?? "";
+      const status =
+        query.status === "pending" || query.status === "accepted" || query.status === "rejected"
+          ? query.status
+          : undefined;
+      const createdFrom = query.createdFrom ? new Date(query.createdFrom) : undefined;
+      const createdTo = query.createdTo ? new Date(query.createdTo) : undefined;
+      const minReviews = parseOptInt(query.minReviews);
+      const maxReviews = parseOptInt(query.maxReviews);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const andConditions: any[] = [];
+      if (status) andConditions.push({ status });
+      if (createdFrom && !Number.isNaN(createdFrom.getTime())) {
+        andConditions.push({ createdAt: { gte: createdFrom } });
+      }
+      if (createdTo && !Number.isNaN(createdTo.getTime())) {
+        const end = new Date(createdTo);
+        end.setHours(23, 59, 59, 999);
+        andConditions.push({ createdAt: { lte: end } });
+      }
+      if (personQ) {
+        andConditions.push({
+          person: {
+            OR: [
+              { firstName: { contains: personQ } },
+              { lastName: { contains: personQ } },
+              { nationalCode: { contains: personQ } },
+            ],
+          },
+        });
+      }
+      if (textQ) {
+        andConditions.push({
+          OR: [{ description: { contains: textQ } }, { title: { contains: textQ } }],
+        });
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let baseWhere: any = andConditions.length ? { AND: andConditions } : {};
+
+      if (minReviews != null || maxReviews != null) {
+        const groups = await prisma.reportReview.groupBy({
+          by: ["reportId"],
+          _count: { id: true },
+        });
+        const map = new Map(groups.map((g) => [g.reportId, g._count.id]));
+        const minR = minReviews ?? 0;
+        const maxR = maxReviews ?? Number.MAX_SAFE_INTEGER;
+        const candidates = await prisma.report.findMany({
+          where: baseWhere,
+          select: { id: true },
+        });
+        const filteredIds = candidates
+          .filter(({ id }) => {
+            const n = map.get(id) ?? 0;
+            return n >= minR && n <= maxR;
+          })
+          .map(({ id }) => id);
+        baseWhere = { AND: [baseWhere, { id: { in: filteredIds } }] };
+      }
+
+      const skip = (page - 1) * perPage;
+      const [total, rows] = await Promise.all([
+        prisma.report.count({ where: baseWhere }),
+        prisma.report.findMany({
+          where: baseWhere,
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: perPage,
+          include: {
+            person: { select: { firstName: true, lastName: true, nationalCode: true } },
+            user: { select: { id: true, name: true, username: true } },
+            _count: { select: { reviews: true, validatorAssignments: true } },
+          },
+        }),
+      ]);
+
+      return {
+        total,
+        page,
+        perPage,
+        data: rows.map((r) => ({
+          id: r.id,
+          status: r.status,
+          title: r.title,
+          description: r.description,
+          createdAt: r.createdAt.toISOString(),
+          person: r.person,
+          user: r.user,
+          reviewCount: r._count.reviews,
+          validatorAssignmentCount: r._count.validatorAssignments,
+        })),
+      };
+    },
+    {
+      query: t.Object({
+        page: t.Optional(t.String()),
+        perPage: t.Optional(t.String()),
+        personQ: t.Optional(t.String()),
+        text: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+        createdFrom: t.Optional(t.String()),
+        createdTo: t.Optional(t.String()),
+        minReviews: t.Optional(t.String()),
+        maxReviews: t.Optional(t.String()),
+      }),
+    },
+  )
+  .get(
     "/pending/:id",
     async ({ params, session, request }) => {
       if (!session?.user?.id) throw new Error("Unauthorized");
@@ -302,11 +432,17 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     "/:id",
     async ({ params, session, request, ip }) => {
       if (!session?.user?.id) throw new Error("Unauthorized");
-      const report = await prisma.report.findFirst({
-        where: { id: params.id, userId: session.user.id },
-        include: { person: true, documents: true },
-      });
+      const [dbUser, report] = await Promise.all([
+        prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
+        prisma.report.findFirst({
+          where: { id: params.id },
+          include: { person: true, documents: true },
+        }),
+      ]);
       if (!report) throw new Error("Not found");
+      const isOwner = report.userId === session.user.id;
+      const isValidator = dbUser?.role === "validator";
+      if (!isOwner && !isValidator) throw new Error("Not found");
       await createAuditLog({
         action: "view",
         entity: "Report",

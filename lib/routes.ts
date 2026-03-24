@@ -24,6 +24,8 @@ export const routes = {
   reportFamous: "/panel/report/famous",
   reportManual: "/panel/report/manual",
   myRequests: "/panel/my-requests",
+  /** جستجوی گزارش‌ها — فقط اعتبارسنج */
+  reportSearch: "/panel/report-search",
   requestDetail: (id: string) => `/panel/request/${id}`,
   approvalList: "/panel/approval-list",
   inviteUser: "/panel/invite-user",

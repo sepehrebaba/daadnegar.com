@@ -15,6 +15,7 @@ import {
   UserPlus,
   AlertCircle,
   Settings,
+  Search,
 } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { toPersianNum } from "@/lib/utils";
@@ -62,6 +63,8 @@ export function MainMenuScreen() {
     user != null &&
     (user.role === "validator" || user.approvedRequestsCount >= minApprovedForApproval);
 
+  const isValidator = user?.role === "validator";
+
   useEffect(() => {
     if (!showApprovalSection) {
       setPendingReviewCount(null);
@@ -84,12 +87,14 @@ export function MainMenuScreen() {
 
   return (
     <div className="bg-background flex flex-col items-center justify-center gap-4 p-4">
-      <Alert className="max-w-md" variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          برای ثبت گزارش جدید، لطفاً مطمئن شوید که اتصال شما امن است.
-        </AlertDescription>
-      </Alert>
+      {!isValidator && (
+        <Alert className="max-w-md" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            برای ثبت گزارش جدید، لطفاً مطمئن شوید که اتصال شما امن است.
+          </AlertDescription>
+        </Alert>
+      )}
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-foreground text-2xl font-black">پنل کاربری</CardTitle>
@@ -108,27 +113,38 @@ export function MainMenuScreen() {
             </span>
           </Button>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {isValidator ? (
             <Button
-              onClick={() => {
-                startReport();
-                router.push(routes.reportCategory);
-              }}
+              onClick={() => router.push(routes.reportSearch)}
               className="w-full justify-start gap-3 py-6 text-base font-black"
               variant="default"
             >
-              <FileText className="h-5 w-5" />
-              ثبت گزارش جدید
+              <Search className="h-5 w-5" />
+              جستجوی گزارشات
             </Button>
-            <Button
-              onClick={() => router.push(routes.myRequests)}
-              className="w-full justify-start gap-3 py-6 text-base"
-              variant="outline"
-            >
-              <ListChecks className="h-5 w-5" />
-              گزارش‌های من
-            </Button>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Button
+                onClick={() => {
+                  startReport();
+                  router.push(routes.reportCategory);
+                }}
+                className="w-full justify-start gap-3 py-6 text-base font-black"
+                variant="default"
+              >
+                <FileText className="h-5 w-5" />
+                ثبت گزارش جدید
+              </Button>
+              <Button
+                onClick={() => router.push(routes.myRequests)}
+                className="w-full justify-start gap-3 py-6 text-base"
+                variant="outline"
+              >
+                <ListChecks className="h-5 w-5" />
+                گزارش‌های من
+              </Button>
+            </div>
+          )}
 
           {showApprovalSection && (
             <Button
