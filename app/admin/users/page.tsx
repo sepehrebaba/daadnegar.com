@@ -62,6 +62,7 @@ import {
   Copy,
   CheckCircle2,
 } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const PASSWORD_REQUIREMENTS = [
   {
@@ -190,13 +191,17 @@ export default function AdminUsersPage() {
     const u = normalizeUsername(addUserUsername);
     if (!u || !isValidPublicUsername(u)) {
       setAddUserError(
-        "نام کاربری معتبر نیست: ۳ تا ۳۲ کاراکتر، فقط حروف کوچک انگلیسی، عدد و زیرخط (بدون dn_).",
+        "نام کاربری معتبر نیست: ۳ تا ۳۲ کاراکتر، فقط حروف کوچک انگلیسی، عدد و زیرخط.",
       );
       return;
     }
     setAddUserLoading(true);
     setAddUserError("");
-    const body: { username: string; name?: string; role?: "user" | "validator" } = {
+    const body: {
+      username: string;
+      name?: string;
+      role?: "user" | "validator";
+    } = {
       username: u,
       role: addUserRole,
     };
@@ -207,7 +212,12 @@ export default function AdminUsersPage() {
       setAddUserError((error as { message?: string })?.message ?? "خطای ناشناخته");
       return;
     }
-    const d = data as { username?: string; password?: string; name?: string; role?: string };
+    const d = data as {
+      username?: string;
+      password?: string;
+      name?: string;
+      role?: string;
+    };
     if (d?.username && d?.password) {
       setAddUserCredentials({
         username: d.username,
@@ -546,7 +556,7 @@ export default function AdminUsersPage() {
                       required
                     />
                     <p className="text-muted-foreground mt-1 text-xs">
-                      ۳–۳۲ کاراکتر؛ فقط a-z، 0-9 و _؛ نمی‌تواند با dn_ شروع شود.
+                      ۳–۳۲ کاراکتر؛ فقط a-z، 0-9 و _
                     </p>
                   </div>
                   <div>
@@ -597,8 +607,7 @@ export default function AdminUsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>نام</TableHead>
-                <TableHead>ایمیل</TableHead>
+                <TableHead>نام کاربری</TableHead>
                 <TableHead>نقش</TableHead>
                 <TableHead>تعداد توکن</TableHead>
                 <TableHead>تعداد گزارش</TableHead>
@@ -609,9 +618,13 @@ export default function AdminUsersPage() {
             <TableBody>
               {users.map((u) => (
                 <TableRow key={u.id}>
-                  <TableCell>{u.name}</TableCell>
                   <TableCell>
-                    <span dir="ltr">{u.username}</span>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <span dir="ltr">{u.username}</span>
+                      </TooltipTrigger>
+                      <TooltipContent>نام نمایشی: {u.name}</TooltipContent>
+                    </Tooltip>
                   </TableCell>
                   <TableCell>
                     <Select
