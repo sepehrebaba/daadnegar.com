@@ -37,6 +37,7 @@ import {
   User,
   X,
   Mail,
+  CheckCheckIcon,
 } from "lucide-react";
 
 const MIN_COMMENT_LEN = 10;
@@ -349,11 +350,6 @@ export function ApprovalDetailScreen() {
                 </Badge>
               )}
             </div>
-            {readOnly && report.status === "pending" && userHasReviewed && (
-              <p className="text-muted-foreground mt-2 text-center text-xs sm:text-right">
-                رأی شما ثبت شده است؛ تا تکمیل حد نصاب‌ آرا فقط امکان مشاهده وجود دارد.
-              </p>
-            )}
           </div>
         </div>
         {!readOnly && !hasAcceptedReview && (
@@ -373,7 +369,7 @@ export function ApprovalDetailScreen() {
           </div>
         )}
         {!readOnly && hasAcceptedReview && (
-          <div className="border-border bg-muted/30 flex items-center gap-2 gap-6 rounded-lg border p-1.5 sm:max-w-md">
+          <div className="border-border bg-muted/30 flex items-center gap-6 rounded-lg border p-1.5 sm:max-w-md">
             <span className="text-muted-foreground text-xs">
               لطفا پس از بررسی کامل گزارش، رأی خود را ثبت کنید.
             </span>
@@ -396,6 +392,7 @@ export function ApprovalDetailScreen() {
                 onClick={() => {
                   setRejectError(null);
                   setRejectDialogOpen(true);
+                  P;
                 }}
                 disabled={actionLoading}
                 className="gap-1.5"
@@ -403,6 +400,37 @@ export function ApprovalDetailScreen() {
                 <X className="h-4 w-4" />
                 رد
               </Button>
+            </div>
+          </div>
+        )}
+        {readOnly && report.status === "pending" && userHasReviewed && (
+          <div className="border-border bg-muted/20 flex flex-col items-center gap-2 rounded-lg border p-1.5 sm:max-w-md">
+            <p className="text-muted-foreground flex items-center gap-2 text-center text-xs sm:text-right">
+              <CheckCheckIcon className="h-4 w-4" />
+              رأی شما ثبت شده است؛ تا تکمیل حد نصاب‌ آرا فقط امکان مشاهده وجود دارد.
+            </p>
+
+            <div className="bg-card flex gap-2 rounded-md border px-2 *:p-1">
+              <span className="text-muted-foreground text-xs">رای شما: </span>
+              <strong
+                className={`text-xs ${c?.myReviewAction === "accepted" ? "text-green-600" : "text-red-600"}`}
+              >
+                {c?.myReviewAction === "accepted" ? "تایید" : "رد"}
+              </strong>
+              {c?.myReviewAction === "rejected" && (
+                <>
+                  <span className="text-muted-foreground text-xs">کد دلیل:</span>
+
+                  <strong
+                    className={`text-xs ${c?.myRejectionTier === "good_faith" ? "text-green-600" : "text-red-600"}`}
+                  >
+                    {c?.myRejectionTier}
+                  </strong>
+                </>
+              )}
+              <span className="text-muted-foreground text-xs">
+                شرح دلیل: {c?.myReviewAction === "rejected" ? c?.myRejectionTier : ""}
+              </span>
             </div>
           </div>
         )}

@@ -12,12 +12,9 @@ import {
   Shield,
   LogOut,
   ChevronDown,
-  Globe,
   UserCog,
   MapPin,
   Settings,
-  List,
-  ClipboardList,
   UserRound,
 } from "lucide-react";
 import { AdminAuthGuard } from "@/components/admin-auth-guard";
@@ -49,16 +46,8 @@ function LogoutButton() {
   );
 }
 
-const reportsSubItems = [
-  { href: "/admin/reports", label: "لیست گزارشات", icon: List },
-  {
-    href: "/admin/reports/queue",
-    label: "صف بررسی گزارشات",
-    icon: ClipboardList,
-  },
-];
-
 const navItems = [
+  { href: "/admin/reports", label: "گزارش‌ها", icon: FileText },
   { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree },
   { href: "/admin/users", label: "کاربران", icon: Users },
   { href: "/admin/people", label: "افراد", icon: UserCircle },
@@ -76,7 +65,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [pendingCount, setPendingCount] = useState(0);
   const isRegionsActive = pathname === "/admin/provinces";
   const isSettingsActive = settingsSubItems.some((s) => pathname === s.href);
-  const isReportsActive = reportsSubItems.some((s) => pathname === s.href);
 
   useEffect(() => {
     if (pathname === "/admin/login") return;
@@ -96,56 +84,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <h2 className="text-lg font-bold">پنل ادمین</h2>
               <ThemeToggle />
             </div>
-            <Collapsible defaultOpen={isReportsActive} className="group/collapsible">
-              <CollapsibleTrigger
-                className={cn(
-                  "hover:bg-muted flex w-full items-center justify-between gap-3 rounded-lg px-4 py-2",
-                  isReportsActive && "bg-muted",
-                )}
-              >
-                <span className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 shrink-0" />
-                  گزارش‌ها
-                </span>
-                <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-180" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="mt-1 flex flex-col gap-0.5 pr-6">
-                  {reportsSubItems.map(({ href, label, icon: Icon }) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm",
-                        pathname === href ? "bg-primary text-primary-foreground" : "hover:bg-muted",
-                      )}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      {label}
-                      {href === "/admin/reports" && pendingCount > 0 && (
-                        <Badge
-                          variant="destructive"
-                          className="me-1 min-w-5 px-1.5 py-0 text-[10px]"
-                        >
-                          {pendingCount}
-                        </Badge>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
             {navItems.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-4 py-2",
-                  pathname === href ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                  pathname === href ||
+                    (href === "/admin/reports" && pathname?.startsWith("/admin/reports"))
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted",
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 {label}
+                {href === "/admin/reports" && pendingCount > 0 && (
+                  <Badge variant="destructive" className="me-1 min-w-5 px-1.5 py-0 text-[10px]">
+                    {pendingCount}
+                  </Badge>
+                )}
               </Link>
             ))}
             <Link

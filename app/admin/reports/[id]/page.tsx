@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/lib/edyen";
@@ -8,10 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   ArrowRight,
   Building2,
   Calendar,
+  Check,
   FileText,
+  Mail,
   MapPin,
   MessageSquare,
   User,
@@ -25,14 +35,26 @@ type ReportReview = {
   reviewerId?: string | null;
 };
 
+type ValidatorAssignment = {
+  id: string;
+  validatorId: string;
+  assignedAt: string;
+  acceptedAt?: string | null;
+  replacedAt?: string | null;
+  reason: string;
+  validator: { id: string; name: string; username: string };
+};
+
 type ReportDetail = {
   id: string;
   title?: string | null;
   description: string;
   status: string;
   rejectionReason?: string | null;
+  assignedAt?: string | null;
   reviewedAt?: string | null;
   reviews?: ReportReview[];
+  validatorAssignments?: ValidatorAssignment[];
   organizationType?: string | null;
   organizationName?: string | null;
   province?: string | null;
@@ -82,6 +104,167 @@ function InfoRow({
         <span className="text-foreground">{value}</span>
       </div>
     </div>
+  );
+}
+
+function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleDateString("fa-IR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+type StepStatus = "completed" | "current" | "pending";
+
+function getValidatorReviewStatus(assignment: ValidatorAssignment, reviews: ReportReview[]) {
+  const review = reviews.find((r) => r.reviewerId === assignment.validator.id);
+  if (review) {
+    return {
+      status: review.action as "accepted" | "rejected",
+      date: review.createdAt,
+    };
+  }
+  if (assignment.replacedAt) {
+    return { status: "replaced" as const, date: assignment.replacedAt };
+  }
+  if (assignment.acceptedAt) {
+    return { status: "reviewing" as const, date: null };
+  }
+  return { status: "waiting" as const, date: null };
+}
+
+function ReportTimeline({ report }: { report: ReportDetail }) {
+  const isFinal = report.status === "accepted" || report.status === "rejected";
+  const assignments = report.validatorAssignments ?? [];
+  const reviews = report.reviews ?? [];
+
+  const steps: {
+    label: string;
+    date?: string | null;
+    status: StepStatus;
+  }[] = [
+    {
+      label: "ثبت",
+      date: report.createdAt,
+      status: "completed",
+    },
+    {
+      label: "بررسی و اعتبارسنجی",
+      date: assignments.length > 0 ? (report.assignedAt ?? assignments[0]?.assignedAt) : null,
+      status: isFinal ? "completed" : "current",
+    },
+    {
+      label: "تایید و نتایج",
+      date: report.reviewedAt,
+      status: isFinal ? "completed" : "pending",
+    },
+  ];
+
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle>تایم‌لاین گزارش</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* 3-step horizontal timeline */}
+        <div className="flex w-full">
+          {steps.map((step, idx) => (
+            <React.Fragment key={step.label}>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all ${
+                    step.status === "completed"
+                      ? "bg-green-500 text-white"
+                      : step.status === "current"
+                        ? "bg-primary text-primary-foreground ring-primary/20 ring-4"
+                        : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {step.status === "completed" ? (
+                    <Check className="h-5 w-5" />
+                  ) : (
+                    <span>{idx + 1}</span>
+                  )}
+                </div>
+                <p
+                  className={`mt-2 text-center text-sm font-medium ${
+                    step.status === "pending" ? "text-muted-foreground" : "text-foreground"
+                  }`}
+                >
+                  {step.label}
+                </p>
+                <p className="text-muted-foreground mt-1 text-center text-xs">
+                  {step.date ? formatDateTime(step.date) : "—"}
+                </p>
+              </div>
+              {idx < steps.length - 1 && (
+                <div className="flex flex-1 items-start pt-5">
+                  <div
+                    className={`h-0.5 w-full ${
+                      steps[idx + 1]?.status !== "pending" ? "bg-green-500" : "bg-muted"
+                    }`}
+                  />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Validators table */}
+        {assignments.length > 0 && (
+          <div>
+            <h3 className="mb-3 text-sm font-semibold">اعتبارسنج‌ها</h3>
+            <div className="overflow-x-auto rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>اعتبارسنج</TableHead>
+                    <TableHead>تاریخ اساین</TableHead>
+                    <TableHead>وضعیت</TableHead>
+                    <TableHead>تاریخ قبول/رد</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {assignments.map((a) => {
+                    const vs = getValidatorReviewStatus(a, reviews);
+                    return (
+                      <TableRow key={a.id}>
+                        <TableCell>
+                          <span className="font-medium">{a.validator.name}</span>
+                          <span className="text-muted-foreground mr-1 text-xs">
+                            ({a.validator.username})
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm">{formatDateTime(a.assignedAt)}</TableCell>
+                        <TableCell>
+                          {vs.status === "accepted" && <Badge variant="default">تایید شده</Badge>}
+                          {vs.status === "rejected" && <Badge variant="destructive">رد شده</Badge>}
+                          {vs.status === "reviewing" && (
+                            <Badge variant="secondary">در حال بررسی</Badge>
+                          )}
+                          {vs.status === "waiting" && <Badge variant="outline">در انتظار</Badge>}
+                          {vs.status === "replaced" && (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              جایگزین شده
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {vs.date ? formatDateTime(vs.date) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -175,6 +358,9 @@ export default function AdminReportDetailPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
+        {/* تایم‌لاین گزارش + جدول اعتبارسنج‌ها */}
+        <ReportTimeline report={report} />
+
         {/* شخص گزارش‌شده */}
         <Card>
           <CardHeader>
@@ -346,88 +532,6 @@ export default function AdminReportDetailPage() {
             )}
           </CardContent>
         </Card>
-
-        {/* اطلاعات اداری */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>اطلاعات اداری</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-4 text-sm">
-            <span>
-              <span className="text-muted-foreground">تاریخ ثبت: </span>
-              {new Date(report.createdAt).toLocaleDateString("fa-IR", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-            <span>
-              <span className="text-muted-foreground">آخرین بروزرسانی: </span>
-              {new Date(report.updatedAt).toLocaleDateString("fa-IR", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-            {report.reviewedAt && (
-              <span>
-                <span className="text-muted-foreground">تاریخ بررسی: </span>
-                {new Date(report.reviewedAt).toLocaleDateString("fa-IR", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* بررسی‌ها */}
-        {report.reviews && report.reviews.length > 0 && (
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>بررسی‌ها ({report.reviews.length})</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {report.reviews.map((r) => (
-                  <div
-                    key={r.id}
-                    className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm"
-                  >
-                    <Badge variant={r.action === "accepted" ? "default" : "destructive"}>
-                      {r.action === "accepted" ? "تأیید" : "رد"}
-                    </Badge>
-                    {r.rejectionReason && (
-                      <span className="text-muted-foreground">
-                        (
-                        {r.rejectionReason === "false"
-                          ? "گزارش اشتباه/قصد تخریب"
-                          : "نقص یا افشای اطلاعات"}
-                        )
-                      </span>
-                    )}
-                    <span className="text-muted-foreground">
-                      {new Date(r.createdAt).toLocaleDateString("fa-IR", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
