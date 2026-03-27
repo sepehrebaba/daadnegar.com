@@ -15,32 +15,26 @@ async function listValidatorsOrdered() {
   });
 }
 
-/** Pick `count` distinct validators in round-robin order; advances global cursor. */
-async function pickNextNValidators(count: number): Promise<string[]> {
-  const validators = await listValidatorsOrdered();
-  if (validators.length === 0 || count < 1) return [];
-
-  const k = Math.min(count, validators.length);
-  const setting = await prisma.setting.findUnique({
-    where: { key: LAST_ASSIGNED_INDEX_KEY },
+/** همهٔ اعتبارسنج‌هایی که تا حالا برای این گزارش ردیف اختصاص داشته‌اند (فعال یا جایگزین‌شده). */
+async function getReportAssignmentValidatorIds(reportId: string): Promise<Set<string>> {
+  const rows = await prisma.reportValidatorAssignment.findMany({
+    where: { reportId },
+    select: { validatorId: true },
   });
-  let lastIndex = setting ? Number.parseInt(setting.value, 10) : -1;
-  if (Number.isNaN(lastIndex)) lastIndex = -1;
+  return new Set(rows.map((r) => r.validatorId));
+}
 
-  const start = (lastIndex + 1) % validators.length;
-  const ids: string[] = [];
-  for (let i = 0; i < k; i++) {
-    ids.push(validators[(start + i) % validators.length].id);
+/** برای اختصاص تازه: کسانی که قبلاً اسلات داشته‌اند یا رأی ثبت کرده‌اند را کنار بگذار. */
+async function getValidatorsToExcludeForReport(reportId: string): Promise<Set<string>> {
+  const exclude = await getReportAssignmentValidatorIds(reportId);
+  const reviews = await prisma.reportReview.findMany({
+    where: { reportId, reviewerId: { not: null } },
+    select: { reviewerId: true },
+  });
+  for (const r of reviews) {
+    if (r.reviewerId) exclude.add(r.reviewerId);
   }
-  const newLastIndex = (start + k - 1) % validators.length;
-
-  await prisma.setting.upsert({
-    where: { key: LAST_ASSIGNED_INDEX_KEY },
-    create: { key: LAST_ASSIGNED_INDEX_KEY, value: String(newLastIndex) },
-    update: { value: String(newLastIndex) },
-  });
-
-  return ids;
+  return exclude;
 }
 
 /** Round-robin among validators not in `exclude`. */
@@ -75,15 +69,6 @@ async function pickNextNValidatorsAvoiding(count: number, exclude: Set<string>):
   });
 
   return picked;
-}
-
-/** Next validator after current (for SLA reassign); different person when possible. */
-function pickNextAfterCurrent(validators: { id: string }[], currentId: string): string | null {
-  if (validators.length === 0) return null;
-  const idx = validators.findIndex((v) => v.id === currentId);
-  if (idx === -1) return validators[0]?.id ?? null;
-  if (validators.length === 1) return validators[0].id;
-  return validators[(idx + 1) % validators.length].id;
 }
 
 /** Keeps `Report.assignedTo` / `assignedAt` aligned with oldest active slot (نمایش و سازگاری). */
@@ -138,7 +123,7 @@ export async function topUpValidatorSlotsForReport(reportId: string): Promise<vo
   const slotsToCreate = stillNeedVotes - activeNotVoted;
   if (slotsToCreate <= 0) return;
 
-  const exclude = new Set<string>([...done, ...activeSlots.map((s) => s.validatorId)]);
+  const exclude = await getValidatorsToExcludeForReport(reportId);
   const validators = await listValidatorsOrdered();
   const available = validators.filter((v) => !exclude.has(v.id)).length;
   const pickCount = Math.min(slotsToCreate, available);
@@ -235,7 +220,11 @@ export async function assignReportFromQueue(reportId: string): Promise<boolean> 
   if (validators.length === 0) return false;
 
   const want = Math.min(validators.length, Math.min(50, Math.max(1, parallel, minConsensus)));
-  const validatorIds = await pickNextNValidators(want);
+  const exclude = await getValidatorsToExcludeForReport(reportId);
+  const availableCount = validators.filter((v) => !exclude.has(v.id)).length;
+  if (availableCount < 1) return false;
+  const pickCount = Math.min(want, availableCount);
+  const validatorIds = await pickNextNValidatorsAvoiding(pickCount, exclude);
   if (validatorIds.length === 0) return false;
 
   const now = new Date();
@@ -263,11 +252,21 @@ async function reassignStaleSlot(slot: {
   reportId: string;
   validatorId: string;
 }): Promise<boolean> {
-  const validators = await listValidatorsOrdered();
-  const nextId = pickNextAfterCurrent(validators, slot.validatorId);
-  if (!nextId) return false;
-
+  const exclude = await getValidatorsToExcludeForReport(slot.reportId);
+  const ids = await pickNextNValidatorsAvoiding(1, exclude);
   const now = new Date();
+
+  if (ids.length === 0) {
+    await prisma.reportValidatorAssignment.update({
+      where: { id: slot.id },
+      data: { replacedAt: now },
+    });
+    await syncReportPrimaryAssignee(slot.reportId);
+    await topUpValidatorSlotsForReport(slot.reportId);
+    return true;
+  }
+
+  const nextId = ids[0]!;
   await prisma.$transaction([
     prisma.reportValidatorAssignment.update({
       where: { id: slot.id },
@@ -364,24 +363,20 @@ export async function reassignReportsFromDemotedValidator(validatorId: string): 
   const now = new Date();
 
   for (const slot of activeSlots) {
-    const existingSlots = await prisma.reportValidatorAssignment.findMany({
-      where: { reportId: slot.reportId, replacedAt: null },
-      select: { validatorId: true },
-    });
-    const exclude = new Set(existingSlots.map((s) => s.validatorId));
-    exclude.add(validatorId);
+    const exclude = await getValidatorsToExcludeForReport(slot.reportId);
 
-    const candidates = validators.filter((v) => !exclude.has(v.id));
-    if (candidates.length === 0) {
+    const ids = await pickNextNValidatorsAvoiding(1, exclude);
+    if (ids.length === 0) {
       await prisma.reportValidatorAssignment.update({
         where: { id: slot.id },
         data: { replacedAt: now },
       });
       await syncReportPrimaryAssignee(slot.reportId);
+      await topUpValidatorSlotsForReport(slot.reportId);
       continue;
     }
 
-    const nextId = pickNextAfterCurrent(candidates, validatorId) ?? candidates[0].id;
+    const nextId = ids[0]!;
 
     await prisma.$transaction([
       prisma.reportValidatorAssignment.update({
