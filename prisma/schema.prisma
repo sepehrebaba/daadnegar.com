@@ -19,7 +19,7 @@ model User {
   emailVerified DateTime?
   image         String?
   role          String    @default("user") // "user" | "validator"
-  tokenBalance  Int       @default(0)
+  tokenBalance  Float     @default(0)
   /// اگر true باشد، کاربر تا زمان تغییر رمز (خودش یا ادمین) به اپ اصلی دسترسی ندارد.
   mustChangePassword Boolean @default(false)
   createdAt     DateTime  @default(now())
@@ -42,7 +42,7 @@ model User {
 model TokenTransaction {
   id        String   @id @default(cuid())
   userId    String
-  amount    Int      // مثبت = واریز، منفی = برداشت
+  amount    Float    // مثبت = واریز، منفی = برداشت
   type      String   // registration | report_approved | report_false | report_problematic | invite_activity | admin_reward
   refId     String?  // مثلاً reportId برای تراکنش‌های مربوط به گزارش
   createdAt DateTime @default(now())
@@ -209,7 +209,8 @@ model Report {
   status           String    @default("pending")
   assignedTo       String?   // Validator userId - round-robin assigned for validator queue
   assignedAt       DateTime? // زمان آخرین اختصاص به اعتبارسنج جاری (ورکر / اسکن SLA)
-  rejectionReason  String?   // "false" | "problematic" when status=rejected
+  rejectionReason  String?   // rejected: false|problematic (ادمین) | good_faith|bad_faith (اکثریت اعتبارسنج)
+  rejectionCode    String?   // کد نهایی R1..B6 پس از اجماع (اختیاری)
   reviewedBy       String?
   reviewedAt       DateTime?
   createdAt        DateTime  @default(now())
@@ -249,6 +250,7 @@ model ReportValidatorAssignment {
   reportId    String
   validatorId String
   assignedAt  DateTime  @default(now())
+  acceptedAt  DateTime? // زمانی که اعتبارسنج بررسی را پذیرفت; null = هنوز پذیرش نکرده
   replacedAt  DateTime? // پایان این اسلات (SLA / جایگزینی); null = هنوز فعال
   reason      String    @default("initial") // initial | stale_reassign
 
@@ -267,9 +269,12 @@ model ReportReview {
   id             String   @id @default(cuid())
   reportId       String
   reviewerId     String?   // User.id for validators; null for admin panel users
-  action         String    // "accepted" | "rejected"
-  rejectionReason String?  // "problematic" | "false" when action=rejected; problematic=نقص/افشا، false=گزارش اشتباه/قصد تخریب
-  createdAt      DateTime @default(now())
+  action          String    // "accepted" | "rejected"
+  rejectionReason String?   // "problematic" | "false" هنگام رد توسط ادمین؛ با اعتبارسنج معمولاً خالی
+  rejectionTier   String?   // good_faith | bad_faith وقتی action=rejected (رأی اعتبارسنج)
+  rejectionCode   String?   // R1..R5 | B1..B6
+  reviewerComment String?   @db.Text // نظر اجباری برای تأیید/رد توسط اعتبارسنج
+  createdAt       DateTime @default(now())
 
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 

@@ -14,6 +14,7 @@ import {
 } from "../lib/report-validator-assignment";
 import { tryFinalizeConsensusReport } from "../lib/report-consensus-finalize";
 import { processReportTokenSettlement } from "../lib/report-token-settlement";
+import { isBadFaithCode, isGoodFaithCode } from "../lib/report-consensus-logic";
 import { getSettingBool, getSettingNumber, SETTING_KEYS } from "../lib/settings";
 import { documentToServeUrl } from "./upload";
 
@@ -29,6 +30,36 @@ function mapReportDocuments<T extends { documents?: { id: string; name: string; 
 
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
+}
+
+const MIN_VALIDATOR_COMMENT_LEN = 10;
+
+function requireValidatorComment(raw: string | undefined): string {
+  const t = (raw ?? "").trim();
+  if (t.length < MIN_VALIDATOR_COMMENT_LEN) {
+    throw new Error(
+      `شرح نظر شما باید حداقل ${MIN_VALIDATOR_COMMENT_LEN} نویسه باشد (تأیید و رد بدون نظر کافی نیست).`,
+    );
+  }
+  return t;
+}
+
+function parseValidatorReject(body: {
+  rejectionTier: "good_faith" | "bad_faith";
+  rejectionCode: string;
+  comment: string;
+}) {
+  const code = body.rejectionCode.trim().toUpperCase();
+  const tier = body.rejectionTier;
+  if (tier === "good_faith") {
+    if (!isGoodFaithCode(code)) {
+      throw new Error("کد رد با حسن‌نیت باید یکی از R1 تا R5 باشد");
+    }
+  } else if (!isBadFaithCode(code)) {
+    throw new Error("کد رد با سوءنیت باید یکی از B1 تا B6 باشد");
+  }
+  const comment = requireValidatorComment(body.comment);
+  return { tier, code, comment };
 }
 
 export const reportsService = new Elysia({ prefix: "/reports", aot: false })
@@ -439,13 +470,29 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       }
       if (!canView) throw new Error("Forbidden");
 
-      const consensusMin = await getSettingNumber(SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS);
-      const validatorReviews = await prisma.reportReview.findMany({
-        where: { reportId: report.id, reviewerId: { not: null } },
-        select: { reviewerId: true, action: true },
-      });
+      const [consensusMin, validatorReviews, myAssignment] = await Promise.all([
+        getSettingNumber(SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS),
+        prisma.reportReview.findMany({
+          where: { reportId: report.id, reviewerId: { not: null } },
+          select: { reviewerId: true, action: true, rejectionTier: true },
+        }),
+        prisma.reportValidatorAssignment.findFirst({
+          where: {
+            reportId: report.id,
+            validatorId: session.user.id,
+            replacedAt: null,
+          },
+          select: { acceptedAt: true },
+        }),
+      ]);
       const acceptedVotes = validatorReviews.filter((r) => r.action === "accepted").length;
-      const rejectedVotes = validatorReviews.filter((r) => r.action === "rejected").length;
+      const badFaithRejectVotes = validatorReviews.filter(
+        (r) => r.action === "rejected" && r.rejectionTier === "bad_faith",
+      ).length;
+      const goodFaithRejectVotes = validatorReviews.filter(
+        (r) => r.action === "rejected" && r.rejectionTier !== "bad_faith",
+      ).length;
+      const rejectedVotes = goodFaithRejectVotes + badFaithRejectVotes;
       const myVote = validatorReviews.find((r) => r.reviewerId === session.user.id);
 
       return {
@@ -454,8 +501,12 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           minReviews: consensusMin,
           acceptedVotes,
           rejectedVotes,
+          goodFaithRejectVotes,
+          badFaithRejectVotes,
           validatorVotesTotal: validatorReviews.length,
           myReviewAction: myVote?.action ?? null,
+          myRejectionTier: myVote?.rejectionTier ?? null,
+          myAcceptedAt: myAssignment?.acceptedAt?.toISOString() ?? null,
         },
       };
     },
@@ -491,8 +542,42 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
     { params: t.Object({ id: t.String() }) },
   )
   .put(
+    "/:id/accept-review",
+    async ({ params, session }) => {
+      if (!session?.user?.id) throw new Error("Unauthorized");
+      const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+      });
+      if (dbUser?.role !== "validator") {
+        throw new Error("Forbidden: فقط اعتبارسنج‌ها می‌توانند بررسی را بپذیرند");
+      }
+
+      const assignment = await prisma.reportValidatorAssignment.findFirst({
+        where: {
+          reportId: params.id,
+          validatorId: session.user.id,
+          replacedAt: null,
+        },
+      });
+      if (!assignment) {
+        throw new Error("این گزارش به شما اختصاص داده نشده است");
+      }
+      if (assignment.acceptedAt) {
+        return { acceptedAt: assignment.acceptedAt };
+      }
+
+      const updated = await prisma.reportValidatorAssignment.update({
+        where: { id: assignment.id },
+        data: { acceptedAt: new Date() },
+      });
+      return { acceptedAt: updated.acceptedAt };
+    },
+    { params: t.Object({ id: t.String() }) },
+  )
+  .put(
     "/:id/approve",
-    async ({ params, request, ip, session }) => {
+    async ({ params, body, request, ip, session }) => {
       if (!session?.user?.id) throw new Error("Unauthorized");
       const admin = await prisma.admin.findUnique({
         where: { userId: session.user.id },
@@ -528,11 +613,13 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
             data: { status: "accepted", reviewedBy: session.user.id, reviewedAt: new Date() },
             include: { person: true },
           });
+          const ac = (body?.comment ?? "").trim() || null;
           await tx.reportReview.create({
             data: {
               reportId: r.id,
               reviewerId: session.user.id,
               action: "accepted",
+              reviewerComment: ac,
             },
           });
           return r;
@@ -575,12 +662,15 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده یا قبلاً رأی داده‌اید");
       }
 
+      const approveComment = requireValidatorComment(body?.comment);
+
       await prisma.$transaction(async (tx) => {
         await tx.reportReview.create({
           data: {
             reportId: existing.id,
             reviewerId: session.user.id,
             action: "accepted",
+            reviewerComment: approveComment,
           },
         });
         await releaseValidatorSlotAfterReviewTx(tx, existing.id, session.user.id);
@@ -615,19 +705,28 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       });
       return report;
     },
-    { params: t.Object({ id: t.String() }) },
+    {
+      params: t.Object({ id: t.String() }),
+      body: t.Optional(
+        t.Object({
+          comment: t.Optional(t.String()),
+        }),
+      ),
+    },
   )
   .put(
     "/:id/reject",
     async ({ params, body, request, ip, session }) => {
       if (!session?.user?.id) throw new Error("Unauthorized");
-      const rejectionReason = body?.rejectionReason ?? "problematic";
-      if (rejectionReason !== "false" && rejectionReason !== "problematic") {
-        throw new Error("دلیل رد باید «نقص یا افشای اطلاعات» یا «گزارش اشتباه یا قصد تخریب» باشد");
-      }
       const admin = await prisma.admin.findUnique({
         where: { userId: session.user.id },
       });
+      const rejectionReasonAdmin = admin ? (body?.rejectionReason ?? "problematic") : null;
+      if (admin) {
+        if (rejectionReasonAdmin !== "false" && rejectionReasonAdmin !== "problematic") {
+          throw new Error("دلیل رد باید «نقص یا افشای اطلاعات» یا «گزارش اشتباه یا قصد تخریب» باشد");
+        }
+      }
       let canApprove = !!admin;
       let dbUser: { role: string | null } | null = null;
       if (!canApprove) {
@@ -653,12 +752,14 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         throw new Error("Not found or already reviewed");
 
       if (admin) {
+        const rr = rejectionReasonAdmin!;
+        const adminRejectComment = (body?.comment ?? "").trim() || null;
         const report = await prisma.$transaction(async (tx) => {
           const r = await tx.report.update({
             where: { id: params.id },
             data: {
               status: "rejected",
-              rejectionReason,
+              rejectionReason: rr,
               reviewedBy: session.user.id,
               reviewedAt: new Date(),
             },
@@ -669,7 +770,8 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
               reportId: r.id,
               reviewerId: session.user.id,
               action: "rejected",
-              rejectionReason,
+              rejectionReason: rr,
+              reviewerComment: adminRejectComment,
             },
           });
           return r;
@@ -678,11 +780,11 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
           await import("../lib/token-transaction");
         const deduct =
-          rejectionReason === "false"
+          rr === "false"
             ? await gsn(SK.TOKENS_DEDUCT_FALSE_REPORT)
             : await gsn(SK.TOKENS_DEDUCT_PROBLEMATIC_REPORT);
         const txType =
-          rejectionReason === "false"
+          rr === "false"
             ? TOKEN_TRANSACTION_TYPES.report_false
             : TOKEN_TRANSACTION_TYPES.report_problematic;
         await addTokenTransaction(existing.userId, -deduct, txType, report.id);
@@ -690,7 +792,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
           action: "reject",
           entity: "Report",
           entityId: report.id,
-          details: JSON.stringify({ rejectionReason }),
+          details: JSON.stringify({ rejectionReason: rr }),
           ctx: {
             userId: session.user.id,
             ipAddress: ip?.address,
@@ -716,13 +818,27 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         throw new Error("Forbidden: این گزارش به شما اختصاص داده نشده یا قبلاً رأی داده‌اید");
       }
 
+      if (body.rejectionTier !== "good_faith" && body.rejectionTier !== "bad_faith") {
+        throw new Error(
+          "برای رد باید نوع رد (حسن‌نیت یا سوءنیت)، کد دلیل و شرح نظر (حداقل ۱۰ نویسه) را ارسال کنید.",
+        );
+      }
+
+      const parsedReject = parseValidatorReject({
+        rejectionTier: body.rejectionTier,
+        rejectionCode: body.rejectionCode ?? "",
+        comment: body.comment ?? "",
+      });
+
       await prisma.$transaction(async (tx) => {
         await tx.reportReview.create({
           data: {
             reportId: existing.id,
             reviewerId: session.user.id,
             action: "rejected",
-            rejectionReason,
+            rejectionTier: parsedReject.tier,
+            rejectionCode: parsedReject.code,
+            reviewerComment: parsedReject.comment,
           },
         });
         await releaseValidatorSlotAfterReviewTx(tx, existing.id, session.user.id);
@@ -751,7 +867,8 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         details: JSON.stringify({
           phase: finalized ? "finalized" : "vote",
           vote: "rejected",
-          rejectionReason,
+          rejectionTier: parsedReject.tier,
+          rejectionCode: parsedReject.code,
         }),
         ctx: {
           userId: session.user.id,
@@ -765,6 +882,9 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       params: t.Object({ id: t.String() }),
       body: t.Object({
         rejectionReason: t.Optional(t.Union([t.Literal("false"), t.Literal("problematic")])),
+        rejectionTier: t.Optional(t.Union([t.Literal("good_faith"), t.Literal("bad_faith")])),
+        rejectionCode: t.Optional(t.String()),
+        comment: t.Optional(t.String()),
       }),
     },
   );

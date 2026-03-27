@@ -7,6 +7,7 @@ import { addTokenTransaction, TOKEN_TRANSACTION_TYPES } from "../../lib/token-tr
 import { getSettingNumber, SETTING_KEYS } from "../../lib/settings";
 import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
 import { generateRandomPassword } from "@/lib/password-utils";
+import { publishValidatorDemoted } from "@/lib/rabbitmq";
 
 export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
   .get("/users", async () => {
@@ -27,10 +28,16 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
   .put(
     "/users/:id/role",
     async ({ params, body, request, ip, auth }) => {
+      const existing = await prisma.user.findUnique({
+        where: { id: params.id },
+        select: { role: true },
+      });
+
       const user = await prisma.user.update({
         where: { id: params.id },
         data: { role: body.role },
       });
+
       await createAuditLog({
         action: "update",
         entity: "User",
@@ -41,6 +48,17 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
           userAgent: request.headers.get("user-agent") ?? undefined,
         }),
       });
+
+      if (existing?.role === "validator" && body.role !== "validator") {
+        const enqueued = await publishValidatorDemoted(params.id);
+        if (!enqueued) {
+          console.error(
+            "[admin/users] Failed to enqueue validator-demoted for userId=%s (RabbitMQ may be down)",
+            params.id,
+          );
+        }
+      }
+
       return user;
     },
     {
@@ -54,7 +72,7 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
     "/users/:id/password",
     async ({ params, body, request, ip, auth: adminAuth }) => {
       if (body.password.length < 8) throw new Error("رمز عبور باید حداقل ۸ کاراکتر باشد");
-      if (!/[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(body.password))
+      if (!/[$@#!%*?&^()[\]{}_\-+=.,:;]/.test(body.password))
         throw new Error("رمز عبور باید حداقل یک کاراکتر خاص داشته باشد");
       if (!/[A-Z]/.test(body.password))
         throw new Error("رمز عبور باید حداقل یک حرف بزرگ داشته باشد");
@@ -124,9 +142,7 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
       const role = body.role === "validator" ? "validator" : "user";
       const username = normalizeUsername(body.username);
       if (!username || !isValidPublicUsername(username)) {
-        throw new Error(
-          "نام کاربری معتبر نیست: ۳ تا ۳۲ کاراکتر، حروف کوچک انگلیسی، عدد و زیرخط؛ پیشوند dn_ مجاز نیست.",
-        );
+        throw new Error("نام کاربری معتبر نیست: ۳ تا ۳۲ کاراکتر، حروف کوچک انگلیسی، عدد و زیرخط.");
       }
 
       const email = usernameToInternalEmail(username);

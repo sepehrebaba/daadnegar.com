@@ -9,6 +9,7 @@ export const QUEUE_NAMES = {
   REPORT_SUBMITTED: "report.submitted",
   SLACK_NOTIFICATION: "slack.notification",
   REPORT_TOKEN_SETTLEMENT: "report.token_settlement",
+  VALIDATOR_DEMOTED: "validator.demoted",
 } as const;
 
 /** Payload shape on `report.submitted`: new report vs periodic SLA scan (CronJob → worker). */
@@ -63,6 +64,13 @@ export async function publishReportQueueStaleScan(): Promise<boolean> {
 
 export async function publishReportTokenSettlement(reportId: string): Promise<boolean> {
   return publish(QUEUE_NAMES.REPORT_TOKEN_SETTLEMENT, { reportId });
+}
+
+/**
+ * اعتبارسنج به کاربر عادی تبدیل شده یا غیرفعال شده — گزارش‌های در دست بررسی باید بازتخصیص شوند.
+ */
+export async function publishValidatorDemoted(validatorId: string): Promise<boolean> {
+  return publish(QUEUE_NAMES.VALIDATOR_DEMOTED, { validatorId });
 }
 
 /**

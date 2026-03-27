@@ -90,9 +90,7 @@ export function LoginScreen() {
           </div>
           <CardTitle className="text-foreground text-xl font-bold">ورود به حساب کاربری</CardTitle>
           <CardDescription className="text-xs">
-            نام کاربری یا ایمیل ثبت‌شده و رمز عبور را وارد کنید. اگر حساب قدیمی با دعوت دارید، نام
-            کاربری ممکن است با <span dir="ltr">dn_</span> شروع شود (همان را کامل بنویسید، نه فقط کد
-            دعوت).
+            نام کاربری یا ایمیل ثبت‌شده و رمز عبور را وارد کنید.
           </CardDescription>
         </CardHeader>
         <CardContent>

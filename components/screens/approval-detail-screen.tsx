@@ -15,6 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -22,11 +24,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   ArrowRight,
   Building2,
   Calendar,
   Check,
+  ClipboardCheck,
   FileText,
   MapPin,
   MessageSquare,
@@ -34,6 +38,69 @@ import {
   X,
   Mail,
 } from "lucide-react";
+
+const MIN_COMMENT_LEN = 10;
+
+const GOOD_FAITH_OPTIONS: { value: string; label: string; hint: string }[] = [
+  {
+    value: "R1",
+    label: "R1 — مدارک ناکافی",
+    hint: "اطلاعات در خلاصه هست ولی ناکافی یا ناقص است.",
+  },
+  {
+    value: "R2",
+    label: "R2 — خارج از محدوده",
+    hint: "موضوع جزو فساد عمومی / محدوده سامانه نیست.",
+  },
+  {
+    value: "R3",
+    label: "R3 — تکراری",
+    hint: "همان پرونده یا گزارش تکراری ارسال شده است.",
+  },
+  {
+    value: "R4",
+    label: "R4 — مبهم / فیلدهای ناقص",
+    hint: "شرح یا فیلدها بیش از حد کلی یا ناقص است.",
+  },
+  {
+    value: "R5",
+    label: "R5 — ریسک امنیتی",
+    hint: "محتوا ریسک امنیتی برای اشخاص یا سامانه دارد.",
+  },
+];
+
+const BAD_FAITH_OPTIONS: { value: string; label: string; hint: string }[] = [
+  {
+    value: "B1",
+    label: "B1 — مدارک جعلی یا دستکاری‌شده",
+    hint: "سند ساختگی یا دست‌کاری‌شده است.",
+  },
+  {
+    value: "B2",
+    label: "B2 — اسپم هماهنگ‌شده",
+    hint: "الگوی اسپم یا هماهنگ‌شده مشاهده می‌شود.",
+  },
+  {
+    value: "B3",
+    label: "B3 — Doxxing / افشای عمدی",
+    hint: "تلاش برای افشای غیرمجاز اطلاعات شخصی.",
+  },
+  {
+    value: "B4",
+    label: "B4 — آزار، نفرت‌پراکنی یا تهدید",
+    hint: "محتوای آزاردهنده یا تهدیدآمیز.",
+  },
+  {
+    value: "B5",
+    label: "B5 — جعل هویت",
+    hint: "جعل هویت گزارش‌دهنده یا شخص گزارش‌شده.",
+  },
+  {
+    value: "B6",
+    label: "B6 — باج‌گیری یا اخاذی",
+    hint: "انگیزه باج‌گیری یا اخاذی مشهود است.",
+  },
+];
 
 type ReportDetail = {
   id: string;
@@ -71,8 +138,12 @@ type ReportDetail = {
     minReviews: number;
     acceptedVotes: number;
     rejectedVotes: number;
+    goodFaithRejectVotes: number;
+    badFaithRejectVotes: number;
     validatorVotesTotal: number;
     myReviewAction: string | null;
+    myRejectionTier: string | null;
+    myAcceptedAt: string | null;
   };
 };
 
@@ -105,8 +176,15 @@ export function ApprovalDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState<"false" | "problematic">("problematic");
+  const [rejectTier, setRejectTier] = useState<"good_faith" | "bad_faith">("good_faith");
+  const [rejectCode, setRejectCode] = useState("R1");
+  const [rejectComment, setRejectComment] = useState("");
+  const [approveComment, setApproveComment] = useState("");
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
+  const [rejectError, setRejectError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [acceptingReview, setAcceptingReview] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -120,6 +198,13 @@ export function ApprovalDetailScreen() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    const opts = rejectTier === "good_faith" ? GOOD_FAITH_OPTIONS : BAD_FAITH_OPTIONS;
+    if (!opts.some((o) => o.value === rejectCode)) {
+      setRejectCode(opts[0].value);
+    }
+  }, [rejectTier, rejectCode]);
+
   const reloadDetail = async () => {
     if (!id) return;
     try {
@@ -131,27 +216,59 @@ export function ApprovalDetailScreen() {
     }
   };
 
-  const handleApprove = async () => {
+  const handleAcceptReview = async () => {
     if (!id) return;
-    setActionLoading(true);
+    setError(null);
+    setAcceptingReview(true);
     try {
-      await api.reports({ id }).approve.put();
+      await api.reports({ id })["accept-review"].put();
       await reloadDetail();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "خطا در تایید");
+      setError(e instanceof Error ? e.message : "خطا در پذیرش اعتبارسنجی");
+    }
+    setAcceptingReview(false);
+  };
+
+  const handleApprove = async () => {
+    if (!id) return;
+    const c = approveComment.trim();
+    if (c.length < MIN_COMMENT_LEN) {
+      setApproveError(`برای تأیید، شرح نظر شما باید حداقل ${MIN_COMMENT_LEN} نویسه باشد.`);
+      return;
+    }
+    setApproveError(null);
+    setActionLoading(true);
+    try {
+      await api.reports({ id }).approve.put({ comment: c });
+      setApproveDialogOpen(false);
+      setApproveComment("");
+      await reloadDetail();
+    } catch (e) {
+      setApproveError(e instanceof Error ? e.message : "خطا در تایید");
     }
     setActionLoading(false);
   };
 
   const handleReject = async () => {
     if (!id) return;
+    const c = rejectComment.trim();
+    if (c.length < MIN_COMMENT_LEN) {
+      setRejectError(`برای رد، شرح نظر شما باید حداقل ${MIN_COMMENT_LEN} نویسه باشد.`);
+      return;
+    }
+    setRejectError(null);
     setActionLoading(true);
     try {
-      await api.reports({ id }).reject.put({ rejectionReason: rejectReason });
+      await api.reports({ id }).reject.put({
+        rejectionTier: rejectTier,
+        rejectionCode: rejectCode,
+        comment: c,
+      });
       setRejectDialogOpen(false);
+      setRejectComment("");
       await reloadDetail();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "خطا در رد");
+      setRejectError(e instanceof Error ? e.message : "خطا در رد");
     }
     setActionLoading(false);
   };
@@ -182,6 +299,7 @@ export function ApprovalDetailScreen() {
 
   const c = report.consensus;
   const userHasReviewed = c?.myReviewAction != null && c.myReviewAction !== "";
+  const hasAcceptedReview = c?.myAcceptedAt != null;
   const readOnly = report.status !== "pending" || userHasReviewed;
 
   const statusBadgeLabel =
@@ -190,8 +308,11 @@ export function ApprovalDetailScreen() {
       : report.status === "rejected"
         ? "رد نهایی (اکثریت رأی)"
         : c != null
-          ? `جمع‌آوری رأی: ${toPersianNum(c.validatorVotesTotal)} از ${toPersianNum(c.minReviews)} — تأیید ${toPersianNum(c.acceptedVotes)}، رد ${toPersianNum(c.rejectedVotes)}`
+          ? `جمع‌آوری رأی: ${toPersianNum(c.validatorVotesTotal)} از ${toPersianNum(c.minReviews)} — تأیید ${toPersianNum(c.acceptedVotes)}، رد حسن‌نیت ${toPersianNum(c.goodFaithRejectVotes ?? 0)}، رد سوءنیت ${toPersianNum(c.badFaithRejectVotes ?? 0)}`
           : "در انتظار جمع‌آوری رأی اعتبارسنج‌ها";
+
+  const codeOptions = rejectTier === "good_faith" ? GOOD_FAITH_OPTIONS : BAD_FAITH_OPTIONS;
+  const selectedCodeHint = codeOptions.find((o) => o.value === rejectCode)?.hint ?? "";
 
   return (
     <div className="bg-background flex flex-col p-4">
@@ -230,32 +351,59 @@ export function ApprovalDetailScreen() {
             </div>
             {readOnly && report.status === "pending" && userHasReviewed && (
               <p className="text-muted-foreground mt-2 text-center text-xs sm:text-right">
-                رأی شما ثبت شده است؛ تا تکمیل حد نصاب فقط مشاهده.
+                رأی شما ثبت شده است؛ تا تکمیل حد نصاب‌ آرا فقط امکان مشاهده وجود دارد.
               </p>
             )}
           </div>
         </div>
-        {!readOnly && (
-          <div className="flex shrink-0 justify-center gap-2 sm:justify-end">
+        {!readOnly && !hasAcceptedReview && (
+          <div className="border-border bg-muted/30 flex items-center gap-6 rounded-lg border p-1.5 sm:max-w-md">
+            <span className="text-muted-foreground text-xs">
+              اگر قصد تایید اعتبارسنجی را دارید، لطفاً پذیرش کنید.
+            </span>
             <Button
-              onClick={handleApprove}
-              disabled={actionLoading}
+              onClick={handleAcceptReview}
+              disabled={acceptingReview}
               size="sm"
-              className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
+              className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700"
             >
-              <Check className="h-4 w-4" />
-              تایید
+              <ClipboardCheck className="h-4 w-4" />
+              {acceptingReview ? "در حال پذیرش…" : "پذیرش اعتبارسنجی"}
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setRejectDialogOpen(true)}
-              disabled={actionLoading}
-              className="gap-1.5"
-            >
-              <X className="h-4 w-4" />
-              رد
-            </Button>
+          </div>
+        )}
+        {!readOnly && hasAcceptedReview && (
+          <div className="border-border bg-muted/30 flex items-center gap-2 gap-6 rounded-lg border p-1.5 sm:max-w-md">
+            <span className="text-muted-foreground text-xs">
+              لطفا پس از بررسی کامل گزارش، رأی خود را ثبت کنید.
+            </span>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setApproveError(null);
+                  setApproveDialogOpen(true);
+                }}
+                disabled={actionLoading}
+                size="sm"
+                className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
+              >
+                <Check className="h-4 w-4" />
+                تایید
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  setRejectError(null);
+                  setRejectDialogOpen(true);
+                }}
+                disabled={actionLoading}
+                className="gap-1.5"
+              >
+                <X className="h-4 w-4" />
+                رد
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -429,36 +577,144 @@ export function ApprovalDetailScreen() {
           </Button>
         </div>
 
-        <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-          <DialogContent>
+        <Dialog
+          open={approveDialogOpen}
+          onOpenChange={(open) => {
+            setApproveDialogOpen(open);
+            if (!open) setApproveError(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>دلیل رد گزارش</DialogTitle>
-              <DialogDescription>
-                لطفاً دلیل رد را انتخاب کنید:
-                <br />
-                <strong>رد نرم (نقص یا افشای اطلاعات):</strong> امتیاز کمتری کسر می‌شود.
-                <br />
-                <strong>رد سخت (گزارش اشتباه یا قصد تخریب):</strong> امتیاز بیشتری کسر می‌شود.
+              <DialogTitle>تأیید گزارش</DialogTitle>
+              <DialogDescription className="text-right leading-relaxed">
+                لطفاً دلیل تأیید خود را با ارجاع به خلاصه و اسناد بنویسید.
               </DialogDescription>
             </DialogHeader>
-            <Select
-              value={rejectReason}
-              onValueChange={(v) => setRejectReason(v as "false" | "problematic")}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="problematic">رد نرم (نقص یا افشای اطلاعات)</SelectItem>
-                <SelectItem value="false">رد سخت (گزارش اشتباه یا قصد تخریب)</SelectItem>
-              </SelectContent>
-            </Select>
-            <DialogFooter>
+            <div className="space-y-4">
+              {approveError && (
+                <p className="text-destructive rounded-md border border-red-200 bg-red-50 p-2 text-sm dark:border-red-900 dark:bg-red-950">
+                  {approveError}
+                </p>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="approve-comment">
+                  شرح نظر شما <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="approve-comment"
+                  dir="rtl"
+                  placeholder="حداقل ۱۰ نویسه: جمع‌بندی دلیل تأیید و ارجاع به خلاصه/اسناد…"
+                  value={approveComment}
+                  onChange={(e) => setApproveComment(e.target.value)}
+                  rows={4}
+                  className="resize-y text-sm"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setApproveDialogOpen(false)}>
+                انصراف
+              </Button>
+              <Button
+                onClick={handleApprove}
+                disabled={actionLoading}
+                className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
+              >
+                <Check className="h-4 w-4" />
+                ثبت تأیید
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={rejectDialogOpen}
+          onOpenChange={(open) => {
+            setRejectDialogOpen(open);
+            if (!open) setRejectError(null);
+          }}
+        >
+          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>رد گزارش با کد دلیل</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {rejectError && (
+                <p className="text-destructive rounded-md border border-red-200 bg-red-50 p-2 text-sm dark:border-red-900 dark:bg-red-950">
+                  {rejectError}
+                </p>
+              )}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">نوع رد</Label>
+                <RadioGroup
+                  value={rejectTier}
+                  onValueChange={(v) => setRejectTier(v as "good_faith" | "bad_faith")}
+                  className="flex flex-col gap-2"
+                >
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
+                    <RadioGroupItem value="good_faith" id="tier-g" className="mt-0.5" />
+                    <span>
+                      <span className="font-medium" id="tier-g-label">
+                        رد با حسن‌نیت
+                      </span>
+                      <span className="text-muted-foreground block text-xs">
+                        بازپرداخت جزئی به گزارش‌دهنده در صورت اجماع
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
+                    <RadioGroupItem value="bad_faith" id="tier-b" className="mt-0.5" />
+                    <span>
+                      <span className="font-medium">رد با سوءنیت</span>
+                      <span className="text-muted-foreground block text-xs">
+                        جریمه سنگین‌تر در صورت اجماع
+                      </span>
+                    </span>
+                  </label>
+                </RadioGroup>
+              </div>
+              <div className="space-y-2">
+                <Label>کد دلیل</Label>
+                <Select value={rejectCode} onValueChange={setRejectCode}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {codeOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedCodeHint ? (
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    {selectedCodeHint}
+                  </p>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reject-comment">
+                  شرح نظر شما <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="reject-comment"
+                  dir="rtl"
+                  placeholder="حداقل ۱۰ نویسه: توضیح دقیق با ارجاع به متن گزارش یا اسناد…"
+                  value={rejectComment}
+                  onChange={(e) => setRejectComment(e.target.value)}
+                  rows={4}
+                  className="resize-y text-sm"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
                 انصراف
               </Button>
               <Button variant="destructive" onClick={handleReject} disabled={actionLoading}>
-                رد گزارش
+                ثبت رد
               </Button>
             </DialogFooter>
           </DialogContent>

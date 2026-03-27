@@ -23,6 +23,9 @@ const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   consensus_reporter_penalty: "جریمه گزارش (اکثریت رد)",
   consensus_validator_correct: "پاداش بررسی صحیح (اکثریت)",
   consensus_validator_wrong: "جریمه بررسی نادرست (اکثریت)",
+  consensus_validator_refund: "بازپرداخت پس از اجماع (اعتبارسنج)",
+  consensus_validator_match_bonus: "پاداش هم‌رأیی با نتیجه نهایی",
+  consensus_validator_bad_faith_penalty: "جریمه رأی سوءنیت در برابر تأیید نهایی",
 };
 
 type Transaction = {

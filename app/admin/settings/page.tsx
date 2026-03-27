@@ -25,6 +25,9 @@ type SettingsData = {
   tokens_consensus_reporter_reject_penalty: number;
   tokens_consensus_validator_correct: number;
   tokens_consensus_validator_wrong_penalty: number;
+  tokens_consensus_validator_refund: number;
+  tokens_consensus_validator_bonus_match_3: number;
+  tokens_consensus_validator_bonus_match_5: number;
 };
 
 const LABELS: Record<keyof SettingsData, string> = {
@@ -47,9 +50,14 @@ const LABELS: Record<keyof SettingsData, string> = {
     "پاداش گزارش‌دهنده وقتی اکثریت گزارش را تأیید کردند (تسویه از طریق صف)",
   tokens_consensus_reporter_reject_penalty:
     "مقدار کسر از گزارش‌دهنده وقتی اکثریت رد کردند (عدد مثبت؛ به‌صورت منفی اعمال می‌شود)",
-  tokens_consensus_validator_correct: "پاداش هر اعتبارسنجی که رأی‌اش با نتیجه نهایی یکی بود",
+  tokens_consensus_validator_correct:
+    "پاداش قدیمی (اکثریت) — در منطق جدید از refund + bonus استفاده می‌شود",
   tokens_consensus_validator_wrong_penalty:
-    "مقدار کسر از اعتبارسنجی که رأی‌اش با نتیجه نهایی ناهم‌خوان بود (عدد مثبت)",
+    "جریمه رأی سوءنیت وقتی نتیجه نهایی «تأیید» است (عدد مثبت)",
+  tokens_consensus_validator_refund: "بازپرداخت اسمی به هر اعتبارسنج پس از تسویه اجماع",
+  tokens_consensus_validator_bonus_match_3:
+    "پاداش اضافه وقتی رأی با نتیجه نهایی یکی است (۳ اعتبارسنج؛ می‌تواند اعشاری مثل ۱.۵ باشد)",
+  tokens_consensus_validator_bonus_match_5: "پاداش اضافه وقتی رأی با اکثریت یکی است (۵ اعتبارسنج)",
 };
 
 const defaults: SettingsData = {
@@ -64,11 +72,14 @@ const defaults: SettingsData = {
   report_validator_sla_hours: 48,
   report_unassigned_grace_minutes: 5,
   report_parallel_validators: 3,
-  report_consensus_min_reviews: 5,
+  report_consensus_min_reviews: 3,
   tokens_consensus_reporter_accept: 5,
   tokens_consensus_reporter_reject_penalty: 3,
   tokens_consensus_validator_correct: 2,
   tokens_consensus_validator_wrong_penalty: 2,
+  tokens_consensus_validator_refund: 2,
+  tokens_consensus_validator_bonus_match_3: 1.5,
+  tokens_consensus_validator_bonus_match_5: 2,
 };
 
 export default function AdminSystemSettingsPage() {
@@ -117,6 +128,14 @@ export default function AdminSystemSettingsPage() {
       tokens_consensus_validator_wrong_penalty:
         Number(raw.tokens_consensus_validator_wrong_penalty) ||
         defaults.tokens_consensus_validator_wrong_penalty,
+      tokens_consensus_validator_refund:
+        Number(raw.tokens_consensus_validator_refund) || defaults.tokens_consensus_validator_refund,
+      tokens_consensus_validator_bonus_match_3:
+        Number(raw.tokens_consensus_validator_bonus_match_3) ||
+        defaults.tokens_consensus_validator_bonus_match_3,
+      tokens_consensus_validator_bonus_match_5:
+        Number(raw.tokens_consensus_validator_bonus_match_5) ||
+        defaults.tokens_consensus_validator_bonus_match_5,
     });
   };
 
@@ -145,6 +164,9 @@ export default function AdminSystemSettingsPage() {
         tokens_consensus_reporter_reject_penalty: settings.tokens_consensus_reporter_reject_penalty,
         tokens_consensus_validator_correct: settings.tokens_consensus_validator_correct,
         tokens_consensus_validator_wrong_penalty: settings.tokens_consensus_validator_wrong_penalty,
+        tokens_consensus_validator_refund: settings.tokens_consensus_validator_refund,
+        tokens_consensus_validator_bonus_match_3: settings.tokens_consensus_validator_bonus_match_3,
+        tokens_consensus_validator_bonus_match_5: settings.tokens_consensus_validator_bonus_match_5,
       });
     } finally {
       setSaving(false);
@@ -403,9 +425,11 @@ export default function AdminSystemSettingsPage() {
             <CardTitle>اکثریت رأی و تسویه توکن (صف RabbitMQ)</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4 text-sm">
-              پس از رسیدن به حد نصاب رأی، اگر بیش از نصف رأی‌ها «تأیید» باشد گزارش نهایی می‌شود؛ وگرنه
-              رد. پاداش و جریمه‌ها توسط ورکر اعمال می‌شوند.
+            <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
+              پس از رسیدن به حد نصاب، نتیجه از روی سه سطح رأی محاسبه می‌شود: تأیید، رد با حسن‌نیت، رد
+              با سوءنیت (قوانین ۳ نفره در کد). تسویه توکن گزارش‌دهنده از تنظیمات کسر «مسئله‌دار / غلط»
+              و برای اعتبارسنج‌ها از بازپرداخت + پاداش هم‌رأیی (و جریمه رأی سوءنیت در برابر تأیید
+              نهایی) استفاده می‌کند.
             </p>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-2 md:col-span-2">
@@ -470,20 +494,63 @@ export default function AdminSystemSettingsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tokens_consensus_validator_correct">
-                  {LABELS.tokens_consensus_validator_correct}
+                <Label htmlFor="tokens_consensus_validator_refund">
+                  {LABELS.tokens_consensus_validator_refund}
                 </Label>
                 <Input
-                  id="tokens_consensus_validator_correct"
+                  id="tokens_consensus_validator_refund"
                   type="number"
                   min={0}
-                  value={settings.tokens_consensus_validator_correct}
+                  step={0.5}
+                  value={settings.tokens_consensus_validator_refund}
                   onChange={(e) =>
                     setSettings((s) => ({
                       ...s,
-                      tokens_consensus_validator_correct: Math.max(
+                      tokens_consensus_validator_refund: Math.max(
                         0,
-                        Number.parseInt(e.target.value, 10) || 0,
+                        Number.parseFloat(e.target.value) || 0,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tokens_consensus_validator_bonus_match_3">
+                  {LABELS.tokens_consensus_validator_bonus_match_3}
+                </Label>
+                <Input
+                  id="tokens_consensus_validator_bonus_match_3"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={settings.tokens_consensus_validator_bonus_match_3}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_consensus_validator_bonus_match_3: Math.max(
+                        0,
+                        Number.parseFloat(e.target.value) || 0,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tokens_consensus_validator_bonus_match_5">
+                  {LABELS.tokens_consensus_validator_bonus_match_5}
+                </Label>
+                <Input
+                  id="tokens_consensus_validator_bonus_match_5"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={settings.tokens_consensus_validator_bonus_match_5}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_consensus_validator_bonus_match_5: Math.max(
+                        0,
+                        Number.parseFloat(e.target.value) || 0,
                       ),
                     }))
                   }
@@ -497,13 +564,35 @@ export default function AdminSystemSettingsPage() {
                   id="tokens_consensus_validator_wrong_penalty"
                   type="number"
                   min={0}
+                  step={0.5}
                   value={settings.tokens_consensus_validator_wrong_penalty}
                   onChange={(e) =>
                     setSettings((s) => ({
                       ...s,
                       tokens_consensus_validator_wrong_penalty: Math.max(
                         0,
-                        Number.parseInt(e.target.value, 10) || 0,
+                        Number.parseFloat(e.target.value) || 0,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="tokens_consensus_validator_correct">
+                  {LABELS.tokens_consensus_validator_correct}
+                </Label>
+                <Input
+                  id="tokens_consensus_validator_correct"
+                  type="number"
+                  min={0}
+                  step={0.5}
+                  value={settings.tokens_consensus_validator_correct}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_consensus_validator_correct: Math.max(
+                        0,
+                        Number.parseFloat(e.target.value) || 0,
                       ),
                     }))
                   }

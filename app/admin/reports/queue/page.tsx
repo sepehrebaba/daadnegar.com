@@ -381,7 +381,7 @@ export default function AdminReportsQueuePage() {
                         <span>
                           {new Date(rev.createdAt).toLocaleDateString("fa-IR", {
                             dateStyle: "short",
-                            timeStyle: "short",
+                            //timeStyle: "short",
                           })}
                         </span>
                       </div>

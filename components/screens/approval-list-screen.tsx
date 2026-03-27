@@ -60,7 +60,7 @@ export function ApprovalListScreen() {
             currentRequests.map((request) => (
               <div key={request.id} className="border-border overflow-hidden rounded-lg border">
                 <div className="hover:bg-muted/50 flex items-center gap-3 p-4">
-                  <div className="bg-primary/10 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full">
+                  <div className="bg-primary/10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
                     <User className="text-primary h-5 w-5" />
                   </div>
                   <div className="flex-1">

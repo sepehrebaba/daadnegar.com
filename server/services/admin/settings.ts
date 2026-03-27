@@ -47,6 +47,9 @@ export const adminSettingsRoutes = new Elysia({ name: "adminSettings" })
         tokens_consensus_reporter_reject_penalty: t.Optional(t.Number()),
         tokens_consensus_validator_correct: t.Optional(t.Number()),
         tokens_consensus_validator_wrong_penalty: t.Optional(t.Number()),
+        tokens_consensus_validator_refund: t.Optional(t.Number()),
+        tokens_consensus_validator_bonus_match_3: t.Optional(t.Number()),
+        tokens_consensus_validator_bonus_match_5: t.Optional(t.Number()),
       }),
     },
   );

@@ -32,8 +32,15 @@ interface AppContextType {
   setReportDescription: (desc: string) => void;
   submitReport: () => Promise<{ tokensAwarded?: number } | undefined>;
   selectRequest: (request: ReportCase) => void;
-  approveRequest: (requestId: string) => void;
-  rejectRequest: (requestId: string, rejectionReason: "problematic" | "false") => void;
+  approveRequest: (requestId: string, comment: string) => Promise<void>;
+  rejectRequest: (
+    requestId: string,
+    payload: {
+      rejectionTier: "good_faith" | "bad_faith";
+      rejectionCode: string;
+      comment: string;
+    },
+  ) => Promise<void>;
   getFamousPeople: (search?: string) => Promise<Person[]>;
   getMyRequests: () => Promise<ReportCase[]>;
   getPendingRequests: () => Promise<ReportCase[]>;
@@ -252,16 +259,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, selectedRequest: request }));
   }, []);
 
-  const approveRequest = useCallback(async (requestId: string) => {
-    const { error } = await api.reports({ id: requestId }).approve.put();
+  const approveRequest = useCallback(async (requestId: string, comment: string) => {
+    const { error } = await api.reports({ id: requestId }).approve.put({ comment });
     if (error) throw new Error(String(error));
   }, []);
 
   const rejectRequest = useCallback(
-    async (requestId: string, rejectionReason: "problematic" | "false") => {
-      const { error } = await api.reports({ id: requestId }).reject.put({
-        rejectionReason,
-      });
+    async (
+      requestId: string,
+      payload: {
+        rejectionTier: "good_faith" | "bad_faith";
+        rejectionCode: string;
+        comment: string;
+      },
+    ) => {
+      const { error } = await api.reports({ id: requestId }).reject.put(payload);
       if (error) throw new Error(String(error));
     },
     [],
