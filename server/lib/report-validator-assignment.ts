@@ -5,7 +5,7 @@ const LAST_ASSIGNED_INDEX_KEY = "last_assigned_validator_index";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
-export type ReportAssignmentReason = "initial" | "stale_reassign";
+export type ReportAssignmentReason = "initial" | "stale_reassign" | "validator_demoted";
 
 async function listValidatorsOrdered() {
   return prisma.user.findMany({
@@ -339,4 +339,67 @@ export async function scanAndReassignStaleReports(): Promise<{
   }
 
   return { slaReassigned, unassignedAssigned };
+}
+
+/**
+ * وقتی اعتبارسنج به کاربر عادی تبدیل یا غیرفعال می‌شود، اسلات‌های فعالش را به اعتبارسنج‌های دیگر منتقل می‌کنیم.
+ * Returns the number of slots that were successfully reassigned.
+ */
+export async function reassignReportsFromDemotedValidator(validatorId: string): Promise<number> {
+  const activeSlots = await prisma.reportValidatorAssignment.findMany({
+    where: {
+      validatorId,
+      replacedAt: null,
+      report: { status: "pending" },
+    },
+    select: { id: true, reportId: true, validatorId: true },
+  });
+
+  if (activeSlots.length === 0) return 0;
+
+  const validators = await listValidatorsOrdered();
+  if (validators.length === 0) return 0;
+
+  let reassigned = 0;
+  const now = new Date();
+
+  for (const slot of activeSlots) {
+    const existingSlots = await prisma.reportValidatorAssignment.findMany({
+      where: { reportId: slot.reportId, replacedAt: null },
+      select: { validatorId: true },
+    });
+    const exclude = new Set(existingSlots.map((s) => s.validatorId));
+    exclude.add(validatorId);
+
+    const candidates = validators.filter((v) => !exclude.has(v.id));
+    if (candidates.length === 0) {
+      await prisma.reportValidatorAssignment.update({
+        where: { id: slot.id },
+        data: { replacedAt: now },
+      });
+      await syncReportPrimaryAssignee(slot.reportId);
+      continue;
+    }
+
+    const nextId = pickNextAfterCurrent(candidates, validatorId) ?? candidates[0].id;
+
+    await prisma.$transaction([
+      prisma.reportValidatorAssignment.update({
+        where: { id: slot.id },
+        data: { replacedAt: now },
+      }),
+      prisma.reportValidatorAssignment.create({
+        data: {
+          reportId: slot.reportId,
+          validatorId: nextId,
+          assignedAt: now,
+          reason: "validator_demoted",
+        },
+      }),
+    ]);
+    await syncReportPrimaryAssignee(slot.reportId);
+    reassigned += 1;
+  }
+
+  return reassigned;
 }

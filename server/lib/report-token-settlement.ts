@@ -1,17 +1,31 @@
 import { prisma } from "../db";
-import { getSettingNumber, SETTING_KEYS } from "./settings";
+import { getSettingFloat, SETTING_KEYS } from "./settings";
+import {
+  computeValidatorPayouts,
+  resolveReporterOutcome,
+  type ValidatorVoteRow,
+  type VoteRow,
+} from "./report-consensus-logic";
 import { TOKEN_TRANSACTION_TYPES } from "./token-transaction";
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
+function isBadFaithRejection(reason: string | null): boolean {
+  return reason === "bad_faith" || reason === "false";
+}
+
 /** اعمال پاداش/جریمه پس از قطعی شدن گزارش (اکثریت رأی). یک تراکنش دیتابیس. */
 export async function processReportTokenSettlement(reportId: string): Promise<void> {
-  const [reporterAccept, reporterPenalty, validatorCorrect, validatorWrong] = await Promise.all([
-    getSettingNumber(SETTING_KEYS.TOKENS_CONSENSUS_REPORTER_ACCEPT),
-    getSettingNumber(SETTING_KEYS.TOKENS_CONSENSUS_REPORTER_REJECT_PENALTY),
-    getSettingNumber(SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_CORRECT),
-    getSettingNumber(SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_WRONG_PENALTY),
-  ]);
+  const [reporterAccept, deductProblematic, deductFalse, refund, bonus3, bonus5, badFaithPenalty] =
+    await Promise.all([
+      getSettingFloat(SETTING_KEYS.TOKENS_CONSENSUS_REPORTER_ACCEPT),
+      getSettingFloat(SETTING_KEYS.TOKENS_DEDUCT_PROBLEMATIC_REPORT),
+      getSettingFloat(SETTING_KEYS.TOKENS_DEDUCT_FALSE_REPORT),
+      getSettingFloat(SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_REFUND),
+      getSettingFloat(SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_3),
+      getSettingFloat(SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_5),
+      getSettingFloat(SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_WRONG_PENALTY),
+    ]);
 
   await prisma.$transaction(async (tx) => {
     const settlement = await tx.reportTokenSettlement.findUnique({
@@ -21,15 +35,33 @@ export async function processReportTokenSettlement(reportId: string): Promise<vo
 
     const report = await tx.report.findUnique({
       where: { id: reportId },
-      select: { id: true, userId: true, status: true },
+      select: { id: true, userId: true, status: true, rejectionReason: true },
     });
     if (!report || (report.status !== "accepted" && report.status !== "rejected")) return;
 
-    const reviews = await tx.reportReview.findMany({
+    const reviewRows = await tx.reportReview.findMany({
       where: { reportId, reviewerId: { not: null } },
-      select: { reviewerId: true, action: true },
+      select: {
+        reviewerId: true,
+        action: true,
+        rejectionTier: true,
+        rejectionCode: true,
+      },
     });
-    if (reviews.length === 0) return;
+    if (reviewRows.length === 0) return;
+
+    const voteRows: VoteRow[] = reviewRows.map((r) => ({
+      action: r.action,
+      rejectionTier: r.rejectionTier,
+      rejectionCode: r.rejectionCode,
+    }));
+    const consensusOutcome = resolveReporterOutcome(voteRows);
+    const validatorRows: ValidatorVoteRow[] = reviewRows.map((r) => ({
+      reviewerId: r.reviewerId!,
+      action: r.action,
+      rejectionTier: r.rejectionTier,
+      rejectionCode: r.rejectionCode,
+    }));
 
     const outcomeAccepted = report.status === "accepted";
 
@@ -42,33 +74,49 @@ export async function processReportTokenSettlement(reportId: string): Promise<vo
         reportId,
       );
     } else {
+      const rr = report.rejectionReason;
+      const amount = isBadFaithRejection(rr) ? deductFalse : deductProblematic;
       await applyTx(
         tx,
         report.userId,
-        -reporterPenalty,
+        -amount,
         TOKEN_TRANSACTION_TYPES.consensus_reporter_penalty,
         reportId,
       );
     }
 
-    for (const r of reviews) {
-      const uid = r.reviewerId!;
-      const votedAccept = r.action === "accepted";
-      const match = (votedAccept && outcomeAccepted) || (!votedAccept && !outcomeAccepted);
-      if (match) {
+    const payouts = computeValidatorPayouts(validatorRows, consensusOutcome, {
+      refund,
+      bonus3,
+      bonus5,
+      badFaithVsApprovePenalty: badFaithPenalty,
+    });
+
+    for (const line of payouts) {
+      if (line.refund > 0) {
         await applyTx(
           tx,
-          uid,
-          validatorCorrect,
-          TOKEN_TRANSACTION_TYPES.consensus_validator_correct,
+          line.reviewerId,
+          line.refund,
+          TOKEN_TRANSACTION_TYPES.consensus_validator_refund,
           reportId,
         );
-      } else {
+      }
+      if (line.bonus > 0) {
         await applyTx(
           tx,
-          uid,
-          -validatorWrong,
-          TOKEN_TRANSACTION_TYPES.consensus_validator_wrong,
+          line.reviewerId,
+          line.bonus,
+          TOKEN_TRANSACTION_TYPES.consensus_validator_match_bonus,
+          reportId,
+        );
+      }
+      if (line.penalty > 0) {
+        await applyTx(
+          tx,
+          line.reviewerId,
+          -line.penalty,
+          TOKEN_TRANSACTION_TYPES.consensus_validator_bad_faith_penalty,
           reportId,
         );
       }

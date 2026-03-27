@@ -13,10 +13,16 @@ export const TOKEN_TRANSACTION_TYPES = {
   consensus_reporter_reward: "consensus_reporter_reward",
   /** تسویه اکثریت: جریمه گزارش‌دهنده وقتی گزارش نهایی رد شد */
   consensus_reporter_penalty: "consensus_reporter_penalty",
-  /** تسویه اکثریت: پاداش اعتبارسنج (رأی با نتیجه نهایی هم‌خوان بود) */
+  /** تسویه اکثریت: پاداش اعتبارسنج (رأی با نتیجه نهایی هم‌خوان بود) — قدیمی */
   consensus_validator_correct: "consensus_validator_correct",
-  /** تسویه اکثریت: جریمه اعتبارسنج (رأی با نتیجه نهایی ناهم‌خوان بود) */
+  /** تسویه اکثریت: جریمه اعتبارسنج (رأی با نتیجه نهایی ناهم‌خوان بود) — قدیمی */
   consensus_validator_wrong: "consensus_validator_wrong",
+  /** بازپرداخت اسمی پس از تسویه اجماع */
+  consensus_validator_refund: "consensus_validator_refund",
+  /** پاداش هم‌رأیی با نتیجه نهایی */
+  consensus_validator_match_bonus: "consensus_validator_match_bonus",
+  /** جریمه رأی رد سوءنیت وقتی نتیجه نهایی تأیید است */
+  consensus_validator_bad_faith_penalty: "consensus_validator_bad_faith_penalty",
 } as const;
 
 export type TokenTransactionType =

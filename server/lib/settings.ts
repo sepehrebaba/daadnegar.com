@@ -30,10 +30,16 @@ export const SETTING_KEYS = {
   TOKENS_CONSENSUS_REPORTER_ACCEPT: "tokens_consensus_reporter_accept",
   /** مقدار کسر از گزارش‌دهنده اگر اکثریت رد کرد (عدد مثبت؛ در تراکنش منفی اعمال می‌شود) */
   TOKENS_CONSENSUS_REPORTER_REJECT_PENALTY: "tokens_consensus_reporter_reject_penalty",
-  /** پاداش هر اعتبارسنجی که رأی‌اش با نتیجه نهایی یکی بود */
+  /** پاداش هر اعتبارسنجی که رأی‌اش با نتیجه نهایی یکی بود (قدیمی؛ ترجیح با refund+bonus) */
   TOKENS_CONSENSUS_VALIDATOR_CORRECT: "tokens_consensus_validator_correct",
   /** مقدار کسر از اعتبارسنج اگر رأی‌اش با نتیجه نهایی ناهم‌خوان بود (عدد مثبت) */
   TOKENS_CONSENSUS_VALIDATOR_WRONG_PENALTY: "tokens_consensus_validator_wrong_penalty",
+  /** بازپرداخت اسمی به هر اعتبارسنج پس از تسویه اجماع */
+  TOKENS_CONSENSUS_VALIDATOR_REFUND: "tokens_consensus_validator_refund",
+  /** پاداش اضافه وقتی رأی با نتیجه یکی است (۳ اعتبارسنج) */
+  TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_3: "tokens_consensus_validator_bonus_match_3",
+  /** پاداش اضافه وقتی رأی با اکثریت یکی است (۵ اعتبارسنج) */
+  TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_5: "tokens_consensus_validator_bonus_match_5",
 } as const;
 
 export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING_KEYS], string> = {
@@ -48,11 +54,14 @@ export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING
   [SETTING_KEYS.REPORT_VALIDATOR_SLA_HOURS]: "48",
   [SETTING_KEYS.REPORT_UNASSIGNED_GRACE_MINUTES]: "5",
   [SETTING_KEYS.REPORT_PARALLEL_VALIDATORS]: "3",
-  [SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS]: "5",
+  [SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS]: "3",
   [SETTING_KEYS.TOKENS_CONSENSUS_REPORTER_ACCEPT]: "5",
   [SETTING_KEYS.TOKENS_CONSENSUS_REPORTER_REJECT_PENALTY]: "3",
   [SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_CORRECT]: "2",
   [SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_WRONG_PENALTY]: "2",
+  [SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_REFUND]: "2",
+  [SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_3]: "1.5",
+  [SETTING_KEYS.TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_5]: "2",
 };
 
 export type SettingsMap = Record<string, string | number | boolean>;
@@ -73,6 +82,15 @@ export async function getSettingNumber<K extends keyof typeof SETTING_KEYS>(
   const v = await getSetting(key);
   const n = Number.parseInt(v, 10);
   return Number.isNaN(n) ? 0 : n;
+}
+
+/** مقدار عددی اعشاری (برای پاداش ۱.۵ و مشابه) */
+export async function getSettingFloat<K extends keyof typeof SETTING_KEYS>(
+  key: (typeof SETTING_KEYS)[K],
+): Promise<number> {
+  const v = await getSetting(key);
+  const n = Number.parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
 }
 
 /** Get setting as boolean */

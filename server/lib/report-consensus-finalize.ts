@@ -1,5 +1,10 @@
 import { prisma } from "../db";
 import { getSettingNumber, SETTING_KEYS } from "./settings";
+import {
+  pickOutcomeRejectionCode,
+  resolveReporterOutcome,
+  type VoteRow,
+} from "./report-consensus-logic";
 
 /**
  * اگر گزارش هنوز pending است و به حد نصاب رأی رسیده و تسویه‌ای ثبت نشده، وضعیت نهایی و ردیف settlement را می‌سازد.
@@ -28,15 +33,30 @@ export async function tryFinalizeConsensusReport(
 
     const votes = await tx.reportReview.findMany({
       where: { reportId, reviewerId: { not: null } },
-      select: { action: true },
+      select: {
+        action: true,
+        rejectionTier: true,
+        rejectionCode: true,
+      },
     });
     if (votes.length < minR) {
       return { finalized: false };
     }
 
-    const accepts = votes.filter((v) => v.action === "accepted").length;
-    const rejects = votes.filter((v) => v.action === "rejected").length;
-    const finalAccept = accepts > rejects;
+    const voteRows: VoteRow[] = votes.map((v) => ({
+      action: v.action,
+      rejectionTier: v.rejectionTier,
+      rejectionCode: v.rejectionCode,
+    }));
+
+    const outcome = resolveReporterOutcome(voteRows);
+    const finalAccept = outcome === "accepted";
+    const rejectionReason = finalAccept
+      ? null
+      : outcome === "good_faith"
+        ? "good_faith"
+        : "bad_faith";
+    const rejectionCode = pickOutcomeRejectionCode(outcome, voteRows);
 
     await tx.report.update({
       where: { id: reportId },
@@ -46,12 +66,14 @@ export async function tryFinalizeConsensusReport(
             reviewedAt: new Date(),
             reviewedBy: lastReviewerUserId,
             rejectionReason: null,
+            rejectionCode: null,
           }
         : {
             status: "rejected",
             reviewedAt: new Date(),
             reviewedBy: lastReviewerUserId,
-            rejectionReason: "problematic",
+            rejectionReason,
+            rejectionCode,
           },
     });
 
