@@ -31,8 +31,12 @@ type ReportReview = {
   id: string;
   action: string;
   rejectionReason?: string | null;
+  rejectionTier?: string | null;
+  rejectionCode?: string | null;
+  reviewerComment?: string | null;
   createdAt: string;
   reviewerId?: string | null;
+  reviewer?: { id: string; name: string; username: string } | null;
 };
 
 type ValidatorAssignment = {
@@ -115,6 +119,28 @@ function formatDateTime(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function assignmentReasonLabel(reason: string): string {
+  if (reason === "stale_reassign") return "انتقال (اتمام مهلت)";
+  return "اختصاص اولیه";
+}
+
+function assignmentForReview(
+  review: { reviewerId?: string | null; createdAt: string },
+  assignments?: ValidatorAssignment[],
+): ValidatorAssignment | null {
+  const list = assignments ?? [];
+  const rid = review.reviewerId;
+  if (!rid) return null;
+  const reviewMs = new Date(review.createdAt).getTime();
+  const candidates = list.filter(
+    (a) => a.validator.id === rid && new Date(a.assignedAt).getTime() <= reviewMs,
+  );
+  if (candidates.length === 0) return null;
+  return candidates.reduce((best, a) =>
+    new Date(a.assignedAt).getTime() > new Date(best.assignedAt).getTime() ? a : best,
+  );
 }
 
 type StepStatus = "completed" | "current" | "pending";
@@ -268,6 +294,118 @@ function ReportTimeline({ report }: { report: ReportDetail }) {
   );
 }
 
+function ReportAssignmentHistoryCard({ assignments }: { assignments: ValidatorAssignment[] }) {
+  if (assignments.length === 0) return null;
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle className="text-base">تاریخچه اختصاص به اعتبارسنج‌ها</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-3 text-sm">
+          {assignments.map((a, i) => (
+            <li
+              key={`${a.id}-${i}`}
+              className="text-muted-foreground border-border/60 flex flex-col gap-0.5 border-b pb-3 last:border-0 last:pb-0"
+            >
+              <span className="text-foreground font-medium">
+                {a.validator.name} <span className="font-normal">({a.validator.username})</span>
+              </span>
+              <span>اختصاص: {formatDateTime(a.assignedAt)}</span>
+              {a.acceptedAt != null && a.acceptedAt !== "" && (
+                <span>پذیرش: {formatDateTime(a.acceptedAt)}</span>
+              )}
+              <span className="text-xs">
+                {assignmentReasonLabel(a.reason)}
+                {a.replacedAt == null ? " · فعال" : ` · پایان ${formatDateTime(a.replacedAt)}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ReportReviewsTableCard({
+  reviews,
+  assignments,
+}: {
+  reviews: ReportReview[];
+  assignments?: ValidatorAssignment[];
+}) {
+  if (reviews.length === 0) return null;
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle className="text-base">بررسی‌های انجام شده</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto rounded-md border">
+          <Table dir="rtl" className="min-w-[640px] text-xs">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="whitespace-nowrap">بررسی‌کننده</TableHead>
+                <TableHead className="whitespace-nowrap">اختصاص</TableHead>
+                <TableHead className="whitespace-nowrap">پذیرش</TableHead>
+                <TableHead className="whitespace-nowrap">ثبت رأی</TableHead>
+                <TableHead className="whitespace-nowrap">نتیجه</TableHead>
+                <TableHead className="min-w-[140px]">یادداشت / کد</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...reviews]
+                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+                .map((rev) => {
+                  const asg = assignmentForReview(rev, assignments);
+                  const who = rev.reviewer
+                    ? `${rev.reviewer.name} (${rev.reviewer.username})`
+                    : rev.reviewerId
+                      ? `شناسه: ${rev.reviewerId}`
+                      : "پنل ادمین / خارج از اپ";
+                  const noteParts: string[] = [];
+                  if (rev.rejectionCode) noteParts.push(`کد: ${rev.rejectionCode}`);
+                  if (rev.rejectionTier)
+                    noteParts.push(rev.rejectionTier === "bad_faith" ? "سوءنیت" : "حسن‌نیت");
+                  if (rev.rejectionReason) noteParts.push(rev.rejectionReason);
+                  if (rev.reviewerComment) noteParts.push(rev.reviewerComment);
+                  const note = noteParts.length > 0 ? noteParts.join(" · ") : "—";
+                  return (
+                    <TableRow key={rev.id}>
+                      <TableCell className="max-w-[160px] align-top whitespace-normal">
+                        {who}
+                      </TableCell>
+                      <TableCell className="align-top whitespace-nowrap">
+                        {asg ? formatDateTime(asg.assignedAt) : "—"}
+                      </TableCell>
+                      <TableCell className="align-top whitespace-nowrap">
+                        {asg?.acceptedAt ? formatDateTime(asg.acceptedAt) : "—"}
+                      </TableCell>
+                      <TableCell className="align-top whitespace-nowrap">
+                        {formatDateTime(rev.createdAt)}
+                      </TableCell>
+                      <TableCell className="align-top whitespace-nowrap">
+                        <Badge
+                          variant={rev.action === "accepted" ? "default" : "destructive"}
+                          className="text-[10px] font-normal"
+                        >
+                          {rev.action === "accepted" ? "تأیید" : "رد"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground max-w-[220px] align-top text-[11px] leading-snug whitespace-normal">
+                        {note}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AdminReportDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -360,6 +498,13 @@ export default function AdminReportDetailPage() {
       <div className="grid gap-6 md:grid-cols-2">
         {/* تایم‌لاین گزارش + جدول اعتبارسنج‌ها */}
         <ReportTimeline report={report} />
+
+        <ReportAssignmentHistoryCard assignments={report.validatorAssignments ?? []} />
+
+        <ReportReviewsTableCard
+          reviews={report.reviews ?? []}
+          assignments={report.validatorAssignments}
+        />
 
         {/* شخص گزارش‌شده */}
         <Card>

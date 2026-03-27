@@ -5,5 +5,5 @@
     "functions": ["cn", "cva"]
   },
   "sortPackageJson": false,
-  "ignorePatterns": []
+  "ignorePatterns": ["daadnegar-chart/**", "grafana/**", "generated/**", "prisma/**", "public/**"]
 }

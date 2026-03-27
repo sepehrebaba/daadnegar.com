@@ -14,9 +14,12 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
     const skip = (page - 1) * perPage;
     const { getSettingNumber, SETTING_KEYS } = await import("../../lib/settings");
     const consensusMin = await getSettingNumber(SETTING_KEYS.REPORT_CONSENSUS_MIN_REVIEWS);
+    const queueWhere = {
+      status: { in: ["pending", "accepted", "rejected"] },
+    };
     const [data, total] = await Promise.all([
       prisma.report.findMany({
-        where: { status: "pending" },
+        where: queueWhere,
         include: {
           person: true,
           user: { select: { id: true, name: true, username: true } },
@@ -33,7 +36,7 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
         skip,
         take: perPage,
       }),
-      prisma.report.count({ where: { status: "pending" } }),
+      prisma.report.count({ where: queueWhere }),
     ]);
     return {
       data: data.map((r) => {
@@ -75,7 +78,29 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
         },
       });
       if (!report) throw new Error("Not found");
-      return mapReportDocuments(report);
+      const reviewerIds = [
+        ...new Set(
+          report.reviews
+            .map((r) => r.reviewerId)
+            .filter((id): id is string => id != null && id !== ""),
+        ),
+      ];
+      const reviewerUsers =
+        reviewerIds.length > 0
+          ? await prisma.user.findMany({
+              where: { id: { in: reviewerIds } },
+              select: { id: true, name: true, username: true },
+            })
+          : [];
+      const reviewerById = new Map(reviewerUsers.map((u) => [u.id, u]));
+      const withReviewers = {
+        ...report,
+        reviews: report.reviews.map((rev) => ({
+          ...rev,
+          reviewer: rev.reviewerId ? (reviewerById.get(rev.reviewerId) ?? null) : null,
+        })),
+      };
+      return mapReportDocuments(withReviewers);
     },
     { params: t.Object({ id: t.String() }) },
   )

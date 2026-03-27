@@ -1,39 +1,39 @@
 # ONLY FOR DEVELOPMENT USAGE
 
 services:
-#  app:
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    image: daadnegar-app:latest
-#    container_name: daadnegar_app
-#    restart: unless-stopped
-#    ports:
-#      - "3000:3000"
-#    environment:
-#      # Prisma migrate deploy (prestart) + app runtime
-#      DATABASE_URL: mysql://${DATABASE_USER}:${DATABASE_PASSWORD}@daadnegar_db:3306/${DATABASE_NAME}
-#      # MinIO
-#      MINIO_ENDPOINT: minio
-#      MINIO_PORT: "9000"
-#      MINIO_USE_SSL: "false"
-#      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
-#      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
-#      MINIO_BUCKET: daadnegar-uploads
-#      # RabbitMQ
-#      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
-#      # Auth
-#      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret}
-#      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
-#    depends_on:
-#      daadnegar_db:
-#        condition: service_healthy
-#      minio:
-#        condition: service_healthy
-#      rabbitmq:
-#        condition: service_healthy
-#    networks:
-#      - daadnegar_network
+  #  app:
+  #    build:
+  #      context: .
+  #      dockerfile: Dockerfile
+  #    image: daadnegar-app:latest
+  #    container_name: daadnegar_app
+  #    restart: unless-stopped
+  #    ports:
+  #      - "3000:3000"
+  #    environment:
+  #      # Prisma migrate deploy (prestart) + app runtime
+  #      DATABASE_URL: mysql://${DATABASE_USER}:${DATABASE_PASSWORD}@daadnegar_db:3306/${DATABASE_NAME}
+  #      # MinIO
+  #      MINIO_ENDPOINT: minio
+  #      MINIO_PORT: "9000"
+  #      MINIO_USE_SSL: "false"
+  #      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+  #      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+  #      MINIO_BUCKET: daadnegar-uploads
+  #      # RabbitMQ
+  #      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASSWORD:-guest}@rabbitmq:5672
+  #      # Auth
+  #      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret}
+  #      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+  #    depends_on:
+  #      daadnegar_db:
+  #        condition: service_healthy
+  #      minio:
+  #        condition: service_healthy
+  #      rabbitmq:
+  #        condition: service_healthy
+  #    networks:
+  #      - daadnegar_network
 
   daadnegar_db:
     image: mysql:${DATABASE_VERSION:-8.0}
