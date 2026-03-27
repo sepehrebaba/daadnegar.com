@@ -28,6 +28,25 @@ function mapReportDocuments<T extends { documents?: { id: string; name: string; 
   };
 }
 
+type ListReviewerStatusPayload =
+  | { kind: "await_accept"; assignmentAssignedAt: string }
+  | { kind: "await_vote"; acceptedAt: string | null }
+  | { kind: "voted"; voteAction: "accepted" | "rejected" };
+
+function reviewerListStatusForRow(
+  vote: { action: string } | undefined,
+  assignment: { acceptedAt: Date | null; assignedAt: Date } | undefined,
+  role: string | null | undefined,
+): ListReviewerStatusPayload {
+  if (vote && (vote.action === "accepted" || vote.action === "rejected")) {
+    return { kind: "voted", voteAction: vote.action };
+  }
+  if (role === "validator" && assignment && !assignment.acceptedAt) {
+    return { kind: "await_accept", assignmentAssignedAt: assignment.assignedAt.toISOString() };
+  }
+  return { kind: "await_vote", acceptedAt: assignment?.acceptedAt?.toISOString() ?? null };
+}
+
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
 }
@@ -253,7 +272,32 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       include: { person: true, user: { select: { id: true, name: true, username: true } } },
       orderBy: { createdAt: "desc" },
     });
-    return reports;
+    const reportIds = reports.map((r) => r.id);
+    if (reportIds.length === 0) return reports;
+    const [myReviews, myAssignments] = await Promise.all([
+      prisma.reportReview.findMany({
+        where: { reportId: { in: reportIds }, reviewerId: session.user.id },
+        select: { reportId: true, action: true },
+      }),
+      prisma.reportValidatorAssignment.findMany({
+        where: {
+          reportId: { in: reportIds },
+          validatorId: session.user.id,
+          replacedAt: null,
+        },
+        select: { reportId: true, acceptedAt: true, assignedAt: true },
+      }),
+    ]);
+    const voteByReport = new Map(myReviews.map((v) => [v.reportId, v]));
+    const assignByReport = new Map(myAssignments.map((a) => [a.reportId, a]));
+    return reports.map((r) => ({
+      ...r,
+      listReviewerStatus: reviewerListStatusForRow(
+        voteByReport.get(r.id),
+        assignByReport.get(r.id),
+        dbUser?.role,
+      ),
+    }));
   })
   .get("/pending/count", async ({ session }) => {
     if (!session?.user?.id) {

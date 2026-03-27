@@ -114,6 +114,23 @@ export const EVIDENCE_TYPES: { value: EvidenceType; label: string }[] = [
 
 export type RequestStatus = "pending" | "accepted" | "rejected";
 
+/** وضعیت گزارش از دید بازبین در لیست انتظار بررسی */
+export type ReviewerListStatus =
+  | {
+      kind: "await_accept";
+      /** شروع مهلت ۲۴ ساعته پذیرش */
+      assignmentAssignedAt: string;
+    }
+  | {
+      kind: "await_vote";
+      /** پس از پذیرش اعتبارسنجی؛ برای کاربر غیراعتبارسنج خالی است */
+      acceptedAt: string | null;
+    }
+  | {
+      kind: "voted";
+      voteAction: "accepted" | "rejected";
+    };
+
 export interface User {
   id: string;
   passkey: string;
@@ -170,6 +187,8 @@ export interface ReportCase {
   contactEmail?: string;
   contactPhone?: string;
   contactSocial?: string;
+  /** فقط پاسخ API لیست pending برای بازبین */
+  listReviewerStatus?: ReviewerListStatus | null;
 }
 
 export interface AppState {

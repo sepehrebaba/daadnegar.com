@@ -392,7 +392,6 @@ export function ApprovalDetailScreen() {
                 onClick={() => {
                   setRejectError(null);
                   setRejectDialogOpen(true);
-                  P;
                 }}
                 disabled={actionLoading}
                 className="gap-1.5"
