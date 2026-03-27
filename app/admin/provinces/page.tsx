@@ -324,7 +324,7 @@ export default function AdminProvincesPage() {
                 className="text-left"
               />
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className="gap-2">
               <Button type="submit">{editingProvince ? "ذخیره" : "افزودن"}</Button>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 انصراف
