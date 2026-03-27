@@ -189,7 +189,7 @@ rabbitmq:
 # Set enabled: false if you don't use report-assign, Slack notifications, or user-reactivation
 # =============================================================================
 worker:
-  enabled: false
+  enabled: true
   replicas: 1
 
 # =============================================================================
