@@ -54,6 +54,11 @@ COPY --chown=node:node --from=build-web /app/prisma ./prisma
 COPY --chown=node:node --from=build-web /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build-web /app/generated/prisma ./generated/prisma
 
+COPY --chown=node:node --from=build-web /app/tsconfig.json ./tsconfig.json
+COPY --chown=node:node --from=build-web /app/workers ./workers
+COPY --chown=node:node --from=build-web /app/server ./server
+COPY --chown=node:node --from=build-web /app/lib ./lib
+
 ENV TZ=UTC
 ENV PORT=3000
 ENV NODE_ENV=production
@@ -75,6 +80,11 @@ COPY --chown=node:node --from=build-admin /app/public ./public
 COPY --chown=node:node --from=build-admin /app/prisma ./prisma
 COPY --chown=node:node --from=build-admin /app/prisma.config.ts ./prisma.config.ts
 COPY --from=build-admin /app/generated/prisma ./generated/prisma
+
+COPY --chown=node:node --from=build-admin /app/tsconfig.json ./tsconfig.json
+COPY --chown=node:node --from=build-admin /app/workers ./workers
+COPY --chown=node:node --from=build-admin /app/server ./server
+COPY --chown=node:node --from=build-admin /app/lib ./lib
 
 ENV TZ=UTC
 ENV PORT=3000
