@@ -380,7 +380,7 @@ export default function AdminProvincesPage() {
                 className="text-left"
               />
             </div>
-            <DialogFooter className="flex flex-row-reverse gap-2 sm:gap-0">
+            <DialogFooter className="flex flex-row-reverse gap-2">
               <Button type="button" variant="outline" onClick={() => setCityDialogOpen(false)}>
                 انصراف
               </Button>

@@ -124,7 +124,7 @@ export default function AdminPanelUsersPage() {
                 className="text-left"
               />
             </div>
-            <DialogFooter className="flex-row-reverse gap-2 sm:gap-0">
+            <DialogFooter className="flex-row-reverse gap-2">
               <Button type="submit">افزودن</Button>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                 انصراف

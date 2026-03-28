@@ -511,7 +511,7 @@ export default function AdminReportsPage() {
                     <TableHead>وضعیت</TableHead>
                     <TableHead>اعتبارسنج‌های فعال</TableHead>
                     <TableHead>شروع اسلات فعلی</TableHead>
-                    <TableHead>نصب رأی‌ها (تأیید / رد / در انتظار)</TableHead>
+                    <TableHead>نتایج رأی‌ها (تأیید / رد / در انتظار)</TableHead>
                     <TableHead></TableHead>
                     <TableHead>گزینه‌ها</TableHead>
                   </TableRow>
@@ -766,7 +766,7 @@ export default function AdminReportsPage() {
               </Table>
             </div>
           </div>
-          <DialogFooter className="flex-row-reverse gap-2 sm:gap-0">
+          <DialogFooter className="flex-row-reverse gap-2">
             <Button
               type="button"
               onClick={redistributeUnacceptedValidators}
@@ -794,7 +794,7 @@ export default function AdminReportsPage() {
               این عملیات به‌صورت حذف نرم انجام می‌شود و گزارش از صف فعلی پنهان خواهد شد.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="flex-row-reverse gap-2 sm:gap-0">
+          <DialogFooter className="flex-row-reverse gap-2">
             <Button
               type="button"
               variant="destructive"
