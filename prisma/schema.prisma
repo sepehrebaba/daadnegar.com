@@ -206,6 +206,7 @@ model Report {
   contactEmail     String?
   contactPhone     String?
   contactSocial    String?
+  isPublic         Boolean   @default(false)
   status           String    @default("pending")
   assignedTo       String?   // Validator userId - round-robin assigned for validator queue
   assignedAt       DateTime? // last assignment time to current validator (worker / SLA scan)

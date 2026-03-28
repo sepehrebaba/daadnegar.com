@@ -1,0 +1,2 @@
+ALTER TABLE `report`
+ADD COLUMN `isPublic` BOOLEAN NOT NULL DEFAULT false;
