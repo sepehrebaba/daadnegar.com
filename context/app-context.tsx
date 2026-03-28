@@ -230,7 +230,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
     if (error) throw new Error(String(error));
     setState((prev) => ({ ...prev, currentReport: null }));
-    // توکن‌های جدید (مثلاً invite_activity) توسط بک‌اند ثبت می‌شوند؛ کاربر را دوباره بارگذاری کن
+    // New tokens (e.g. invite_activity) are recorded by the backend; reload user
     const { data: me } = await api.me.get();
     if (me) {
       const m = me as {

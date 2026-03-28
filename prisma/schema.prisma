@@ -20,7 +20,7 @@ model User {
   image         String?
   role          String    @default("user") // "user" | "validator"
   tokenBalance  Float     @default(0)
-  /// اگر true باشد، کاربر تا زمان تغییر رمز (خودش یا ادمین) به اپ اصلی دسترسی ندارد.
+  /// When true, the user cannot use the main app until they or an admin changes the password.
   mustChangePassword Boolean @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -38,13 +38,13 @@ model User {
   reportValidatorAssignments ReportValidatorAssignment[]
 }
 
-/** Event-sourcing: هر تغییر توکن ثبت می‌شود. tokenBalance در User فقط cache است. */
+/** Event-sourcing: every token change is logged; tokenBalance on User is a cache. */
 model TokenTransaction {
   id        String   @id @default(cuid())
   userId    String
-  amount    Float    // مثبت = واریز، منفی = برداشت
+  amount    Float    // positive = credit, negative = debit
   type      String   // registration | report_approved | report_false | report_problematic | invite_activity | admin_reward
-  refId     String?  // مثلاً reportId برای تراکنش‌های مربوط به گزارش
+  refId     String?  // e.g. reportId for report-related transactions
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -138,17 +138,17 @@ model Person {
   id           String    @id @default(cuid())
   firstName    String
   lastName     String
-  fatherName   String?   // نام پدر
+  fatherName   String?   // father's name
   nationalCode String?
   imageUrl     String?
-  title        String?   // سمت
-  organization String?   // ارگان
+  title        String?   // position / title
+  organization String?   // organization
   dateOfBirth  DateTime?
   address      String?
   mobile       String?
   phone        String?
   isFamous     Boolean   @default(false)
-  status       String    @default("approved") // approved | pending - pending: در انتظار تایید ادمین
+  status       String    @default("approved") // approved | pending — pending awaits admin approval
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -208,9 +208,9 @@ model Report {
   contactSocial    String?
   status           String    @default("pending")
   assignedTo       String?   // Validator userId - round-robin assigned for validator queue
-  assignedAt       DateTime? // زمان آخرین اختصاص به اعتبارسنج جاری (ورکر / اسکن SLA)
-  rejectionReason  String?   // rejected: false|problematic (ادمین) | good_faith|bad_faith (اکثریت اعتبارسنج)
-  rejectionCode    String?   // کد نهایی R1..B6 پس از اجماع (اختیاری)
+  assignedAt       DateTime? // last assignment time to current validator (worker / SLA scan)
+  rejectionReason  String?   // rejected: false|problematic (admin) | good_faith|bad_faith (validator majority)
+  rejectionCode    String?   // final code R1..B6 after consensus (optional)
   reviewedBy       String?
   reviewedAt       DateTime?
   createdAt        DateTime  @default(now())
@@ -231,7 +231,7 @@ model Report {
   @@map("report")
 }
 
-/** پس از رسیدن به حد نصاب رأی اعتبارسنج‌ها؛ تسویه توکن توسط ورکر انجام می‌شود. */
+/** Created after enough validator votes; token settlement is done by the worker. */
 model ReportTokenSettlement {
   id              String   @id @default(cuid())
   reportId        String   @unique
@@ -244,14 +244,14 @@ model ReportTokenSettlement {
   @@map("report_token_settlement")
 }
 
-/** هر ردیف = یک «اسلات» بررسی؛ چند ردیف با replacedAt=null یعنی چند اعتبارسنج همزمان. */
+/** Each row is one review slot; multiple rows with replacedAt=null means parallel validators. */
 model ReportValidatorAssignment {
   id          String    @id @default(cuid())
   reportId    String
   validatorId String
   assignedAt  DateTime  @default(now())
-  acceptedAt  DateTime? // زمانی که اعتبارسنج بررسی را پذیرفت; null = هنوز پذیرش نکرده
-  replacedAt  DateTime? // پایان این اسلات (SLA / جایگزینی); null = هنوز فعال
+  acceptedAt  DateTime? // when the validator accepted the review; null = not yet accepted
+  replacedAt  DateTime? // end of this slot (SLA / replacement); null = still active
   reason      String    @default("initial") // initial | stale_reassign
 
   report    Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
@@ -264,16 +264,16 @@ model ReportValidatorAssignment {
   @@map("report_validator_assignment")
 }
 
-/** بررسی‌های گزارش: تایید/رد توسط اعتبارسنج یا ادمین */
+/** Report reviews: accept/reject by validator or admin */
 model ReportReview {
   id             String   @id @default(cuid())
   reportId       String
   reviewerId     String?   // User.id for validators; null for admin panel users
   action          String    // "accepted" | "rejected"
-  rejectionReason String?   // "problematic" | "false" هنگام رد توسط ادمین؛ با اعتبارسنج معمولاً خالی
-  rejectionTier   String?   // good_faith | bad_faith وقتی action=rejected (رأی اعتبارسنج)
+  rejectionReason String?   // "problematic" | "false" on admin reject; usually empty for validators
+  rejectionTier   String?   // good_faith | bad_faith when action=rejected (validator vote)
   rejectionCode   String?   // R1..R5 | B1..B6
-  reviewerComment String?   @db.Text // نظر اجباری برای تأیید/رد توسط اعتبارسنج
+  reviewerComment String?   @db.Text // required comment for validator accept/reject
   createdAt       DateTime @default(now())
 
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)

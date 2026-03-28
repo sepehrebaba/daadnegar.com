@@ -1,27 +1,27 @@
 import { prisma } from "../db";
 
-/** نوع تراکنش توکن */
+/** Token transaction type */
 export const TOKEN_TRANSACTION_TYPES = {
   registration: "registration",
   report_approved: "report_approved",
   report_false: "report_false",
   report_problematic: "report_problematic",
   invite_activity: "invite_activity",
-  /** واریز دستی از پنل ادمین؛ در سابقه به‌عنوان پاداش نمایش داده می‌شود */
+  /** Manual credit from admin panel; shown as reward in history */
   admin_reward: "admin_reward",
-  /** تسویه اکثریت: پاداش گزارش‌دهنده وقتی گزارش نهایی تأیید شد */
+  /** Majority settlement: reward reporter when report is finally accepted */
   consensus_reporter_reward: "consensus_reporter_reward",
-  /** تسویه اکثریت: جریمه گزارش‌دهنده وقتی گزارش نهایی رد شد */
+  /** Majority settlement: penalty reporter when report is finally rejected */
   consensus_reporter_penalty: "consensus_reporter_penalty",
-  /** تسویه اکثریت: پاداش اعتبارسنج (رأی با نتیجه نهایی هم‌خوان بود) — قدیمی */
+  /** Majority settlement: validator reward when vote matched final outcome — legacy */
   consensus_validator_correct: "consensus_validator_correct",
-  /** تسویه اکثریت: جریمه اعتبارسنج (رأی با نتیجه نهایی ناهم‌خوان بود) — قدیمی */
+  /** Majority settlement: validator penalty when vote did not match final outcome — legacy */
   consensus_validator_wrong: "consensus_validator_wrong",
-  /** بازپرداخت اسمی پس از تسویه اجماع */
+  /** Nominal refund to each validator after consensus settlement */
   consensus_validator_refund: "consensus_validator_refund",
-  /** پاداش هم‌رأیی با نتیجه نهایی */
+  /** Bonus when vote matches final outcome */
   consensus_validator_match_bonus: "consensus_validator_match_bonus",
-  /** جریمه رأی رد سوءنیت وقتی نتیجه نهایی تأیید است */
+  /** Penalty for bad-faith reject vote when final outcome is accepted */
   consensus_validator_bad_faith_penalty: "consensus_validator_bad_faith_penalty",
 } as const;
 
@@ -29,9 +29,9 @@ export type TokenTransactionType =
   (typeof TOKEN_TRANSACTION_TYPES)[keyof typeof TOKEN_TRANSACTION_TYPES];
 
 /**
- * ثبت تراکنش توکن و آپدیت cache (tokenBalance) در یک transaction دیتابیس.
- * amount مثبت = واریز، منفی = برداشت.
- * برای برداشت، موجودی منفی نمی‌شود (حداقل ۰).
+ * Records a token transaction and updates the tokenBalance cache in one DB transaction.
+ * Positive amount = credit, negative = debit.
+ * Debits cannot drive balance below zero.
  */
 export async function addTokenTransaction(
   userId: string,

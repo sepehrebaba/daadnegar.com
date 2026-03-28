@@ -1,6 +1,6 @@
-/** کدهای رد با حسن‌نیت (بازپرداخت جزئی به گزارش‌دهنده) */
+/** Good-faith rejection codes (partial refund to reporter) */
 export const GOOD_FAITH_CODES = ["R1", "R2", "R3", "R4", "R5"] as const;
-/** کدهای رد با سوءنیت (جریمه سنگین‌تر) */
+/** Bad-faith rejection codes (heavier penalty) */
 export const BAD_FAITH_CODES = ["B1", "B2", "B3", "B4", "B5", "B6"] as const;
 
 export type GoodFaithCode = (typeof GOOD_FAITH_CODES)[number];
@@ -27,7 +27,7 @@ export function isBadFaithCode(code: string): code is BadFaithCode {
   return BAD_SET.has(code);
 }
 
-/** سطح رأی: تأیید → رد حسن‌نیت → رد سوءنیت */
+/** Vote tier: accept → good-faith reject → bad-faith reject */
 export function voteBucket(v: VoteRow): "a" | "g" | "b" {
   if (v.action === "accepted") return "a";
   if (v.rejectionTier === "bad_faith") return "b";
@@ -48,9 +48,9 @@ export function countAbg(reviews: VoteRow[]) {
 }
 
 /**
- * نتیجه نهایی برای گزارش‌دهنده.
- * با ۳ اعتبارسنج: ۲+ تأیید → تأیید؛ ۲+ رد سوءنیت → سوءنیت؛ ۲+ رد حسن‌نیت → حسن‌نیت؛ ۱-۱-۱ → حسن‌نیت.
- * با ۵+ رأی: اکثریت مطلق (بیش از نصف)؛ در غیر این صورت شکست با اولویت میانی (حسن‌نیت).
+ * Final outcome for the reporter.
+ * With 3 validators: 2+ accept → accepted; 2+ bad-faith → bad_faith; 2+ good-faith → good_faith; 1-1-1 → good_faith.
+ * With 5+ votes: absolute majority (> half); otherwise tie-break favoring good_faith.
  */
 export function resolveReporterOutcome(reviews: VoteRow[]): ConsensusOutcome {
   const { a, g, b, n } = countAbg(reviews);
@@ -132,10 +132,11 @@ function round2(n: number): number {
 }
 
 /**
- * تسویه اعتبارسنج‌ها پس از قطعی شدن نتیجه.
- * ۳ نفر: همیشه بازپرداخت اسمی؛ اگر رأی با نتیجه یکی باشد + پاداش (۱.۵ پیش‌فرض)؛
- * رد سوءنیت وقتی نتیجه تأیید است → جریمه اضافه.
- * ۵ نفر: هم‌رأی با اکثریت → بازپرداخت + پاداش ۲؛ اقلیت با اختلاف یک سطح → فقط بازپرداخت؛ دو سطح → بدون بازپرداخت؛ رد سوءنیت در برابر تأیید → جریمه.
+ * Validator payouts after the outcome is final.
+ * 3 validators: always nominal refund; if vote matches outcome + bonus (default 1.5);
+ * bad-faith reject when outcome is accepted → extra penalty.
+ * 5 validators: match majority → refund + bonus 2; minority one level off → refund only; two levels off → no refund;
+ * bad-faith reject vs accepted outcome → penalty.
  */
 export function computeValidatorPayouts(
   reviews: ValidatorVoteRow[],
@@ -185,7 +186,7 @@ export function computeValidatorPayouts(
       return { reviewerId: r.reviewerId, refund: refundAmt, bonus: bonusAmt, penalty: penaltyAmt };
     }
 
-    /* ۴ رأی یا حالت میانی: مثل ۳ نفر */
+    /* 4 votes or middle case: same rules as 3 validators */
     refundAmt = refund;
     if (match) bonusAmt = bonus3;
     if (badFaithAgainstApprove) penaltyAmt = pen;

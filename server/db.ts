@@ -19,7 +19,7 @@ function createPrismaClient() {
   return new PrismaClient({ adapter: createAdapter() });
 }
 
-/** جلوگیری از چند pool در dev (HMR) — قبلاً auth و db هر کدام client جدا داشتند و به «pool timeout» می‌خورد. */
+/** Avoid multiple pools in dev (HMR) — auth and db used to each create a client and hit pool timeouts. */
 const globalForPrisma = globalThis as unknown as { daadnegarPrisma?: PrismaClient };
 export const prisma = globalForPrisma.daadnegarPrisma ?? createPrismaClient();
 if (process.env.NODE_ENV !== "production") {

@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import ExifTransformer from "exif-be-gone";
 import { fileTypeFromBuffer } from "file-type";
 
-/** فرمت‌های مجاز با MIME types */
+/** Allowed formats with MIME types */
 const ALLOWED_MIMES = new Set([
   "image/jpeg",
   "image/png",
@@ -15,7 +15,7 @@ const ALLOWED_MIMES = new Set([
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
-/** فرمت‌هایی که exif-be-gone متادیتا را حذف می‌کند (EXIF, XMP, GPS, …) */
+/** Formats where exif-be-gone strips metadata (EXIF, XMP, GPS, …) */
 const METADATA_STRIPPABLE = new Set([
   "image/jpeg",
   "image/png",
@@ -56,10 +56,10 @@ export type ProcessResult =
   | { ok: false; error: string };
 
 /**
- * اعتبارسنجی و پاک‌سازی متادیتای فایل را انجام می‌دهد.
- * - بررسی magic bytes (نه فقط پسوند)
- * - حذف EXIF, XMP, GPS و سایر متادیتا
- * - محدودیت حجم
+ * Validates the file and strips metadata.
+ * - Checks magic bytes (not just extension)
+ * - Removes EXIF, XMP, GPS, and other metadata
+ * - Enforces size limit
  */
 export async function processUploadedFile(
   buffer: Buffer,

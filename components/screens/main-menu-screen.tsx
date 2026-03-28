@@ -29,7 +29,7 @@ export function MainMenuScreen() {
   const [minApprovedForApproval, setMinApprovedForApproval] = useState(5);
   const [pendingReviewCount, setPendingReviewCount] = useState<number | null>(null);
 
-  // بارگذاری کاربر از سرور و تنظیمات (رفرش، ورود مستقیم، یا به‌روزرسانی)
+  // Load user from server and settings (refresh, direct login, or update)
   useEffect(() => {
     let cancelled = false;
     api.me.get().then((result: Awaited<ReturnType<typeof api.me.get>>) => {
@@ -58,7 +58,7 @@ export function MainMenuScreen() {
     };
   }, [setUser]);
 
-  // نمایش بخش تایید برای: کاربر validator یا کاربر با حداقل گزارش‌های تاییدشده
+  // Show approval section for validators or users with enough approved reports
   const showApprovalSection =
     user != null &&
     (user.role === "validator" || user.approvedRequestsCount >= minApprovedForApproval);

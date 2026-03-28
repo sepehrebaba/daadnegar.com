@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { routes } from "@/lib/routes";
 
-/** ریدایرکت به پنل با باز شدن مودال تنظیمات */
+/** Redirect to panel with settings modal open */
 export default function SettingsPage() {
   const router = useRouter();
 

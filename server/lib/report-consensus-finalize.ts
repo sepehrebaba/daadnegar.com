@@ -7,7 +7,7 @@ import {
 } from "./report-consensus-logic";
 
 /**
- * اگر گزارش هنوز pending است و به حد نصاب رأی رسیده و تسویه‌ای ثبت نشده، وضعیت نهایی و ردیف settlement را می‌سازد.
+ * If the report is still pending, has enough votes, and no settlement yet, creates final status and settlement row.
  */
 export async function tryFinalizeConsensusReport(
   reportId: string,

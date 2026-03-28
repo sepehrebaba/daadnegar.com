@@ -254,7 +254,7 @@ INSERT IGNORE INTO city (id, name, provinceId, sortOrder, createdAt) VALUES
 ('city_kb4', 'دوگنبدان', 'prov_kohgiluyeh', 3, NOW());
 
 -- -----------------------------------------------------------------------------
--- 5. Unknown Person (نامشخص عمومی)
+-- 5. Unknown Person (generic placeholder)
 -- -----------------------------------------------------------------------------
 INSERT IGNORE INTO person (id, firstName, lastName, isFamous, status, createdAt, updatedAt) VALUES
 ('pers_unknown', 'نامشخص', 'عمومی', 0, 'approved', NOW(), NOW());

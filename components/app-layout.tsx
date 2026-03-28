@@ -54,7 +54,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const handleLogout = logout;
 
-  // نمایش toast خروج بعد از ریدایرکت (full page load)
+  // Show logout toast after redirect (full page load)
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem("daadnegar_logout_toast")) {
@@ -70,7 +70,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (token) setInviteTokenStorage(token);
   }, []);
 
-  // بارگذاری کاربر هنگام وجود auth (invite token یا session cookie)
+  // Load user when auth exists (invite token or session cookie)
   useEffect(() => {
     if (user) return;
     const hasAuth =

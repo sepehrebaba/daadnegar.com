@@ -496,7 +496,7 @@ export default function AdminReportDetailPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* تایم‌لاین گزارش + جدول اعتبارسنج‌ها */}
+        {/* Report timeline + validators table */}
         <ReportTimeline report={report} />
 
         <ReportAssignmentHistoryCard assignments={report.validatorAssignments ?? []} />
@@ -506,7 +506,7 @@ export default function AdminReportDetailPage() {
           assignments={report.validatorAssignments}
         />
 
-        {/* شخص گزارش‌شده */}
+        {/* Reported person */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -534,7 +534,7 @@ export default function AdminReportDetailPage() {
           </CardContent>
         </Card>
 
-        {/* کاربر ثبت‌کننده */}
+        {/* Submitting user */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -553,7 +553,7 @@ export default function AdminReportDetailPage() {
           </CardContent>
         </Card>
 
-        {/* شرح و دسته‌بندی */}
+        {/* Description and category */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -575,7 +575,7 @@ export default function AdminReportDetailPage() {
           </CardContent>
         </Card>
 
-        {/* سازمان و مکان */}
+        {/* Organization and location */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -592,7 +592,7 @@ export default function AdminReportDetailPage() {
           </CardContent>
         </Card>
 
-        {/* زمان و شواهد */}
+        {/* Time and evidence */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -622,7 +622,7 @@ export default function AdminReportDetailPage() {
           </CardContent>
         </Card>
 
-        {/* تماس */}
+        {/* Contact */}
         {(report.wantsContact ||
           report.contactEmail ||
           report.contactPhone ||
@@ -648,7 +648,7 @@ export default function AdminReportDetailPage() {
           </Card>
         )}
 
-        {/* اسناد */}
+        {/* Documents */}
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

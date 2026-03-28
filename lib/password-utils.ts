@@ -1,4 +1,4 @@
-/** قوانین امنیتی رمز عبور */
+/** Password security rules */
 export const PASSWORD_RULES = {
   minLength: 8,
   hasUppercase: /[A-Z]/.test.bind(/[A-Z]/),
@@ -44,7 +44,7 @@ export function getPasswordStrength(password: string): number {
 
 const SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?";
 
-/** تولید رمز عبور تصادفی قوی که تمام قوانین امنیتی را رعایت می‌کند */
+/** Generate a strong random password that satisfies all security rules */
 export function generateRandomPassword(length = 16): string {
   const parts: string[] = [];
   parts.push(String.fromCharCode(65 + Math.floor(Math.random() * 26))); // A-Z

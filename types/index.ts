@@ -114,16 +114,16 @@ export const EVIDENCE_TYPES: { value: EvidenceType; label: string }[] = [
 
 export type RequestStatus = "pending" | "accepted" | "rejected";
 
-/** وضعیت گزارش از دید بازبین در لیست انتظار بررسی */
+/** Report status for a reviewer in the pending-review list */
 export type ReviewerListStatus =
   | {
       kind: "await_accept";
-      /** شروع مهلت ۲۴ ساعته پذیرش */
+      /** Start of the 24-hour acceptance window */
       assignmentAssignedAt: string;
     }
   | {
       kind: "await_vote";
-      /** پس از پذیرش اعتبارسنجی؛ برای کاربر غیراعتبارسنج خالی است */
+      /** After validator acceptance; null for non-validator users */
       acceptedAt: string | null;
     }
   | {
@@ -142,7 +142,7 @@ export interface User {
   role?: string;
   username?: string;
   name?: string;
-  /** true تا کاربر رمز اولیه را عوض نکند */
+  /** True until the user changes their initial password */
   mustChangePassword?: boolean;
 }
 
@@ -164,9 +164,9 @@ export interface ReportCase {
   description: string;
   status: RequestStatus;
   createdAt: Date;
-  /** Used in report wizard: آیا شخص خاصی دخیل است؟ */
+  /** Used in report wizard: whether a specific person is involved */
   hasInvolvedPerson?: boolean;
-  /** شخص انتخاب‌شده وقتی hasInvolvedPerson=true */
+  /** Selected person when hasInvolvedPerson is true */
   involvedPerson?: Person;
   categoryId?: string;
   subcategoryId?: string;
@@ -187,7 +187,7 @@ export interface ReportCase {
   contactEmail?: string;
   contactPhone?: string;
   contactSocial?: string;
-  /** فقط پاسخ API لیست pending برای بازبین */
+  /** Only set on the pending-list API response for reviewers */
   listReviewerStatus?: ReviewerListStatus | null;
 }
 

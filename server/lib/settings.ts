@@ -24,21 +24,21 @@ export const SETTING_KEYS = {
   REPORT_UNASSIGNED_GRACE_MINUTES: "report_unassigned_grace_minutes",
   /** How many validators receive the same pending report at once (capped by validator count) */
   REPORT_PARALLEL_VALIDATORS: "report_parallel_validators",
-  /** حداقل تعداد رأی اعتبارسنج (با reviewerId) قبل از تعیین وضعیت نهایی گزارش */
+  /** Minimum validator votes (with reviewerId) before final report status */
   REPORT_CONSENSUS_MIN_REVIEWS: "report_consensus_min_reviews",
-  /** پاداش گزارش‌دهنده اگر اکثریت تأیید کرد */
+  /** Reporter reward if majority accepts */
   TOKENS_CONSENSUS_REPORTER_ACCEPT: "tokens_consensus_reporter_accept",
-  /** مقدار کسر از گزارش‌دهنده اگر اکثریت رد کرد (عدد مثبت؛ در تراکنش منفی اعمال می‌شود) */
+  /** Amount deducted from reporter if majority rejects (positive value; applied negative in tx) */
   TOKENS_CONSENSUS_REPORTER_REJECT_PENALTY: "tokens_consensus_reporter_reject_penalty",
-  /** پاداش هر اعتبارسنجی که رأی‌اش با نتیجه نهایی یکی بود (قدیمی؛ ترجیح با refund+bonus) */
+  /** Legacy per-validator reward when vote matched outcome (prefer refund+bonus) */
   TOKENS_CONSENSUS_VALIDATOR_CORRECT: "tokens_consensus_validator_correct",
-  /** مقدار کسر از اعتبارسنج اگر رأی‌اش با نتیجه نهایی ناهم‌خوان بود (عدد مثبت) */
+  /** Amount deducted from validator if vote did not match final outcome (positive value) */
   TOKENS_CONSENSUS_VALIDATOR_WRONG_PENALTY: "tokens_consensus_validator_wrong_penalty",
-  /** بازپرداخت اسمی به هر اعتبارسنج پس از تسویه اجماع */
+  /** Nominal refund to each validator after consensus settlement */
   TOKENS_CONSENSUS_VALIDATOR_REFUND: "tokens_consensus_validator_refund",
-  /** پاداش اضافه وقتی رأی با نتیجه یکی است (۳ اعتبارسنج) */
+  /** Extra bonus when vote matches outcome (3 validators) */
   TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_3: "tokens_consensus_validator_bonus_match_3",
-  /** پاداش اضافه وقتی رأی با اکثریت یکی است (۵ اعتبارسنج) */
+  /** Extra bonus when vote matches majority (5 validators) */
   TOKENS_CONSENSUS_VALIDATOR_BONUS_MATCH_5: "tokens_consensus_validator_bonus_match_5",
 } as const;
 
@@ -84,7 +84,7 @@ export async function getSettingNumber<K extends keyof typeof SETTING_KEYS>(
   return Number.isNaN(n) ? 0 : n;
 }
 
-/** مقدار عددی اعشاری (برای پاداش ۱.۵ و مشابه) */
+/** Numeric float setting (e.g. 1.5 bonus values) */
 export async function getSettingFloat<K extends keyof typeof SETTING_KEYS>(
   key: (typeof SETTING_KEYS)[K],
 ): Promise<number> {

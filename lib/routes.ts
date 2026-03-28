@@ -4,7 +4,7 @@ export const routes = {
   security: "/security",
   inviteCode: "/auth/invite-code",
   login: "/auth/login",
-  /** اجبار تغییر رمز پس از ورود (کاربران ایجادشده توسط ادمین) */
+  /** Force password change after sign-in (users created by admin) */
   changePasswordRequired: "/auth/change-password",
   passkeyRegister: "/auth/passkey/register",
   passkeyVerify: "/auth/passkey/verify",
@@ -24,7 +24,7 @@ export const routes = {
   reportFamous: "/panel/report/famous",
   reportManual: "/panel/report/manual",
   myRequests: "/panel/my-requests",
-  /** جستجوی گزارش‌ها — فقط اعتبارسنج */
+  /** Report search — validators only */
   reportSearch: "/panel/report-search",
   requestDetail: (id: string) => `/panel/request/${id}`,
   approvalList: "/panel/approval-list",

@@ -42,7 +42,7 @@ export function MyTokensScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
 
-  // بارگذاری کاربر هنگام رفرش یا ورود مستقیم
+  // Load user on refresh or direct navigation
   useEffect(() => {
     if (user) return;
     const hasAuth =
@@ -67,7 +67,7 @@ export function MyTokensScreen() {
     };
   }, [user, setUser]);
 
-  // بارگذاری تراکنش‌ها هنگام وجود کاربر
+  // Load transactions when user is present
   useEffect(() => {
     if (!user?.id) return;
     setTransactionsLoading(true);
@@ -94,7 +94,7 @@ export function MyTokensScreen() {
             <p className="text-muted-foreground">توکن فعال</p>
           </div>
 
-          {/* لیست تراکنش‌ها */}
+          {/* Transaction list */}
           <div className="bg-card border-border mt-6 w-full max-w-md overflow-hidden rounded-lg border">
             <div className="border-border border-b px-4 py-3">
               <h3 className="text-foreground font-bold">سابقه تراکنش‌ها</h3>

@@ -99,9 +99,9 @@ export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
           data: { passkeyHash },
         });
         /*
-         * Better Auth فقط اولین Account با providerId === "credential" را برای ورود ایمیل/رمز چک می‌کند.
-         * فیلتر قبلی password: { not: null } ردیف‌های بدون رمز را رد می‌کرد → گاهی هیچ ردیفی
-         * به‌روز نمی‌شد یا ردیفی که لاگین از آن استفاده می‌کند عوض نمی‌شد.
+         * Better Auth only checks the first Account with providerId === "credential" for email/password sign-in.
+         * The previous filter password: { not: null } skipped rows without a password → sometimes no row
+         * was updated, or not the row the login actually uses.
          */
         const updated = await tx.account.updateMany({
           where: { userId: params.id, providerId: "credential" },

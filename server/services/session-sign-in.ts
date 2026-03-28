@@ -7,7 +7,7 @@ function isLooselyValidEmail(s: string): boolean {
   return /^[^\s@]+@[^\s@]+$/.test(s);
 }
 
-/** ورود با نام کاربری یا ایمیل: کاربر را از DB پیدا می‌کند و session Better Auth را با همان email می‌سازد. */
+/** Sign-in with username or email: loads user from DB and creates Better Auth session with that email. */
 export const sessionSignInService = new Elysia({
   prefix: "/session",
   aot: false,

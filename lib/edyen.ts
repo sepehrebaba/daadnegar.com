@@ -38,7 +38,7 @@ export const api = treaty<App>(getAppBaseUrl(), {
   },
 }).api;
 
-/** آپلود امن فایل (حذف متادیتا و ذخیره در MinIO) - برای اسناد گزارش */
+/** Secure file upload (strip metadata, store in MinIO) for report documents */
 export async function uploadReportFile(file: File): Promise<{ key: string; name: string }> {
   const token = getInviteToken();
   const base = getAppBaseUrl();
@@ -65,7 +65,7 @@ export async function uploadReportFile(file: File): Promise<{ key: string; name:
   return data;
 }
 
-/** دریافت جزئیات گزارش در انتظار (برای اعتبارسنج) */
+/** Fetch pending report detail (for validators) */
 export async function getPendingReportDetail(id: string) {
   const token = getInviteToken();
   const base = getAppBaseUrl();

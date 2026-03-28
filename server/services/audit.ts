@@ -2,7 +2,7 @@ import { prisma } from "../db";
 
 export type AuditContext = {
   userId?: string;
-  /** برای پنل ادمین؛ چون AdminPanelUser با User متفاوت است، در details ذخیره می‌شود */
+  /** For admin panel; AdminPanelUser differs from User, so stored in details */
   adminPanelUserId?: string;
   adminPanelUsername?: string;
   ipAddress?: string;
@@ -50,8 +50,8 @@ export async function createAuditLog(params: {
 }
 
 /**
- * فانکشن ساده برای لاگ عملیات‌ها.
- * قبل یا بعد از هر عملیاتی صدا بزن.
+ * Simple helper to log actions.
+ * Call before or after an operation.
  */
 export type LogActionParams = {
   action: string;

@@ -5,6 +5,20 @@ const RABBITMQ_URL = process.env.RABBITMQ_URL ?? "amqp://guest:guest@localhost:5
 let connection: Connection | null = null;
 let channel: Channel | null = null;
 
+function resetConnection(): void {
+  connection = null;
+  channel = null;
+}
+
+function logConnectionError(err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg === "Heartbeat timeout") {
+    console.warn("[rabbitmq] Connection dropped (heartbeat); will reconnect on the next publish.");
+    return;
+  }
+  console.error("[rabbitmq] Connection error:", err);
+}
+
 export const QUEUE_NAMES = {
   REPORT_SUBMITTED: "report.submitted",
   SLACK_NOTIFICATION: "slack.notification",
@@ -22,11 +36,15 @@ async function getChannel(): Promise<Channel> {
   connection = await amqp.connect(RABBITMQ_URL);
   channel = await connection.createChannel();
   connection.on("error", (err) => {
-    console.error("[rabbitmq] Connection error:", err);
+    logConnectionError(err);
+    resetConnection();
+  });
+  channel.on("error", (err) => {
+    console.error("[rabbitmq] Channel error:", err);
+    resetConnection();
   });
   connection.on("close", () => {
-    connection = null;
-    channel = null;
+    resetConnection();
   });
   return channel;
 }
@@ -35,16 +53,24 @@ async function getChannel(): Promise<Channel> {
  * Publish a message to a queue. Safe to call - returns false if RabbitMQ is unavailable.
  */
 export async function publish(queueName: string, message: object): Promise<boolean> {
-  try {
+  const attempt = async (): Promise<boolean> => {
     const ch = await getChannel();
     await ch.assertQueue(queueName, { durable: true });
-    const ok = ch.sendToQueue(queueName, Buffer.from(JSON.stringify(message)), {
+    return ch.sendToQueue(queueName, Buffer.from(JSON.stringify(message)), {
       persistent: true,
     });
-    return ok;
+  };
+  try {
+    return await attempt();
   } catch (err) {
     console.error("[rabbitmq] Publish failed:", err);
-    return false;
+    resetConnection();
+    try {
+      return await attempt();
+    } catch (err2) {
+      console.error("[rabbitmq] Publish failed after reconnect:", err2);
+      return false;
+    }
   }
 }
 
@@ -67,7 +93,7 @@ export async function publishReportTokenSettlement(reportId: string): Promise<bo
 }
 
 /**
- * اعتبارسنج به کاربر عادی تبدیل شده یا غیرفعال شده — گزارش‌های در دست بررسی باید بازتخصیص شوند.
+ * Published when a validator is demoted to a normal user or deactivated — in-review reports must be reassigned.
  */
 export async function publishValidatorDemoted(validatorId: string): Promise<boolean> {
   return publish(QUEUE_NAMES.VALIDATOR_DEMOTED, { validatorId });
@@ -94,7 +120,6 @@ export async function close(): Promise<void> {
     if (channel) await channel.close();
     if (connection) await connection.close();
   } finally {
-    channel = null;
-    connection = null;
+    resetConnection();
   }
 }

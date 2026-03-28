@@ -6,7 +6,7 @@ ALTER TABLE `report_review` ADD COLUMN `rejectionTier` VARCHAR(191) NULL,
     ADD COLUMN `rejectionCode` VARCHAR(191) NULL,
     ADD COLUMN `reviewerComment` TEXT NULL;
 
--- AlterTable (اعشار برای پاداش ۱.۵ توکن)
+-- AlterTable (float for 1.5 token rewards)
 ALTER TABLE `User` MODIFY `tokenBalance` DOUBLE NOT NULL DEFAULT 0;
 
 -- AlterTable

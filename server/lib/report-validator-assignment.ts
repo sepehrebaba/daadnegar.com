@@ -15,7 +15,7 @@ async function listValidatorsOrdered() {
   });
 }
 
-/** همهٔ اعتبارسنج‌هایی که تا حالا برای این گزارش ردیف اختصاص داشته‌اند (فعال یا جایگزین‌شده). */
+/** All validators who have ever had an assignment row for this report (active or replaced). */
 async function getReportAssignmentValidatorIds(reportId: string): Promise<Set<string>> {
   const rows = await prisma.reportValidatorAssignment.findMany({
     where: { reportId },
@@ -24,7 +24,7 @@ async function getReportAssignmentValidatorIds(reportId: string): Promise<Set<st
   return new Set(rows.map((r) => r.validatorId));
 }
 
-/** برای اختصاص تازه: کسانی که قبلاً اسلات داشته‌اند یا رأی ثبت کرده‌اند را کنار بگذار. */
+/** For new assignments: exclude anyone who already had a slot or cast a vote. */
 async function getValidatorsToExcludeForReport(reportId: string): Promise<Set<string>> {
   const exclude = await getReportAssignmentValidatorIds(reportId);
   const reviews = await prisma.reportReview.findMany({
@@ -71,7 +71,7 @@ async function pickNextNValidatorsAvoiding(count: number, exclude: Set<string>):
   return picked;
 }
 
-/** Keeps `Report.assignedTo` / `assignedAt` aligned with oldest active slot (نمایش و سازگاری). */
+/** Keeps `Report.assignedTo` / `assignedAt` aligned with the oldest active slot (display and compatibility). */
 export async function syncReportPrimaryAssignee(reportId: string): Promise<void> {
   const first = await prisma.reportValidatorAssignment.findFirst({
     where: { reportId, replacedAt: null },
@@ -98,7 +98,7 @@ export async function releaseValidatorSlotAfterReviewTx(
   });
 }
 
-/** افزودن اسلات برای اعتبارسنج‌هایی که هنوز رأی نداده‌اند تا به حد نصاب برسیم. */
+/** Add slots for validators who have not voted yet until we reach the minimum review count. */
 export async function topUpValidatorSlotsForReport(reportId: string): Promise<void> {
   const report = await prisma.report.findUnique({
     where: { id: reportId },
@@ -148,7 +148,7 @@ export async function topUpValidatorSlotsForReport(reportId: string): Promise<vo
   await syncReportPrimaryAssignee(reportId);
 }
 
-/** رأی دادن: اسلات فعال یا assignedTo قدیمی، و فقط یک‌بار رأی. */
+/** Voting: requires an active slot or legacy assignedTo; only one vote per validator. */
 export async function validatorMayVoteOnReport(
   reportId: string,
   validatorUserId: string,
@@ -166,7 +166,7 @@ export async function validatorMayVoteOnReport(
   return assignedToLegacy === validatorUserId;
 }
 
-/** مشاهده گزارش در انتظار: اگر قبلاً رأی داده یا اسلات دارد. */
+/** Viewing a pending report: allowed if they already voted or have a slot. */
 export async function validatorMayViewPendingReport(
   reportId: string,
   validatorUserId: string,
@@ -180,7 +180,7 @@ export async function validatorMayViewPendingReport(
   return validatorMayVoteOnReport(reportId, validatorUserId, assignedToLegacy);
 }
 
-/** اعتبارسنج باید اسلات داشته باشد؛ کاربر با حداقل گزارش تأییدشده بدون محدودیت اسلات. */
+/** Validators need a slot; users with enough approved reports are not slot-limited. */
 export async function userMayVoteOnConsensusReport(
   reportId: string,
   userId: string,
@@ -341,7 +341,7 @@ export async function scanAndReassignStaleReports(): Promise<{
 }
 
 /**
- * وقتی اعتبارسنج به کاربر عادی تبدیل یا غیرفعال می‌شود، اسلات‌های فعالش را به اعتبارسنج‌های دیگر منتقل می‌کنیم.
+ * When a validator is demoted or deactivated, reassign their active slots to other validators.
  * Returns the number of slots that were successfully reassigned.
  */
 export async function reassignReportsFromDemotedValidator(validatorId: string): Promise<number> {

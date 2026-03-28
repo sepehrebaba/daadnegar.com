@@ -255,7 +255,7 @@ export function InviteUserScreen() {
             </DialogContent>
           </Dialog>
 
-          {/* لیست کدهای دعوت ایجاد شده */}
+          {/* Created invite codes list */}
           <div className="bg-card border-border mt-6 w-full max-w-md overflow-hidden rounded-lg border">
             <div className="border-border border-b px-4 py-3">
               <h3 className="text-foreground flex items-center gap-2 font-semibold">

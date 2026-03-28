@@ -16,7 +16,7 @@ function getBaseUrl(): string {
   return process.env.FRONTEND_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 }
 
-/** تبدیل document.url (کلید MinIO) به URL قابل دسترسی برای کلاینت */
+/** Turn document.url (MinIO key) into a URL the client can fetch */
 export function documentToServeUrl(doc: { id: string; name: string; url: string }): string {
   const base = getBaseUrl();
   return `${base}/api/upload/serve/${doc.id}`;

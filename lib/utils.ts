@@ -5,12 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** عدد را به اعداد فارسی (۱، ۲، ۳، ...) تبدیل می‌کند */
+/** Formats a number with Persian digits (fa-IR locale). */
 export function toPersianNum(n: number): string {
   return n.toLocaleString("fa-IR");
 }
 
-/** زمان نسبی به فارسی: الان، ۱ دقیقه پیش، ۲ ساعت پیش، ۳ روز پیش */
+/** Relative time in Persian: now, N minutes ago, N hours ago, etc. */
 export function formatTimeAgo(dateStr: string): string {
   const date = new Date(dateStr);
   const now = new Date();

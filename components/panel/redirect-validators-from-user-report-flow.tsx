@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/context/app-context";
 import { routes } from "@/lib/routes";
 
-/** اعتبارسنج نباید ویزارد ثبت گزارش یا «گزارش‌های من» را ببیند. */
+/** Validators should not see the report wizard or “my requests”. */
 export function RedirectValidatorsFromUserReportFlow({ children }: { children: React.ReactNode }) {
   const { state } = useApp();
   const router = useRouter();

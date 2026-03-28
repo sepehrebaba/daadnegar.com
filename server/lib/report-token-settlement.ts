@@ -14,7 +14,7 @@ function isBadFaithRejection(reason: string | null): boolean {
   return reason === "bad_faith" || reason === "false";
 }
 
-/** اعمال پاداش/جریمه پس از قطعی شدن گزارش (اکثریت رأی). یک تراکنش دیتابیس. */
+/** Apply rewards/penalties after the report outcome is final (majority vote). Single DB transaction. */
 export async function processReportTokenSettlement(reportId: string): Promise<void> {
   const [reporterAccept, deductProblematic, deductFalse, refund, bonus3, bonus5, badFaithPenalty] =
     await Promise.all([
