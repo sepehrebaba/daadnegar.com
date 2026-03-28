@@ -21,8 +21,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -356,22 +354,21 @@ export default function AdminReportsPage() {
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>فیلتر گزارشات</DropdownMenuLabel>
             <DropdownMenuSeparator />
-
-            <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-              وضعیت
-            </DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as StatusFilter)}
-            >
-              <DropdownMenuRadioItem value="all">همه وضعیت‌ها</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="pending">در انتظار بررسی</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="accepted">تأیید شده</DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="rejected">رد شده</DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-
-            <DropdownMenuSeparator />
             <div className="space-y-3 px-2 py-1.5" dir="rtl">
+              <div className="space-y-1.5">
+                <p className="text-muted-foreground text-xs">وضعیت</p>
+                <select
+                  value={statusFilter}
+                  onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+                  className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+                >
+                  <option value="all">همه وضعیت‌ها</option>
+                  <option value="pending">در انتظار بررسی</option>
+                  <option value="accepted">تأیید شده</option>
+                  <option value="rejected">رد شده</option>
+                </select>
+              </div>
+
               <div className="space-y-1.5">
                 <p className="text-muted-foreground text-xs">شهر</p>
                 <select
@@ -734,24 +731,40 @@ export default function AdminReportsPage() {
           </DialogHeader>
           <div className="space-y-2 text-sm">
             <p className="font-medium">اعتبارسنج‌های فعال فعلی:</p>
-            <ul className="max-h-48 space-y-1 overflow-auto rounded-md border p-3">
-              {activeSlots(redistributeTarget?.validatorAssignments).map((slot) => (
-                <li
-                  key={`${slot.validator.id}-${slot.assignedAt}`}
-                  className="flex items-center gap-2"
-                >
-                  <span>
-                    {slot.validator.name} ({slot.validator.username})
-                  </span>
-                  <Badge variant={slot.acceptedAt ? "default" : "secondary"} className="text-xs">
-                    {slot.acceptedAt ? "قبول کرده" : "در انتظار قبول"}
-                  </Badge>
-                </li>
-              ))}
-              {activeSlots(redistributeTarget?.validatorAssignments).length === 0 && (
-                <li className="text-muted-foreground">اعتبارسنج فعال ندارد.</li>
-              )}
-            </ul>
+            <div className="max-h-48 overflow-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>اعتبارسنج</TableHead>
+                    <TableHead className="w-32">وضعیت</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {activeSlots(redistributeTarget?.validatorAssignments).map((slot) => (
+                    <TableRow key={`${slot.validator.id}-${slot.assignedAt}`}>
+                      <TableCell>
+                        {slot.validator.name} ({slot.validator.username})
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={slot.acceptedAt ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {slot.acceptedAt ? "قبول کرده" : "در انتظار قبول"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {activeSlots(redistributeTarget?.validatorAssignments).length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-muted-foreground">
+                        اعتبارسنج فعال ندارد.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
           <DialogFooter className="flex-row-reverse gap-2 sm:gap-0">
             <Button

@@ -49,14 +49,14 @@ function LogoutButton() {
 
 const navItems = [
   { href: "/admin/reports", label: "گزارش‌ها", icon: FileText },
-  { href: "/admin/users", label: "کاربران", icon: Users },
+  { href: "/admin/users", label: "کاربران سیستم", icon: Users },
   { href: "/admin/logs", label: "لاگ‌ها", icon: ScrollText },
 ];
 
 const reportSettingsSubItems = [
-  { href: "/admin/provinces", label: "استان‌ها و شهرها", icon: MapPin },
-  { href: "/admin/people", label: "افراد", icon: UserCircle },
   { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree },
+  { href: "/admin/people", label: "اشخاص", icon: UserCircle },
+  { href: "/admin/provinces", label: "استان‌ها و شهرها", icon: MapPin },
 ];
 
 const settingsSubItems = [
@@ -119,7 +119,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <span className="flex items-center gap-3">
                   <SlidersHorizontal className="h-5 w-5 shrink-0" />
-                  تنظیمات ثبت گزارش
+                  فرم ثبت گزارش
                 </span>
                 <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-180" />
               </CollapsibleTrigger>
