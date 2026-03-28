@@ -118,6 +118,16 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       if (!reportsEnabled) {
         throw new Error("در حال حاضر امکان ثبت گزارش جدید وجود ندارد");
       }
+      const reportSubmitStake = await getSettingNumber(SETTING_KEYS.TOKENS_REPORT_SUBMIT_STAKE);
+      if (reportSubmitStake > 0) {
+        const userBalance = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: { tokenBalance: true },
+        });
+        if (!userBalance || (userBalance.tokenBalance ?? 0) < reportSubmitStake) {
+          throw new Error(`حداقل ${reportSubmitStake} توکن برای ثبت گزارش و گروگذاری لازم است`);
+        }
+      }
       const reportCountBefore = await prisma.report.count({ where: { userId: session.user.id } });
       const report = await prisma.report.create({
         data: {
@@ -169,11 +179,21 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       const isInviteUser =
         reportCountBefore === 0 &&
         (await prisma.inviteSession.findFirst({ where: { userId: session.user.id } }));
+      const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
+        await import("../lib/token-transaction");
+      let tokensStaked = 0;
+      if (reportSubmitStake > 0) {
+        await addTokenTransaction(
+          session.user.id,
+          -reportSubmitStake,
+          TOKEN_TRANSACTION_TYPES.report_submit_stake,
+          report.id,
+        );
+        tokensStaked = reportSubmitStake;
+      }
       let tokensAwarded = 0;
       if (isInviteUser) {
         const reward = await getSettingNumber(SETTING_KEYS.TOKENS_REWARD_INVITED_ACTIVITY);
-        const { addTokenTransaction, TOKEN_TRANSACTION_TYPES } =
-          await import("../lib/token-transaction");
         await addTokenTransaction(
           session.user.id,
           reward,
@@ -182,7 +202,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         );
         tokensAwarded = reward;
       }
-      return { ...mapReportDocuments(report), tokensAwarded };
+      return { ...mapReportDocuments(report), tokensAwarded, tokensStaked };
     },
     {
       body: t.Object({
@@ -219,6 +239,125 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       orderBy: { createdAt: "desc" },
     });
     return reports.map(mapReportDocuments);
+  })
+  .get(
+    "/public",
+    async ({ query }) => {
+      const page = Math.max(1, Number(query.page ?? 1));
+      const perPage = Math.min(50, Math.max(1, Number(query.perPage ?? 12)));
+      const skip = (page - 1) * perPage;
+
+      const q = query.q?.trim();
+      const city = query.city?.trim();
+      const categoryId = query.categoryId?.trim();
+      const fromRaw = query.occurrenceDateFrom?.trim();
+      const toRaw = query.occurrenceDateTo?.trim();
+      const fromDate = fromRaw ? new Date(fromRaw) : null;
+      const toDate = toRaw ? new Date(toRaw) : null;
+
+      const where: Parameters<typeof prisma.report.findMany>[0]["where"] = {
+        isPublic: true,
+        status: "accepted",
+      };
+      if (q) {
+        where.OR = [
+          { title: { contains: q } },
+          { description: { contains: q } },
+          { city: { contains: q } },
+          { organizationName: { contains: q } },
+          { category: { is: { name: { contains: q } } } },
+        ];
+      }
+      if (city) {
+        where.city = { contains: city };
+      }
+      if (categoryId) {
+        where.categoryId = categoryId;
+      }
+      const occurrenceDateWhere: { gte?: Date; lte?: Date } = {};
+      if (fromDate && !Number.isNaN(fromDate.getTime())) {
+        fromDate.setHours(0, 0, 0, 0);
+        occurrenceDateWhere.gte = fromDate;
+      }
+      if (toDate && !Number.isNaN(toDate.getTime())) {
+        toDate.setHours(23, 59, 59, 999);
+        occurrenceDateWhere.lte = toDate;
+      }
+      if (occurrenceDateWhere.gte || occurrenceDateWhere.lte) {
+        where.occurrenceDate = occurrenceDateWhere;
+      }
+
+      const [rows, total] = await Promise.all([
+        prisma.report.findMany({
+          where,
+          orderBy: [{ occurrenceDate: "desc" }, { createdAt: "desc" }],
+          skip,
+          take: perPage,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            city: true,
+            province: true,
+            occurrenceDate: true,
+            createdAt: true,
+            category: { select: { id: true, name: true } },
+            person: { select: { firstName: true, lastName: true } },
+            _count: { select: { documents: true } },
+          },
+        }),
+        prisma.report.count({ where }),
+      ]);
+
+      return {
+        data: rows,
+        total,
+        page,
+        perPage,
+      };
+    },
+    {
+      query: t.Object({
+        page: t.Optional(t.String()),
+        perPage: t.Optional(t.String()),
+        q: t.Optional(t.String()),
+        city: t.Optional(t.String()),
+        categoryId: t.Optional(t.String()),
+        occurrenceDateFrom: t.Optional(t.String()),
+        occurrenceDateTo: t.Optional(t.String()),
+      }),
+    },
+  )
+  .get("/public/filters", async () => {
+    const baseWhere: Parameters<typeof prisma.report.findMany>[0]["where"] = {
+      isPublic: true,
+      status: "accepted",
+    };
+    const [categories, cities] = await Promise.all([
+      prisma.category.findMany({
+        where: {
+          type: "report",
+          isActive: true,
+          reportsAsCategory: { some: baseWhere },
+        },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.report.findMany({
+        where: {
+          ...baseWhere,
+          city: { not: null },
+        },
+        select: { city: true },
+        distinct: ["city"],
+        orderBy: { city: "asc" },
+      }),
+    ]);
+
+    return {
+      categories,
+      cities: cities.map((row) => row.city).filter((value): value is string => Boolean(value)),
+    };
   })
   .get("/pending", async ({ request, session }) => {
     if (!session?.user?.id) {

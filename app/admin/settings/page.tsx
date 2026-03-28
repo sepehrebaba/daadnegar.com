@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 type SettingsData = {
   reports_enabled: boolean;
   default_tokens_new_user: number;
+  tokens_report_submit_stake: number;
   tokens_reward_approved_report: number;
   tokens_deduct_false_report: number;
   tokens_deduct_problematic_report: number;
@@ -33,6 +34,7 @@ type SettingsData = {
 const LABELS: Record<keyof SettingsData, string> = {
   reports_enabled: "فعال‌سازی دریافت گزارش جدید",
   default_tokens_new_user: "تعداد توکن‌های پیش‌فرض کاربر جدید",
+  tokens_report_submit_stake: "مقدار توکن گرو در زمان ثبت گزارش",
   tokens_reward_approved_report: "تعداد توکن هدیه بعد از تأیید گزارش",
   tokens_deduct_false_report: "تعداد توکن کسر شده در صورت گزارش غلط",
   tokens_deduct_problematic_report: "تعداد توکن کسر شده در صورت گزارش مشکل‌دار",
@@ -63,6 +65,7 @@ const LABELS: Record<keyof SettingsData, string> = {
 const defaults: SettingsData = {
   reports_enabled: true,
   default_tokens_new_user: 10,
+  tokens_report_submit_stake: 5,
   tokens_reward_approved_report: 5,
   tokens_deduct_false_report: 3,
   tokens_deduct_problematic_report: 1,
@@ -97,6 +100,9 @@ export default function AdminSystemSettingsPage() {
           : raw.reports_enabled === "true",
       default_tokens_new_user:
         Number(raw.default_tokens_new_user) || defaults.default_tokens_new_user,
+      tokens_report_submit_stake: Number.isFinite(Number(raw.tokens_report_submit_stake))
+        ? Number(raw.tokens_report_submit_stake)
+        : defaults.tokens_report_submit_stake,
       tokens_reward_approved_report:
         Number(raw.tokens_reward_approved_report) || defaults.tokens_reward_approved_report,
       tokens_deduct_false_report:
@@ -150,6 +156,7 @@ export default function AdminSystemSettingsPage() {
       await api.admin.settings.put({
         reports_enabled: settings.reports_enabled,
         default_tokens_new_user: settings.default_tokens_new_user,
+        tokens_report_submit_stake: settings.tokens_report_submit_stake,
         tokens_reward_approved_report: settings.tokens_reward_approved_report,
         tokens_deduct_false_report: settings.tokens_deduct_false_report,
         tokens_deduct_problematic_report: settings.tokens_deduct_problematic_report,
@@ -214,6 +221,27 @@ export default function AdminSystemSettingsPage() {
                     setSettings((s) => ({
                       ...s,
                       default_tokens_new_user: Math.max(
+                        0,
+                        Number.parseInt(e.target.value, 10) || 0,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tokens_report_submit_stake">
+                  {LABELS.tokens_report_submit_stake}
+                </Label>
+                <Input
+                  id="tokens_report_submit_stake"
+                  type="number"
+                  min={0}
+                  value={settings.tokens_report_submit_stake}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_report_submit_stake: Math.max(
                         0,
                         Number.parseInt(e.target.value, 10) || 0,
                       ),

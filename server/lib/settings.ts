@@ -6,6 +6,8 @@ export const SETTING_KEYS = {
   REPORTS_ENABLED: "reports_enabled",
   /** Default token balance for new invite users */
   DEFAULT_TOKENS_NEW_USER: "default_tokens_new_user",
+  /** Tokens held as collateral when submitting a report */
+  TOKENS_REPORT_SUBMIT_STAKE: "tokens_report_submit_stake",
   /** Tokens rewarded when report is approved */
   TOKENS_REWARD_APPROVED_REPORT: "tokens_reward_approved_report",
   /** Tokens deducted when report is rejected as false */
@@ -45,6 +47,7 @@ export const SETTING_KEYS = {
 export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING_KEYS], string> = {
   [SETTING_KEYS.REPORTS_ENABLED]: "true",
   [SETTING_KEYS.DEFAULT_TOKENS_NEW_USER]: "10",
+  [SETTING_KEYS.TOKENS_REPORT_SUBMIT_STAKE]: "5",
   [SETTING_KEYS.TOKENS_REWARD_APPROVED_REPORT]: "5",
   [SETTING_KEYS.TOKENS_DEDUCT_FALSE_REPORT]: "3",
   [SETTING_KEYS.TOKENS_DEDUCT_PROBLEMATIC_REPORT]: "1",

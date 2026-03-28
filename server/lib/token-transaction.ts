@@ -3,6 +3,7 @@ import { prisma } from "../db";
 /** Token transaction type */
 export const TOKEN_TRANSACTION_TYPES = {
   registration: "registration",
+  report_submit_stake: "report_submit_stake",
   report_approved: "report_approved",
   report_false: "report_false",
   report_problematic: "report_problematic",

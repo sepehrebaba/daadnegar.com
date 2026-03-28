@@ -33,6 +33,7 @@ export const adminSettingsRoutes = new Elysia({ name: "adminSettings" })
       body: t.Object({
         reports_enabled: t.Optional(t.Boolean()),
         default_tokens_new_user: t.Optional(t.Number()),
+        tokens_report_submit_stake: t.Optional(t.Number()),
         tokens_reward_approved_report: t.Optional(t.Number()),
         tokens_deduct_false_report: t.Optional(t.Number()),
         tokens_deduct_problematic_report: t.Optional(t.Number()),
