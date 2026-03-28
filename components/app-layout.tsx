@@ -7,7 +7,16 @@ import { SettingsModal } from "@/components/settings-modal";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Languages, House, UserCircle, Settings, Shield, HelpCircle, LogOut } from "lucide-react";
+import {
+  Languages,
+  House,
+  UserCircle,
+  Settings,
+  Shield,
+  HelpCircle,
+  LogOut,
+  FileText,
+} from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   DropdownMenu,
@@ -212,6 +221,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           >
             <Shield className="h-4 w-4" />
             نگرانی‌های امنیتی
+          </Link>
+          <Link
+            href={routes.publicReports}
+            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
+          >
+            <FileText className="h-4 w-4" />
+            گزارش‌های عمومی
           </Link>
           <Link
             href={routes.about}
