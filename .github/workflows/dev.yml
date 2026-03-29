@@ -21,9 +21,6 @@ jobs:
   build-and-deploy:
     runs-on: arc-runner-set
 
-    container:
-      image: gcr.io/kaniko-project/executor:debug
-      options: --entrypoint=""
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4.1.4
@@ -63,47 +60,42 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configure Kaniko credentials
-        run: |
-          mkdir -p ${{ github.workspace }}/.docker
-          echo "{\"auths\":{\"ghcr.io\":{\"auth\":\"$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w 0)\"}}}" \
-            > ${{ github.workspace }}/.docker/config.json
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.3.0
+
+      - name: Extract Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5.5.1
+        with:
+          tags: type=semver,pattern={{version}},prefix=v,value=${{ steps.version.outputs.version }}
+          images: |
+            ghcr.io/${{ env.IMAGE }}
 
       - name: Build and Push (public website image)
-        uses: int128/kaniko-action@v1
+        uses: docker/build-push-action@v5.3.0
         with:
-          push: true
-          file: Dockerfile
           context: .
           target: release-web
+          platforms: linux/amd64
           tags: ghcr.io/${{ env.IMAGE }}:v${{ steps.version.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          push: true
           build-args: |
             NX_CLOUD_ACCESS_TOKEN=${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-            NODE_OPTIONS=--max-old-space-size=8192
-          kaniko-args: |
-            --platform linux/amd64
-            --cache=true
-            --cache-repo=ghcr.io/${{ env.IMAGE }}/cache
-            --cache-ttl=24h
+            NODE_OPTIONS="--max-old-space-size=8192"
 
       - name: Build and Push (admin-only image)
-        uses: int128/kaniko-action@v1
+        uses: docker/build-push-action@v5.3.0
         with:
-          push: true
-          file: Dockerfile
           context: .
           target: release-admin
+          platforms: linux/amd64
           tags: ghcr.io/${{ env.IMAGE }}:v${{ steps.version.outputs.version }}-admin
           labels: ${{ steps.meta.outputs.labels }}
+          push: true
           build-args: |
             NX_CLOUD_ACCESS_TOKEN=${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-            NODE_OPTIONS=--max-old-space-size=8192
-          kaniko-args: |
-            --platform linux/amd64
-            --cache=true
-            --cache-repo=ghcr.io/${{ env.IMAGE }}/cache
-            --cache-ttl=24h
+            NODE_OPTIONS="--max-old-space-size=8192"
 
       # Kubernetes deployment steps
       - name: Set up kubeconfig
