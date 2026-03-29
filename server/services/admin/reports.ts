@@ -31,6 +31,17 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
       if (query.categoryId?.trim()) {
         queueWhere.categoryId = query.categoryId.trim();
       }
+      const person = query.person?.trim();
+      if (person) {
+        queueWhere.person = {
+          OR: [{ firstName: { contains: person } }, { lastName: { contains: person } }],
+        };
+      }
+      if (query.isPublic === "true") {
+        queueWhere.isPublic = true;
+      } else if (query.isPublic === "false") {
+        queueWhere.isPublic = false;
+      }
       if (query.hasDocuments === "true") {
         queueWhere.documents = { some: {} };
       } else if (query.hasDocuments === "false") {
@@ -112,6 +123,8 @@ export const adminReportsRoutes = new Elysia({ name: "adminReports" })
         ),
         city: t.Optional(t.String()),
         categoryId: t.Optional(t.String()),
+        person: t.Optional(t.String()),
+        isPublic: t.Optional(t.Union([t.Literal("true"), t.Literal("false")])),
         hasDocuments: t.Optional(t.Union([t.Literal("true"), t.Literal("false")])),
         wantsContact: t.Optional(t.Union([t.Literal("true"), t.Literal("false")])),
         occurrenceDateFrom: t.Optional(t.String()),

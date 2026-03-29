@@ -71,6 +71,7 @@ type QueueReport = {
 type StatusFilter = "all" | "pending" | "accepted" | "rejected";
 type HasDocumentsFilter = "all" | "with" | "without";
 type ContactableFilter = "all" | "yes" | "no";
+type PublicityFilter = "all" | "public" | "private";
 type CategoryOption = {
   id: string;
   name: string;
@@ -137,6 +138,8 @@ export default function AdminReportsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [cityFilter, setCityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [personFilter, setPersonFilter] = useState("");
+  const [publicityFilter, setPublicityFilter] = useState<PublicityFilter>("all");
   const [hasDocumentsFilter, setHasDocumentsFilter] = useState<HasDocumentsFilter>("all");
   const [contactableFilter, setContactableFilter] = useState<ContactableFilter>("all");
   const [occurrenceDateFrom, setOccurrenceDateFrom] = useState("");
@@ -158,6 +161,9 @@ export default function AdminReportsPage() {
     if (statusFilter !== "all") params.set("status", statusFilter);
     if (cityFilter !== "all") params.set("city", cityFilter);
     if (categoryFilter !== "all") params.set("categoryId", categoryFilter);
+    if (personFilter.trim()) params.set("person", personFilter.trim());
+    if (publicityFilter === "public") params.set("isPublic", "true");
+    if (publicityFilter === "private") params.set("isPublic", "false");
     if (hasDocumentsFilter === "with") params.set("hasDocuments", "true");
     if (hasDocumentsFilter === "without") params.set("hasDocuments", "false");
     if (contactableFilter === "yes") params.set("wantsContact", "true");
@@ -182,6 +188,8 @@ export default function AdminReportsPage() {
     statusFilter,
     cityFilter,
     categoryFilter,
+    personFilter,
+    publicityFilter,
     hasDocumentsFilter,
     contactableFilter,
     occurrenceDateFrom,
@@ -212,6 +220,8 @@ export default function AdminReportsPage() {
     statusFilter,
     cityFilter,
     categoryFilter,
+    personFilter,
+    publicityFilter,
     hasDocumentsFilter,
     contactableFilter,
     occurrenceDateFrom,
@@ -222,6 +232,8 @@ export default function AdminReportsPage() {
     statusFilter !== "all",
     cityFilter !== "all",
     categoryFilter !== "all",
+    personFilter.trim() !== "",
+    publicityFilter !== "all",
     hasDocumentsFilter !== "all",
     contactableFilter !== "all",
     occurrenceDateFrom !== "",
@@ -245,6 +257,8 @@ export default function AdminReportsPage() {
     setStatusFilter("all");
     setCityFilter("all");
     setCategoryFilter("all");
+    setPersonFilter("");
+    setPublicityFilter("all");
     setHasDocumentsFilter("all");
     setContactableFilter("all");
     setOccurrenceDateFrom("");
@@ -398,6 +412,29 @@ export default function AdminReportsPage() {
                       {category.name}
                     </option>
                   ))}
+                </select>
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-muted-foreground text-xs">شخص</p>
+                <Input
+                  value={personFilter}
+                  onChange={(event) => setPersonFilter(event.target.value)}
+                  placeholder="نام یا نام خانوادگی شخص"
+                  className="h-9 text-sm"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <p className="text-muted-foreground text-xs">عمومیت گزارش</p>
+                <select
+                  value={publicityFilter}
+                  onChange={(event) => setPublicityFilter(event.target.value as PublicityFilter)}
+                  className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
+                >
+                  <option value="all">همه</option>
+                  <option value="public">فقط عمومی</option>
+                  <option value="private">فقط خصوصی</option>
                 </select>
               </div>
 
