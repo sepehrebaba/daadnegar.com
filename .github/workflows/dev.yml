@@ -21,6 +21,9 @@ jobs:
   build-and-deploy:
     runs-on: arc-runner-set
 
+    container:
+      image: gcr.io/kaniko-project/executor:debug
+      options: --entrypoint=""
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4.1.4
