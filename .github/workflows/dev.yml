@@ -149,6 +149,7 @@ jobs:
       - name: Deploy to Kubernetes with Helm Secrets
         run: |
           helm secrets upgrade --install daadnegar ./daadnegar-chart \
+            --namespace default \
             --set image.repository=ghcr.io/${{ env.IMAGE }} \
             --set image.tag=v${{ steps.version.outputs.version }} \
             --set adminPanel.enabled=true \
