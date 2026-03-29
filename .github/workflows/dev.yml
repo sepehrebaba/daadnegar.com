@@ -62,9 +62,9 @@ jobs:
 
       - name: Configure Kaniko credentials
         run: |
-          mkdir -p /kaniko/.docker
+          mkdir -p ${{ github.workspace }}/.docker
           echo "{\"auths\":{\"ghcr.io\":{\"auth\":\"$(echo -n "${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}" | base64 -w 0)\"}}}" \
-            > /kaniko/.docker/config.json
+            > ${{ github.workspace }}/.docker/config.json
 
       - name: Build and Push (public website image)
         uses: int128/kaniko-action@v1
