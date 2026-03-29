@@ -103,6 +103,10 @@ jobs:
         with:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
 
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
       - name: Install SOPS
         run: |
           curl -L https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64 -o sops
