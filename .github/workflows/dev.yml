@@ -83,6 +83,9 @@ jobs:
           build-args: |
             NX_CLOUD_ACCESS_TOKEN=${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
             NODE_OPTIONS="--max-old-space-size=8192"
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-web
+          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-web,mode=max
+
 
       - name: Build and Push (admin-only image)
         uses: docker/build-push-action@v5.3.0
@@ -96,7 +99,8 @@ jobs:
           build-args: |
             NX_CLOUD_ACCESS_TOKEN=${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
             NODE_OPTIONS="--max-old-space-size=8192"
-
+          cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-admin
+          cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-admin,mode=max
       # Kubernetes deployment steps
       - name: Set up kubeconfig
         uses: azure/k8s-set-context@v3
@@ -104,8 +108,14 @@ jobs:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
 
       - name: Install Helm
-        run: |
-          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: v1.29.0
 
       - name: Install SOPS
         run: |
