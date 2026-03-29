@@ -521,47 +521,50 @@ export default function AdminReportsPage() {
         </DropdownMenu>
       </div>
 
-      {loading ? (
-        <p>در حال بارگذاری...</p>
-      ) : reports.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">گزارشی برای نمایش وجود ندارد.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle>گزارش‌ها</CardTitle>
-            <p className="text-muted-foreground text-sm font-normal">
-              در انتظار بررسی و تأییدشده (اکثریت رأی یا نهایی)
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="w-full overflow-x-auto">
-              <Table>
-                <TableHeader>
+      <Card>
+        <CardHeader className="space-y-1">
+          <CardTitle>گزارش‌ها</CardTitle>
+          <p className="text-muted-foreground text-sm font-normal">
+            در انتظار بررسی و تأییدشده (اکثریت رأی یا نهایی)
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>شخص</TableHead>
+                  <TableHead>کاربر</TableHead>
+                  <TableHead>تاریخ ثبت</TableHead>
+                  <TableHead>وضعیت</TableHead>
+                  <TableHead>اعتبارسنج‌های فعال</TableHead>
+                  <TableHead>شروع اسلات فعلی</TableHead>
+                  <TableHead>نتایج رأی‌ها (تأیید / رد / در انتظار)</TableHead>
+                  <TableHead></TableHead>
+                  <TableHead>گزینه‌ها</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
                   <TableRow>
-                    <TableHead>شخص</TableHead>
-                    <TableHead>کاربر</TableHead>
-                    <TableHead>تاریخ ثبت</TableHead>
-                    <TableHead>وضعیت</TableHead>
-                    <TableHead>اعتبارسنج‌های فعال</TableHead>
-                    <TableHead>شروع اسلات فعلی</TableHead>
-                    <TableHead>نتایج رأی‌ها (تأیید / رد / در انتظار)</TableHead>
-                    <TableHead></TableHead>
-                    <TableHead>گزینه‌ها</TableHead>
+                    <TableCell colSpan={9} className="text-muted-foreground py-8 text-center">
+                      در حال بارگذاری...
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredReports.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={9} className="text-muted-foreground py-8 text-center">
-                        گزارشی با فیلترهای انتخاب‌شده پیدا نشد.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {filteredReports.map((r) => {
+                ) : reports.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-muted-foreground py-8 text-center">
+                      گزارشی برای نمایش وجود ندارد.
+                    </TableCell>
+                  </TableRow>
+                ) : filteredReports.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-muted-foreground py-8 text-center">
+                      گزارشی با فیلترهای انتخاب‌شده پیدا نشد.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredReports.map((r) => {
                     const statusInfo = reportStatusLabel(r.status ?? "pending");
                     const waitingVotes = Math.max(
                       0,
@@ -697,26 +700,26 @@ export default function AdminReportsPage() {
                         </TableCell>
                       </TableRow>
                     );
-                  })}
-                </TableBody>
-              </Table>
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="mt-4 flex justify-between">
+            <span>
+              صفحه {page} از {Math.ceil(total / 25) || 1}
+            </span>
+            <div className="flex gap-2">
+              <Button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                قبلی
+              </Button>
+              <Button disabled={page * 25 >= total} onClick={() => setPage((p) => p + 1)}>
+                بعدی
+              </Button>
             </div>
-            <div className="mt-4 flex justify-between">
-              <span>
-                صفحه {page} از {Math.ceil(total / 25) || 1}
-              </span>
-              <div className="flex gap-2">
-                <Button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  قبلی
-                </Button>
-                <Button disabled={page * 25 >= total} onClick={() => setPage((p) => p + 1)}>
-                  بعدی
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Dialog
         open={publicityTarget != null}
