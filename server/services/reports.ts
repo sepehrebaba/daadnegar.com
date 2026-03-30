@@ -520,6 +520,11 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const andConditions: any[] = [];
+      // Security gate for validator search:
+      // validators can see all accepted reports, but for non-accepted only their own reports.
+      andConditions.push({
+        OR: [{ status: "accepted" }, { userId: session.user.id }],
+      });
       if (status) andConditions.push({ status });
       if (createdFrom && !Number.isNaN(createdFrom.getTime())) {
         andConditions.push({ createdAt: { gte: createdFrom } });
