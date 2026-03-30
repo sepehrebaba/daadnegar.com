@@ -28,6 +28,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { formatTimeAgo } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { toast } from "sonner";
 
 type InviteCodeItem = {
   id: string;
@@ -113,6 +114,8 @@ export function InviteUserScreen() {
         message?: string;
       };
       const errMsg = errObj?.value?.error?.message ?? errObj?.message ?? "خطا در ارسال دعوت.";
+      toast.error(errMsg);
+
       setError(errMsg);
       setIsLoading(false);
       return;

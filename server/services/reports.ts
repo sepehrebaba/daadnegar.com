@@ -512,6 +512,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         query.status === "pending" || query.status === "accepted" || query.status === "rejected"
           ? query.status
           : undefined;
+      const reviewedByMe = query.reviewedByMe === "true" || query.reviewedByMe === "1";
       const createdFrom = query.createdFrom ? new Date(query.createdFrom) : undefined;
       const createdTo = query.createdTo ? new Date(query.createdTo) : undefined;
       const minReviews = parseOptInt(query.minReviews);
@@ -542,6 +543,11 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       if (textQ) {
         andConditions.push({
           OR: [{ description: { contains: textQ } }, { title: { contains: textQ } }],
+        });
+      }
+      if (reviewedByMe) {
+        andConditions.push({
+          reviews: { some: { reviewerId: session.user.id } },
         });
       }
 
@@ -613,6 +619,7 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
         createdTo: t.Optional(t.String()),
         minReviews: t.Optional(t.String()),
         maxReviews: t.Optional(t.String()),
+        reviewedByMe: t.Optional(t.String()),
       }),
     },
   )

@@ -162,6 +162,16 @@ export function MainMenuScreen() {
               </Badge>
             </Button>
           )}
+          {isValidator && (
+            <Button
+              onClick={() => router.push(`${routes.reportSearch}?reviewedByMe=1`)}
+              className="w-full justify-start gap-3 py-6 text-base"
+              variant="outline"
+            >
+              <ListChecks className="h-5 w-5" />
+              گزارش‌های بررسی‌شده
+            </Button>
+          )}
 
           <Button
             onClick={() => router.push(routes.inviteUser)}

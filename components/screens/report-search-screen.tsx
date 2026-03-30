@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/edyen";
 import { routes } from "@/lib/routes";
 import { toPersianNum } from "@/lib/utils";
@@ -38,6 +38,9 @@ const statusLabels: Record<string, string> = {
 
 export function ReportSearchScreen() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const reviewedByMe =
+    searchParams.get("reviewedByMe") === "1" || searchParams.get("reviewedByMe") === "true";
   const [personQ, setPersonQ] = useState("");
   const [text, setText] = useState("");
   const [status, setStatus] = useState<string>("all");
@@ -69,6 +72,7 @@ export function ReportSearchScreen() {
       if (createdTo) query.createdTo = createdTo;
       if (minReviews.trim()) query.minReviews = minReviews.trim();
       if (maxReviews.trim()) query.maxReviews = maxReviews.trim();
+      if (reviewedByMe) query.reviewedByMe = "true";
 
       const res = await api.reports.search.get({ query });
       setLoading(false);
@@ -88,7 +92,7 @@ export function ReportSearchScreen() {
       setTotal(typeof data?.total === "number" ? data.total : 0);
       setPage(typeof data?.page === "number" ? data.page : p);
     },
-    [personQ, text, status, createdFrom, createdTo, minReviews, maxReviews, perPage],
+    [personQ, text, status, createdFrom, createdTo, minReviews, maxReviews, perPage, reviewedByMe],
   );
 
   const onSearch = () => {
@@ -110,9 +114,13 @@ export function ReportSearchScreen() {
     <div className="bg-background flex flex-col p-4">
       <Card className="mx-auto w-full max-w-lg">
         <CardHeader>
-          <CardTitle className="text-center text-xl font-bold">جستجوی گزارشات</CardTitle>
+          <CardTitle className="text-center text-xl font-bold">
+            {reviewedByMe ? "گزارش‌های بررسی‌شده" : "جستجوی گزارشات"}
+          </CardTitle>
           <p className="text-muted-foreground mt-1 text-center text-sm">
-            فیلتر بر اساس شخص، متن، وضعیت، تاریخ ثبت و تعداد بررسی‌ها
+            {reviewedByMe
+              ? "فهرست گزارش‌هایی که توسط شما بررسی شده‌اند"
+              : "فیلتر بر اساس شخص، متن، وضعیت، تاریخ ثبت و تعداد بررسی‌ها"}
           </p>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
