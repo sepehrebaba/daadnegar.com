@@ -966,7 +966,12 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
 
       if (finalized) {
         const published = await publishReportTokenSettlement(existing.id);
-        if (!published) await processReportTokenSettlement(existing.id);
+        if (!published) {
+          console.warn("[reports] Failed to enqueue token settlement, applying inline fallback");
+        }
+        // Apply settlement inline as well; idempotent guard in settlement row keeps this safe
+        // even if worker processes the queued message later.
+        await processReportTokenSettlement(existing.id);
       }
 
       const report = await prisma.report.findUnique({
@@ -1134,7 +1139,12 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
 
       if (finalized) {
         const published = await publishReportTokenSettlement(existing.id);
-        if (!published) await processReportTokenSettlement(existing.id);
+        if (!published) {
+          console.warn("[reports] Failed to enqueue token settlement, applying inline fallback");
+        }
+        // Apply settlement inline as well; idempotent guard in settlement row keeps this safe
+        // even if worker processes the queued message later.
+        await processReportTokenSettlement(existing.id);
       }
 
       const report = await prisma.report.findUnique({

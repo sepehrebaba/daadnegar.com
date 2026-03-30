@@ -244,7 +244,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             © {new Date().getFullYear()} دادنگار — ما اینجا هستیم تا مطمئن شویم هیچ‌کس از عدالت فرار
             نمی‌کند
           </p>
-          {appVersion ? <p className="mt-1">نسخه: {appVersion}</p> : null}
+          {appVersion ? <p className="mt-1">Version: {appVersion}</p> : null}
         </div>
       </footer>
     </div>

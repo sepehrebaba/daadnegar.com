@@ -6,7 +6,22 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /** Formats a number with Persian digits (fa-IR locale). */
-export function toPersianNum(n: number): string {
+export function toPersianNum(n: number | string): string {
+  if (typeof n === "string") {
+    const map: Record<string, string> = {
+      "0": "۰",
+      "1": "۱",
+      "2": "۲",
+      "3": "۳",
+      "4": "۴",
+      "5": "۵",
+      "6": "۶",
+      "7": "۷",
+      "8": "۸",
+      "9": "۹",
+    };
+    return n.replace(/[0-9]/g, (d) => map[d]);
+  }
   return n.toLocaleString("fa-IR");
 }
 
