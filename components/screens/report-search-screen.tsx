@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/edyen";
 import { routes } from "@/lib/routes";
@@ -100,6 +100,12 @@ export function ReportSearchScreen() {
     void fetchPage(1);
   };
 
+  useEffect(() => {
+    if (!reviewedByMe) return;
+    setPage(1);
+    void fetchPage(1);
+  }, [reviewedByMe, fetchPage]);
+
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   const openReport = (r: Row) => {
@@ -123,94 +129,100 @@ export function ReportSearchScreen() {
               : "فیلتر بر اساس شخص، متن، وضعیت، تاریخ ثبت و تعداد بررسی‌ها"}
           </p>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="personQ">شخص (نام، نام خانوادگی یا کد ملی)</Label>
-            <Input
-              id="personQ"
-              value={personQ}
-              onChange={(e) => setPersonQ(e.target.value)}
-              placeholder="مثلاً بخشی از نام یا کد ملی"
-              dir="rtl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="text">متن گزارش یا عنوان</Label>
-            <Input
-              id="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder="جستجو در توضیحات و عنوان"
-              dir="rtl"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>وضعیت</Label>
-            <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="w-full" dir="rtl">
-                <SelectValue placeholder="همه" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">همه</SelectItem>
-                <SelectItem value="pending">در انتظار</SelectItem>
-                <SelectItem value="accepted">تایید شده</SelectItem>
-                <SelectItem value="rejected">رد شده</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {!reviewedByMe && (
+          <CardContent className="flex flex-col gap-4">
             <div className="space-y-2">
-              <Label htmlFor="createdFrom">از تاریخ ثبت</Label>
+              <Label htmlFor="personQ">شخص (نام، نام خانوادگی یا کد ملی)</Label>
               <Input
-                id="createdFrom"
-                type="date"
-                value={createdFrom}
-                onChange={(e) => setCreatedFrom(e.target.value)}
+                id="personQ"
+                value={personQ}
+                onChange={(e) => setPersonQ(e.target.value)}
+                placeholder="مثلاً بخشی از نام یا کد ملی"
+                dir="rtl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="createdTo">تا تاریخ ثبت</Label>
+              <Label htmlFor="text">متن گزارش یا عنوان</Label>
               <Input
-                id="createdTo"
-                type="date"
-                value={createdTo}
-                onChange={(e) => setCreatedTo(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="minReviews">حداقل تعداد بررسی</Label>
-              <Input
-                id="minReviews"
-                inputMode="numeric"
-                value={minReviews}
-                onChange={(e) => setMinReviews(e.target.value.replace(/\D/g, ""))}
-                placeholder="۰"
-                dir="ltr"
-                className="text-end"
+                id="text"
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="جستجو در توضیحات و عنوان"
+                dir="rtl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="maxReviews">حداکثر تعداد بررسی</Label>
-              <Input
-                id="maxReviews"
-                inputMode="numeric"
-                value={maxReviews}
-                onChange={(e) => setMaxReviews(e.target.value.replace(/\D/g, ""))}
-                placeholder="بدون سقف"
-                dir="ltr"
-                className="text-end"
-              />
+              <Label>وضعیت</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger className="w-full" dir="rtl">
+                  <SelectValue placeholder="همه" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه</SelectItem>
+                  <SelectItem value="pending">در انتظار</SelectItem>
+                  <SelectItem value="accepted">تایید شده</SelectItem>
+                  <SelectItem value="rejected">رد شده</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          {error && <p className="text-destructive text-sm">{error}</p>}
-          <Button type="button" className="w-full gap-2" onClick={onSearch} disabled={loading}>
-            <Search className="h-4 w-4" />
-            {loading ? "در حال جستجو..." : "جستجو"}
-          </Button>
-        </CardContent>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="createdFrom">از تاریخ ثبت</Label>
+                <Input
+                  id="createdFrom"
+                  type="date"
+                  value={createdFrom}
+                  onChange={(e) => setCreatedFrom(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="createdTo">تا تاریخ ثبت</Label>
+                <Input
+                  id="createdTo"
+                  type="date"
+                  value={createdTo}
+                  onChange={(e) => setCreatedTo(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="minReviews">حداقل تعداد بررسی</Label>
+                <Input
+                  id="minReviews"
+                  inputMode="numeric"
+                  value={minReviews}
+                  onChange={(e) => setMinReviews(e.target.value.replace(/\D/g, ""))}
+                  placeholder="۰"
+                  dir="ltr"
+                  className="text-end"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="maxReviews">حداکثر تعداد بررسی</Label>
+                <Input
+                  id="maxReviews"
+                  inputMode="numeric"
+                  value={maxReviews}
+                  onChange={(e) => setMaxReviews(e.target.value.replace(/\D/g, ""))}
+                  placeholder="بدون سقف"
+                  dir="ltr"
+                  className="text-end"
+                />
+              </div>
+            </div>
+            {error && <p className="text-destructive text-sm">{error}</p>}
+            <Button type="button" className="w-full gap-2" onClick={onSearch} disabled={loading}>
+              <Search className="h-4 w-4" />
+              {loading ? "در حال جستجو..." : "جستجو"}
+            </Button>
+          </CardContent>
+        )}
       </Card>
+
+      {reviewedByMe && error && (
+        <div className="text-destructive mx-auto mt-3 w-full max-w-lg text-sm">{error}</div>
+      )}
 
       {rows.length > 0 && (
         <Card className="mx-auto mt-4 w-full max-w-lg">
@@ -300,6 +312,12 @@ export function ReportSearchScreen() {
           <p>نتیجه‌ای یافت نشد.</p>
         </div>
       )}
+
+      <div className="mx-auto mt-6 w-full max-w-lg">
+        <Button type="button" variant="outline" className="w-full" onClick={() => router.back()}>
+          بازگشت
+        </Button>
+      </div>
     </div>
   );
 }
