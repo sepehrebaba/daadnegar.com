@@ -68,7 +68,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5.5.1
         with:
-          tags: type=semver,pattern={{version}},prefix=v,value=${{ steps.version.outputs.version }}
+          tags: type=raw,prefix=v,value=${{ steps.version.outputs.version }}
           images: |
             ghcr.io/${{ env.IMAGE }}
 
