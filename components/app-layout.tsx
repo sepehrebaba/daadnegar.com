@@ -49,6 +49,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
   const { state, setLanguage, setUser, logout } = useApp();
   const user = state.user;
   const isSettingsOpen = searchParams.get("settings") === "open";
@@ -243,6 +244,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             © {new Date().getFullYear()} دادنگار — ما اینجا هستیم تا مطمئن شویم هیچ‌کس از عدالت فرار
             نمی‌کند
           </p>
+          {appVersion ? <p className="mt-1">نسخه: {appVersion}</p> : null}
         </div>
       </footer>
     </div>

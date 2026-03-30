@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4.1.4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -52,6 +52,7 @@ jobs:
           echo "COMMIT_SHA_SHORT=$SHORT" >> "$GITHUB_ENV"
           echo "CURRENT_DATE=$DATE" >> "$GITHUB_ENV"
           echo "version=${SHORT}-${DATE}" >> "$GITHUB_OUTPUT"
+          echo "Computed version: ${SHORT}-${DATE}"
 
       - name: Login to GitHub Container Registery
         uses: docker/login-action@v3.1.0
@@ -83,6 +84,7 @@ jobs:
           build-args: |
             NX_CLOUD_ACCESS_TOKEN=${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
             NODE_OPTIONS="--max-old-space-size=8192"
+            NEXT_PUBLIC_APP_VERSION=${{ steps.version.outputs.version }}
           cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-web
           cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-web,mode=max
 
@@ -99,6 +101,7 @@ jobs:
           build-args: |
             NX_CLOUD_ACCESS_TOKEN=${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
             NODE_OPTIONS="--max-old-space-size=8192"
+            NEXT_PUBLIC_APP_VERSION=${{ steps.version.outputs.version }}
           cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-admin
           cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-admin,mode=max
       # Kubernetes deployment steps

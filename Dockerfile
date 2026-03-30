@@ -1,4 +1,5 @@
 ARG NODE_OPTIONS="--max-old-space-size=8192"
+ARG NEXT_PUBLIC_APP_VERSION="dev"
 
 # --- Base Image ---
 FROM node:lts-bullseye-slim AS base
@@ -13,6 +14,7 @@ WORKDIR /app
 # --- Dependencies + Prisma client (shared by web & admin builds) ---
 FROM base AS build-prep
 ARG NODE_OPTIONS
+ARG NEXT_PUBLIC_APP_VERSION
 
 COPY package.json pnpm-lock.yaml ./
 COPY ./prisma /app/prisma
@@ -21,6 +23,7 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 
 ENV NODE_OPTIONS=$NODE_OPTIONS
+ENV NEXT_PUBLIC_APP_VERSION=$NEXT_PUBLIC_APP_VERSION
 
 ARG DATABASE_URL=mysql://localhost:3306/dummy
 RUN DATABASE_URL=${DATABASE_URL} pnpm run prisma:generate
