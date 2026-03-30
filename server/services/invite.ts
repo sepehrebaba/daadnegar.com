@@ -10,6 +10,7 @@ import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } fro
 import { assertPasswordChangeNotRequired } from "../lib/must-change-password";
 
 const TOKEN_EXPIRY_DAYS = 365;
+const MIN_ACCOUNT_AGE_DAYS_FOR_INVITE = 3;
 const INVITE_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // excluded 0,O,1,I for readability
 
 function roleFromAssignedInvite(assignedRole: string | null | undefined): string {
@@ -304,6 +305,27 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         throw status(401, "لطفاً وارد شوید");
       }
       await assertPasswordChangeNotRequired(inviterId);
+      const inviter = await prisma.user.findUnique({
+        where: { id: inviterId },
+        select: { createdAt: true, tokenBalance: true },
+      });
+      if (!inviter) {
+        throw status(404, "کاربر دعوت‌کننده یافت نشد");
+      }
+      const minAccountAgeMs = MIN_ACCOUNT_AGE_DAYS_FOR_INVITE * 24 * 60 * 60 * 1000;
+      if (Date.now() - inviter.createdAt.getTime() < minAccountAgeMs) {
+        throw status(
+          403,
+          `برای ساخت کد دعوت باید حداقل ${MIN_ACCOUNT_AGE_DAYS_FOR_INVITE} روز از عضویت شما گذشته باشد.`,
+        );
+      }
+      const inviteCreateStake = Math.max(
+        0,
+        await getSettingNumber(SETTING_KEYS.TOKENS_INVITE_CREATE_STAKE),
+      );
+      if ((inviter.tokenBalance ?? 0) < inviteCreateStake) {
+        throw status(400, `حداقل ${inviteCreateStake} توکن برای ساخت کد دعوت (وثیقه) لازم است.`);
+      }
       if (body.type === "personal") {
         const u = normalizeUsername(body.username ?? "");
         if (!u || !isValidPublicUsername(u)) {
@@ -326,12 +348,40 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       }
 
       const code = await ensureUniqueInviteCode();
-      const inviteCodeRecord = await prisma.inviteCode.create({
-        data: {
-          code,
-          ...(inviterId ? { inviter: { connect: { id: inviterId } } } : {}),
-        },
-      });
+      let inviteCodeRecord;
+      try {
+        inviteCodeRecord = await prisma.$transaction(async (tx) => {
+          const created = await tx.inviteCode.create({
+            data: {
+              code,
+              ...(inviterId ? { inviter: { connect: { id: inviterId } } } : {}),
+            },
+          });
+          if (inviteCreateStake > 0) {
+            const debited = await tx.user.updateMany({
+              where: { id: inviterId, tokenBalance: { gte: inviteCreateStake } },
+              data: { tokenBalance: { decrement: inviteCreateStake } },
+            });
+            if (debited.count === 0) {
+              throw new Error("INSUFFICIENT_BALANCE_FOR_INVITE_STAKE");
+            }
+            await tx.tokenTransaction.create({
+              data: {
+                userId: inviterId,
+                amount: -inviteCreateStake,
+                type: TOKEN_TRANSACTION_TYPES.invite_create_stake,
+                refId: created.id,
+              },
+            });
+          }
+          return created;
+        });
+      } catch (err) {
+        if (err instanceof Error && err.message === "INSUFFICIENT_BALANCE_FOR_INVITE_STAKE") {
+          throw status(400, `حداقل ${inviteCreateStake} توکن برای ساخت کد دعوت (وثیقه) لازم است.`);
+        }
+        throw err;
+      }
 
       await createAuditLog({
         action: "create",

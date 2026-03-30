@@ -40,6 +40,7 @@ INSERT INTO setting (id, `key`, value, updatedAt) VALUES
 (UUID(), 'tokens_deduct_false_report', '3', NOW()),
 (UUID(), 'tokens_deduct_problematic_report', '1', NOW()),
 (UUID(), 'tokens_reward_invited_activity', '2', NOW()),
+(UUID(), 'tokens_invite_create_stake', '3', NOW()),
 (UUID(), 'max_invite_codes_unused', '5', NOW())
 ON DUPLICATE KEY UPDATE value = VALUES(value), updatedAt = NOW();
 

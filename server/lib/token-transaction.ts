@@ -8,6 +8,7 @@ export const TOKEN_TRANSACTION_TYPES = {
   report_false: "report_false",
   report_problematic: "report_problematic",
   invite_activity: "invite_activity",
+  invite_create_stake: "invite_create_stake",
   /** Manual credit from admin panel; shown as reward in history */
   admin_reward: "admin_reward",
   /** Majority settlement: reward reporter when report is finally accepted */

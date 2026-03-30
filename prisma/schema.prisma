@@ -43,7 +43,7 @@ model TokenTransaction {
   id        String   @id @default(cuid())
   userId    String
   amount    Float    // positive = credit, negative = debit
-  type      String   // registration | report_submit_stake | report_approved | report_false | report_problematic | invite_activity | admin_reward
+  type      String   // registration | report_submit_stake | report_approved | report_false | report_problematic | invite_activity | invite_create_stake | admin_reward
   refId     String?  // e.g. reportId for report-related transactions
   createdAt DateTime @default(now())
 

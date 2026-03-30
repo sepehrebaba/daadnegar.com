@@ -16,6 +16,8 @@ export const SETTING_KEYS = {
   TOKENS_DEDUCT_PROBLEMATIC_REPORT: "tokens_deduct_problematic_report",
   /** Tokens rewarded when invited user submits first report (activity) */
   TOKENS_REWARD_INVITED_ACTIVITY: "tokens_reward_invited_activity",
+  /** Tokens held as collateral when creating an invite code */
+  TOKENS_INVITE_CREATE_STAKE: "tokens_invite_create_stake",
   /** Max unused invite codes per user */
   MAX_INVITE_CODES_UNUSED: "max_invite_codes_unused",
   /** Min approved reports required for user to see approval section (approve others) */
@@ -52,6 +54,7 @@ export const SETTING_DEFAULTS: Record<(typeof SETTING_KEYS)[keyof typeof SETTING
   [SETTING_KEYS.TOKENS_DEDUCT_FALSE_REPORT]: "3",
   [SETTING_KEYS.TOKENS_DEDUCT_PROBLEMATIC_REPORT]: "1",
   [SETTING_KEYS.TOKENS_REWARD_INVITED_ACTIVITY]: "2",
+  [SETTING_KEYS.TOKENS_INVITE_CREATE_STAKE]: "3",
   [SETTING_KEYS.MAX_INVITE_CODES_UNUSED]: "5",
   [SETTING_KEYS.MIN_APPROVED_REPORTS_FOR_APPROVAL]: "5",
   [SETTING_KEYS.REPORT_VALIDATOR_SLA_HOURS]: "48",

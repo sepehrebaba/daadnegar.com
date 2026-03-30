@@ -38,6 +38,7 @@ export const adminSettingsRoutes = new Elysia({ name: "adminSettings" })
         tokens_deduct_false_report: t.Optional(t.Number()),
         tokens_deduct_problematic_report: t.Optional(t.Number()),
         tokens_reward_invited_activity: t.Optional(t.Number()),
+        tokens_invite_create_stake: t.Optional(t.Number()),
         max_invite_codes_unused: t.Optional(t.Number()),
         min_approved_reports_for_approval: t.Optional(t.Number()),
         report_validator_sla_hours: t.Optional(t.Number()),

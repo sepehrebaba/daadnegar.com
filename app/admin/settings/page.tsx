@@ -16,6 +16,7 @@ type SettingsData = {
   tokens_deduct_false_report: number;
   tokens_deduct_problematic_report: number;
   tokens_reward_invited_activity: number;
+  tokens_invite_create_stake: number;
   max_invite_codes_unused: number;
   min_approved_reports_for_approval: number;
   report_validator_sla_hours: number;
@@ -34,11 +35,12 @@ type SettingsData = {
 const LABELS: Record<keyof SettingsData, string> = {
   reports_enabled: "فعال‌سازی دریافت گزارش جدید",
   default_tokens_new_user: "تعداد توکن‌های پیش‌فرض کاربر جدید",
-  tokens_report_submit_stake: "مقدار توکن گرو در زمان ثبت گزارش",
+  tokens_report_submit_stake: "مقدار توکن وثیقه در زمان ثبت گزارش",
   tokens_reward_approved_report: "تعداد توکن هدیه بعد از تأیید گزارش",
   tokens_deduct_false_report: "تعداد توکن کسر شده در صورت گزارش غلط",
   tokens_deduct_problematic_report: "تعداد توکن کسر شده در صورت گزارش مشکل‌دار",
   tokens_reward_invited_activity: "تعداد توکن هدیه در صورت فعالیت کاربر دعوت‌شده",
+  tokens_invite_create_stake: "مقدار توکن وثیقه هنگام ساخت کد دعوت",
   max_invite_codes_unused: "حداکثر کد دعوت مجاز (استفاده‌نشده)",
   min_approved_reports_for_approval: "حداقل تعداد گزارش تاییدشده برای مجوز تایید گزارش‌های دیگران",
   report_validator_sla_hours:
@@ -70,6 +72,7 @@ const defaults: SettingsData = {
   tokens_deduct_false_report: 3,
   tokens_deduct_problematic_report: 1,
   tokens_reward_invited_activity: 2,
+  tokens_invite_create_stake: 3,
   max_invite_codes_unused: 5,
   min_approved_reports_for_approval: 5,
   report_validator_sla_hours: 48,
@@ -111,6 +114,9 @@ export default function AdminSystemSettingsPage() {
         Number(raw.tokens_deduct_problematic_report) || defaults.tokens_deduct_problematic_report,
       tokens_reward_invited_activity:
         Number(raw.tokens_reward_invited_activity) || defaults.tokens_reward_invited_activity,
+      tokens_invite_create_stake: Number.isFinite(Number(raw.tokens_invite_create_stake))
+        ? Number(raw.tokens_invite_create_stake)
+        : defaults.tokens_invite_create_stake,
       max_invite_codes_unused:
         Number(raw.max_invite_codes_unused) ?? defaults.max_invite_codes_unused,
       min_approved_reports_for_approval:
@@ -161,6 +167,7 @@ export default function AdminSystemSettingsPage() {
         tokens_deduct_false_report: settings.tokens_deduct_false_report,
         tokens_deduct_problematic_report: settings.tokens_deduct_problematic_report,
         tokens_reward_invited_activity: settings.tokens_reward_invited_activity,
+        tokens_invite_create_stake: settings.tokens_invite_create_stake,
         max_invite_codes_unused: settings.max_invite_codes_unused,
         min_approved_reports_for_approval: settings.min_approved_reports_for_approval,
         report_validator_sla_hours: settings.report_validator_sla_hours,
@@ -354,6 +361,27 @@ export default function AdminSystemSettingsPage() {
                 <p className="text-muted-foreground text-xs">
                   ۰ = نامحدود. کاربر نمی‌تواند بیش از این تعداد کد دعوت استفاده‌نشده داشته باشد.
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tokens_invite_create_stake">
+                  {LABELS.tokens_invite_create_stake}
+                </Label>
+                <Input
+                  id="tokens_invite_create_stake"
+                  type="number"
+                  min={0}
+                  value={settings.tokens_invite_create_stake}
+                  onChange={(e) =>
+                    setSettings((s) => ({
+                      ...s,
+                      tokens_invite_create_stake: Math.max(
+                        0,
+                        Number.parseInt(e.target.value, 10) || 0,
+                      ),
+                    }))
+                  }
+                />
               </div>
 
               <div className="space-y-2">

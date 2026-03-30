@@ -14,11 +14,12 @@ import { Coins, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 
 const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   registration: "عضویت",
-  report_submit_stake: "گرو ثبت گزارش",
+  report_submit_stake: "وثیقه ثبت گزارش",
   report_approved: "تایید گزارش",
   report_false: "رد گزارش (اطلاعات نادرست)",
   report_problematic: "رد گزارش (مسئله‌دار)",
   invite_activity: "اولین گزارش (دعوت‌شده)",
+  invite_create_stake: "وثیقه ساخت کد دعوت",
   admin_reward: "پاداش",
   consensus_reporter_reward: "پاداش گزارش صحیح (اکثریت)",
   consensus_reporter_penalty: "جریمه گزارش (اکثریت رد)",
