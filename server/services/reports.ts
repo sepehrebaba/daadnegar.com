@@ -359,6 +359,94 @@ export const reportsService = new Elysia({ prefix: "/reports", aot: false })
       cities: cities.map((row) => row.city).filter((value): value is string => Boolean(value)),
     };
   })
+  .get(
+    "/public/person/:personId",
+    async ({ params }) => {
+      const baseWhere: Parameters<typeof prisma.report.findMany>[0]["where"] = {
+        personId: params.personId,
+        isPublic: true,
+        status: "accepted",
+      };
+      const [person, reports] = await Promise.all([
+        prisma.person.findUnique({
+          where: { id: params.personId },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            imageUrl: true,
+            title: true,
+          },
+        }),
+        prisma.report.findMany({
+          where: baseWhere,
+          orderBy: [{ occurrenceDate: "desc" }, { createdAt: "desc" }],
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            city: true,
+            province: true,
+            occurrenceDate: true,
+            createdAt: true,
+            category: { select: { id: true, name: true } },
+          },
+        }),
+      ]);
+      if (!person || reports.length === 0) {
+        throw new Error("Not found");
+      }
+      return { person, reports };
+    },
+    { params: t.Object({ personId: t.String() }) },
+  )
+  .get(
+    "/public/:id",
+    async ({ params }) => {
+      const report = await prisma.report.findFirst({
+        where: {
+          id: params.id,
+          isPublic: true,
+          status: "accepted",
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          organizationType: true,
+          organizationName: true,
+          city: true,
+          province: true,
+          exactLocation: true,
+          occurrenceFrequency: true,
+          occurrenceDate: true,
+          hasEvidence: true,
+          evidenceTypes: true,
+          evidenceDescription: true,
+          wantsContact: true,
+          contactEmail: true,
+          contactPhone: true,
+          contactSocial: true,
+          status: true,
+          isPublic: true,
+          createdAt: true,
+          updatedAt: true,
+          category: { select: { id: true, name: true } },
+          subcategory: { select: { id: true, name: true } },
+          person: {
+            select: { id: true, firstName: true, lastName: true, title: true, imageUrl: true },
+          },
+        },
+      });
+      if (!report) {
+        throw new Error("Not found");
+      }
+      return report;
+    },
+    {
+      params: t.Object({ id: t.String() }),
+    },
+  )
   .get("/pending", async ({ request, session }) => {
     if (!session?.user?.id) {
       throw new Error("Unauthorized");

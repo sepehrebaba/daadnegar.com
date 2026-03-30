@@ -1,6 +1,8 @@
 export const routes = {
   home: "/",
   publicReports: "/public-reports",
+  publicReportDetail: (id: string) => `/public-reports/${id}`,
+  publicReportsByPerson: (personId: string) => `/public-reports/person/${personId}`,
   about: "/about",
   security: "/security",
   inviteCode: "/auth/invite-code",

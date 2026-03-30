@@ -21,7 +21,6 @@ type PublicReportRow = {
   createdAt: string;
   category: { id: string; name: string } | null;
   person: { firstName: string; lastName: string };
-  _count: { documents: number };
 };
 
 type FiltersPayload = {
@@ -257,42 +256,44 @@ export default function PublicReportsPage() {
           ) : (
             <>
               {rows.map((report) => (
-                <Card key={report.id}>
-                  <CardContent className="space-y-3 pt-5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {report.category ? (
-                        <Badge variant="secondary">{report.category.name}</Badge>
-                      ) : null}
-                      {report.city ? <Badge variant="outline">{report.city}</Badge> : null}
-                      {report._count.documents > 0 ? (
-                        <Badge variant="outline">
-                          {toPersianNum(report._count.documents)} فایل پیوست
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <h2 className="text-base font-bold md:text-lg">
-                      {report.title?.trim() || "گزارش عمومی تاییدشده"}
-                    </h2>
-                    <p className="text-muted-foreground text-sm leading-7">
-                      {report.description.length > 420
-                        ? `${report.description.slice(0, 420)}...`
-                        : report.description}
-                    </p>
-                    <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                      <span>
-                        فرد گزارش‌شده: {report.person.firstName} {report.person.lastName}
-                      </span>
-                      <span>
-                        تاریخ انتشار: {new Date(report.createdAt).toLocaleDateString("fa-IR")}
-                      </span>
-                      {report.occurrenceDate ? (
+                <Link
+                  key={report.id}
+                  href={routes.publicReportDetail(report.id)}
+                  className="block rounded-xl focus-visible:ring-2 focus-visible:outline-none"
+                >
+                  <Card className="hover:bg-muted/30 transition-colors">
+                    <CardContent className="space-y-3 pt-5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {report.category ? (
+                          <Badge variant="secondary">{report.category.name}</Badge>
+                        ) : null}
+                        {report.city ? <Badge variant="outline">{report.city}</Badge> : null}
+                      </div>
+                      <h2 className="text-base font-bold md:text-lg">
+                        {report.title?.trim() || "گزارش عمومی تاییدشده"}
+                      </h2>
+                      <p className="text-muted-foreground text-sm leading-7">
+                        {report.description.length > 420
+                          ? `${report.description.slice(0, 420)}...`
+                          : report.description}
+                      </p>
+                      <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                         <span>
-                          تاریخ وقوع: {new Date(report.occurrenceDate).toLocaleDateString("fa-IR")}
+                          فرد گزارش‌شده: {report.person.firstName} {report.person.lastName}
                         </span>
-                      ) : null}
-                    </div>
-                  </CardContent>
-                </Card>
+                        <span>
+                          تاریخ انتشار: {new Date(report.createdAt).toLocaleDateString("fa-IR")}
+                        </span>
+                        {report.occurrenceDate ? (
+                          <span>
+                            تاریخ وقوع:{" "}
+                            {new Date(report.occurrenceDate).toLocaleDateString("fa-IR")}
+                          </span>
+                        ) : null}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               ))}
 
               {totalPages > 1 ? (
