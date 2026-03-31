@@ -28,31 +28,41 @@ export function MainMenuScreen() {
   const user = state.user;
   const [minApprovedForApproval, setMinApprovedForApproval] = useState(5);
   const [pendingReviewCount, setPendingReviewCount] = useState<number | null>(null);
+  const [reportsEnabled, setReportsEnabled] = useState(true);
 
   // Load user from server and settings (refresh, direct login, or update)
   useEffect(() => {
     let cancelled = false;
-    api.me.get().then((result: Awaited<ReturnType<typeof api.me.get>>) => {
-      const { data, error } = result;
-      if (cancelled || error || !data) return;
-      setUser({
-        id: data.id,
-        passkey: "",
-        inviteCode: data.inviteCode ?? "",
-        isActivated: true,
-        tokensCount: data.tokensCount ?? 0,
-        approvedRequestsCount: data.approvedRequestsCount ?? 0,
-        role: data.role ?? "user",
-        username: (data as { username?: string }).username,
-        name: data.name,
-        mustChangePassword: (data as { mustChangePassword?: boolean }).mustChangePassword ?? false,
-      } as Parameters<typeof setUser>[0]);
-      setMinApprovedForApproval(
-        typeof data.minApprovedReportsForApproval === "number"
-          ? data.minApprovedReportsForApproval
-          : 5,
-      );
-    });
+    void Promise.all([api.me.get(), api.constants["reports-enabled"].get()]).then(
+      ([meResult, reportsEnabledResult]) => {
+        const { data, error } = meResult;
+        if (!cancelled && !error && data) {
+          setUser({
+            id: data.id,
+            passkey: "",
+            inviteCode: data.inviteCode ?? "",
+            isActivated: true,
+            tokensCount: data.tokensCount ?? 0,
+            approvedRequestsCount: data.approvedRequestsCount ?? 0,
+            role: data.role ?? "user",
+            username: (data as { username?: string }).username,
+            name: data.name,
+            mustChangePassword:
+              (data as { mustChangePassword?: boolean }).mustChangePassword ?? false,
+          } as Parameters<typeof setUser>[0]);
+          setMinApprovedForApproval(
+            typeof data.minApprovedReportsForApproval === "number"
+              ? data.minApprovedReportsForApproval
+              : 5,
+          );
+        }
+
+        const reportsEnabledData = reportsEnabledResult.data as { enabled?: boolean } | null;
+        if (!cancelled && !reportsEnabledResult.error && reportsEnabledData) {
+          setReportsEnabled(reportsEnabledData.enabled !== false);
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -126,11 +136,13 @@ export function MainMenuScreen() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Button
                 onClick={() => {
+                  if (!reportsEnabled) return;
                   startReport();
                   router.push(routes.reportCategory);
                 }}
                 className="w-full justify-start gap-3 py-6 text-base font-black"
                 variant="default"
+                disabled={!reportsEnabled}
               >
                 <FileText className="h-5 w-5" />
                 ثبت گزارش جدید

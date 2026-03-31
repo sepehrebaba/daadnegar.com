@@ -4,9 +4,16 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type SettingsData = {
   reports_enabled: boolean;
@@ -18,14 +25,11 @@ type SettingsData = {
   tokens_reward_invited_activity: number;
   tokens_invite_create_stake: number;
   max_invite_codes_unused: number;
-  min_approved_reports_for_approval: number;
   report_validator_sla_hours: number;
   report_unassigned_grace_minutes: number;
   report_parallel_validators: number;
   report_consensus_min_reviews: number;
   tokens_consensus_reporter_accept: number;
-  tokens_consensus_reporter_reject_penalty: number;
-  tokens_consensus_validator_correct: number;
   tokens_consensus_validator_wrong_penalty: number;
   tokens_consensus_validator_refund: number;
   tokens_consensus_validator_bonus_match_3: number;
@@ -42,26 +46,17 @@ const LABELS: Record<keyof SettingsData, string> = {
   tokens_reward_invited_activity: "تعداد توکن هدیه در صورت فعالیت کاربر دعوت‌شده",
   tokens_invite_create_stake: "مقدار توکن وثیقه هنگام ساخت کد دعوت",
   max_invite_codes_unused: "حداکثر کد دعوت مجاز (استفاده‌نشده)",
-  min_approved_reports_for_approval: "حداقل تعداد گزارش تاییدشده برای مجوز تایید گزارش‌های دیگران",
-  report_validator_sla_hours:
-    "مهلت بررسی اعتبارسنج (ساعت) — پس از آن Cron می‌تواند گزارش را به نفر بعد بدهد",
+  report_validator_sla_hours: "مهلت بررسی اعتبارسنج (ساعت)",
   report_unassigned_grace_minutes:
     "تاخیر اختصاص خودکار (دقیقه) اگر ورکر هنوز گزارش را به کسی نداده باشد",
-  report_parallel_validators: "تعداد اعتبارسنج‌هایی که همزمان یک گزارش جدید به آن‌ها اساین می‌شود",
-  report_consensus_min_reviews:
-    "حداقل تعداد رأی اعتبارسنج (ثبت‌شده در اپ) قبل از تعیین وضعیت نهایی بر اساس اکثریت",
+  report_parallel_validators: "تعداد اعتبارسنج همزمان",
+  report_consensus_min_reviews: "حداقل رأی برای اجماع",
   tokens_consensus_reporter_accept:
     "پاداش گزارش‌دهنده وقتی اکثریت گزارش را تأیید کردند (تسویه از طریق صف)",
-  tokens_consensus_reporter_reject_penalty:
-    "مقدار کسر از گزارش‌دهنده وقتی اکثریت رد کردند (عدد مثبت؛ به‌صورت منفی اعمال می‌شود)",
-  tokens_consensus_validator_correct:
-    "پاداش قدیمی (اکثریت) — در منطق جدید از refund + bonus استفاده می‌شود",
-  tokens_consensus_validator_wrong_penalty:
-    "جریمه رأی سوءنیت وقتی نتیجه نهایی «تأیید» است (عدد مثبت)",
-  tokens_consensus_validator_refund: "بازپرداخت اسمی به هر اعتبارسنج پس از تسویه اجماع",
-  tokens_consensus_validator_bonus_match_3:
-    "پاداش اضافه وقتی رأی با نتیجه نهایی یکی است (۳ اعتبارسنج؛ می‌تواند اعشاری مثل ۱.۵ باشد)",
-  tokens_consensus_validator_bonus_match_5: "پاداش اضافه وقتی رأی با اکثریت یکی است (۵ اعتبارسنج)",
+  tokens_consensus_validator_wrong_penalty: "جریمه رأی اشتباه اعتبارسنج",
+  tokens_consensus_validator_refund: "بازپرداخت پایه اعتبارسنج",
+  tokens_consensus_validator_bonus_match_3: "پاداش تطابق رأی (۳ نفره)",
+  tokens_consensus_validator_bonus_match_5: "پاداش تطابق رأی (۵ نفره)",
 };
 
 const defaults: SettingsData = {
@@ -74,19 +69,139 @@ const defaults: SettingsData = {
   tokens_reward_invited_activity: 2,
   tokens_invite_create_stake: 3,
   max_invite_codes_unused: 5,
-  min_approved_reports_for_approval: 5,
   report_validator_sla_hours: 48,
   report_unassigned_grace_minutes: 5,
   report_parallel_validators: 3,
   report_consensus_min_reviews: 3,
   tokens_consensus_reporter_accept: 5,
-  tokens_consensus_reporter_reject_penalty: 3,
-  tokens_consensus_validator_correct: 2,
   tokens_consensus_validator_wrong_penalty: 2,
   tokens_consensus_validator_refund: 2,
   tokens_consensus_validator_bonus_match_3: 1.5,
   tokens_consensus_validator_bonus_match_5: 2,
 };
+
+type NumericSettingKey = Exclude<keyof SettingsData, "reports_enabled">;
+
+const NUMERIC_FIELDS: Array<{
+  key: NumericSettingKey;
+  min: number;
+  max?: number;
+  step?: number;
+  parse: "int" | "float";
+  hint?: string;
+}> = [
+  { key: "default_tokens_new_user", min: 0, parse: "int" },
+  {
+    key: "tokens_report_submit_stake",
+    min: 0,
+    parse: "int",
+    hint: "توکن وثیقه",
+  },
+  { key: "tokens_reward_approved_report", min: 0, parse: "int" },
+  { key: "tokens_deduct_false_report", min: 0, parse: "int" },
+  { key: "tokens_deduct_problematic_report", min: 0, parse: "int" },
+  { key: "tokens_reward_invited_activity", min: 0, parse: "int" },
+  { key: "tokens_invite_create_stake", min: 0, parse: "int" },
+  { key: "max_invite_codes_unused", min: 0, parse: "int", hint: "۰ = نامحدود" },
+  {
+    key: "report_validator_sla_hours",
+    min: 1,
+    parse: "int",
+    hint: "پس از این زمان، Cron می‌تواند گزارش را به نفر بعد بدهد.",
+  },
+  { key: "report_unassigned_grace_minutes", min: 1, parse: "int" },
+  {
+    key: "report_parallel_validators",
+    min: 1,
+    max: 50,
+    parse: "int",
+    hint: "هر گزارش جدید به این تعداد اعتبارسنج به‌صورت همزمان اساین می‌شود.",
+  },
+  {
+    key: "report_consensus_min_reviews",
+    min: 1,
+    max: 50,
+    parse: "int",
+    hint: "حداقل رأی ثبت‌شده قبل از تعیین وضعیت نهایی با اکثریت.",
+  },
+  { key: "tokens_consensus_reporter_accept", min: 0, parse: "int" },
+  {
+    key: "tokens_consensus_validator_refund",
+    min: 0,
+    step: 0.5,
+    parse: "float",
+    hint: "بازپرداخت اسمی به هر اعتبارسنج پس از تسویه اجماع.",
+  },
+  {
+    key: "tokens_consensus_validator_bonus_match_3",
+    min: 0,
+    step: 0.5,
+    parse: "float",
+    hint: "وقتی رأی با نتیجه نهایی یکی باشد (برای سناریوی ۳ اعتبارسنج).",
+  },
+  {
+    key: "tokens_consensus_validator_bonus_match_5",
+    min: 0,
+    step: 0.5,
+    parse: "float",
+    hint: "وقتی رأی با اکثریت یکی باشد (برای سناریوی ۵ اعتبارسنج).",
+  },
+  {
+    key: "tokens_consensus_validator_wrong_penalty",
+    min: 0,
+    step: 0.5,
+    parse: "float",
+    hint: "جریمه رأی اشتباه وقتی نتیجه نهایی «تأیید» باشد (عدد مثبت).",
+  },
+];
+
+const NUMERIC_FIELD_MAP: Record<NumericSettingKey, (typeof NUMERIC_FIELDS)[number]> =
+  Object.fromEntries(NUMERIC_FIELDS.map((field) => [field.key, field])) as Record<
+    NumericSettingKey,
+    (typeof NUMERIC_FIELDS)[number]
+  >;
+
+const SETTING_SECTIONS: Array<{
+  id: string;
+  title: string;
+  keys: NumericSettingKey[];
+  includeReportsToggle?: boolean;
+}> = [
+  {
+    id: "system",
+    title: "بخش سیستم",
+    includeReportsToggle: true,
+    keys: ["report_unassigned_grace_minutes"],
+  },
+  {
+    id: "validator",
+    title: "بخش اعتبارسنج",
+    keys: [
+      "report_validator_sla_hours",
+      "report_parallel_validators",
+      "report_consensus_min_reviews",
+      "tokens_consensus_validator_wrong_penalty",
+      "tokens_consensus_validator_refund",
+      "tokens_consensus_validator_bonus_match_3",
+      "tokens_consensus_validator_bonus_match_5",
+    ],
+  },
+  {
+    id: "user",
+    title: "بخش کاربر",
+    keys: [
+      "default_tokens_new_user",
+      "tokens_report_submit_stake",
+      "tokens_reward_approved_report",
+      "tokens_deduct_false_report",
+      "tokens_deduct_problematic_report",
+      "tokens_reward_invited_activity",
+      "tokens_invite_create_stake",
+      "max_invite_codes_unused",
+      "tokens_consensus_reporter_accept",
+    ],
+  },
+];
 
 export default function AdminSystemSettingsPage() {
   const [settings, setSettings] = useState<SettingsData>(defaults);
@@ -117,10 +232,9 @@ export default function AdminSystemSettingsPage() {
       tokens_invite_create_stake: Number.isFinite(Number(raw.tokens_invite_create_stake))
         ? Number(raw.tokens_invite_create_stake)
         : defaults.tokens_invite_create_stake,
-      max_invite_codes_unused:
-        Number(raw.max_invite_codes_unused) ?? defaults.max_invite_codes_unused,
-      min_approved_reports_for_approval:
-        Number(raw.min_approved_reports_for_approval) ?? defaults.min_approved_reports_for_approval,
+      max_invite_codes_unused: Number.isFinite(Number(raw.max_invite_codes_unused))
+        ? Number(raw.max_invite_codes_unused)
+        : defaults.max_invite_codes_unused,
       report_validator_sla_hours:
         Number(raw.report_validator_sla_hours) || defaults.report_validator_sla_hours,
       report_unassigned_grace_minutes:
@@ -131,12 +245,6 @@ export default function AdminSystemSettingsPage() {
         Number(raw.report_consensus_min_reviews) || defaults.report_consensus_min_reviews,
       tokens_consensus_reporter_accept:
         Number(raw.tokens_consensus_reporter_accept) || defaults.tokens_consensus_reporter_accept,
-      tokens_consensus_reporter_reject_penalty:
-        Number(raw.tokens_consensus_reporter_reject_penalty) ||
-        defaults.tokens_consensus_reporter_reject_penalty,
-      tokens_consensus_validator_correct:
-        Number(raw.tokens_consensus_validator_correct) ||
-        defaults.tokens_consensus_validator_correct,
       tokens_consensus_validator_wrong_penalty:
         Number(raw.tokens_consensus_validator_wrong_penalty) ||
         defaults.tokens_consensus_validator_wrong_penalty,
@@ -169,14 +277,11 @@ export default function AdminSystemSettingsPage() {
         tokens_reward_invited_activity: settings.tokens_reward_invited_activity,
         tokens_invite_create_stake: settings.tokens_invite_create_stake,
         max_invite_codes_unused: settings.max_invite_codes_unused,
-        min_approved_reports_for_approval: settings.min_approved_reports_for_approval,
         report_validator_sla_hours: settings.report_validator_sla_hours,
         report_unassigned_grace_minutes: settings.report_unassigned_grace_minutes,
         report_parallel_validators: settings.report_parallel_validators,
         report_consensus_min_reviews: settings.report_consensus_min_reviews,
         tokens_consensus_reporter_accept: settings.tokens_consensus_reporter_accept,
-        tokens_consensus_reporter_reject_penalty: settings.tokens_consensus_reporter_reject_penalty,
-        tokens_consensus_validator_correct: settings.tokens_consensus_validator_correct,
         tokens_consensus_validator_wrong_penalty: settings.tokens_consensus_validator_wrong_penalty,
         tokens_consensus_validator_refund: settings.tokens_consensus_validator_refund,
         tokens_consensus_validator_bonus_match_3: settings.tokens_consensus_validator_bonus_match_3,
@@ -200,463 +305,77 @@ export default function AdminSystemSettingsPage() {
       <h1 className="mb-6 text-2xl font-bold">تنظیمات سیستم</h1>
 
       <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle>تنظیمات توکن و گزارش</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="flex flex-row items-center justify-between rounded-lg border p-4 md:col-span-2">
-                <Label htmlFor="reports_enabled" className="cursor-pointer">
-                  {LABELS.reports_enabled}
-                </Label>
-                <Switch
-                  id="reports_enabled"
-                  checked={settings.reports_enabled}
-                  onCheckedChange={(v) => setSettings((s) => ({ ...s, reports_enabled: v }))}
-                />
+        {SETTING_SECTIONS.map((section) => (
+          <Card key={section.id} className="mb-6">
+            <CardHeader>
+              <CardTitle>{section.title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[45%]">تنظیم</TableHead>
+                      <TableHead className="w-[20%]">مقدار</TableHead>
+                      <TableHead className="w-[35%]">راهنما</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {section.includeReportsToggle ? (
+                      <TableRow>
+                        <TableCell className="font-medium">{LABELS.reports_enabled}</TableCell>
+                        <TableCell>
+                          <Switch
+                            id="reports_enabled"
+                            checked={settings.reports_enabled}
+                            onCheckedChange={(v) =>
+                              setSettings((s) => ({ ...s, reports_enabled: v }))
+                            }
+                          />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-xs">
+                          خاموش بودن این گزینه ثبت گزارش جدید را در API و پنل کاربر غیرفعال می‌کند.
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                    {section.keys.map((key) => {
+                      const field = NUMERIC_FIELD_MAP[key];
+                      return (
+                        <TableRow key={field.key}>
+                          <TableCell className="font-medium">{LABELS[field.key]}</TableCell>
+                          <TableCell>
+                            <Input
+                              id={field.key}
+                              type="number"
+                              min={field.min}
+                              max={field.max}
+                              step={field.step}
+                              value={settings[field.key]}
+                              onChange={(e) => {
+                                const parsed =
+                                  field.parse === "float"
+                                    ? Number.parseFloat(e.target.value)
+                                    : Number.parseInt(e.target.value, 10);
+                                let next = Number.isFinite(parsed) ? parsed : field.min;
+                                if (field.max != null) next = Math.min(field.max, next);
+                                next = Math.max(field.min, next);
+                                setSettings((s) => ({ ...s, [field.key]: next }));
+                              }}
+                              className="h-9"
+                            />
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-xs">
+                            {field.hint ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="default_tokens_new_user">{LABELS.default_tokens_new_user}</Label>
-                <Input
-                  id="default_tokens_new_user"
-                  type="number"
-                  min={0}
-                  value={settings.default_tokens_new_user}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      default_tokens_new_user: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tokens_report_submit_stake">
-                  {LABELS.tokens_report_submit_stake}
-                </Label>
-                <Input
-                  id="tokens_report_submit_stake"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_report_submit_stake}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_report_submit_stake: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tokens_reward_approved_report">
-                  {LABELS.tokens_reward_approved_report}
-                </Label>
-                <Input
-                  id="tokens_reward_approved_report"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_reward_approved_report}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_reward_approved_report: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tokens_deduct_false_report">
-                  {LABELS.tokens_deduct_false_report}
-                </Label>
-                <Input
-                  id="tokens_deduct_false_report"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_deduct_false_report}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_deduct_false_report: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tokens_deduct_problematic_report">
-                  {LABELS.tokens_deduct_problematic_report}
-                </Label>
-                <Input
-                  id="tokens_deduct_problematic_report"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_deduct_problematic_report}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_deduct_problematic_report: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tokens_reward_invited_activity">
-                  {LABELS.tokens_reward_invited_activity}
-                </Label>
-                <Input
-                  id="tokens_reward_invited_activity"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_reward_invited_activity}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_reward_invited_activity: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="max_invite_codes_unused">{LABELS.max_invite_codes_unused}</Label>
-                <Input
-                  id="max_invite_codes_unused"
-                  type="number"
-                  min={0}
-                  value={settings.max_invite_codes_unused}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      max_invite_codes_unused: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-                <p className="text-muted-foreground text-xs">
-                  ۰ = نامحدود. کاربر نمی‌تواند بیش از این تعداد کد دعوت استفاده‌نشده داشته باشد.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tokens_invite_create_stake">
-                  {LABELS.tokens_invite_create_stake}
-                </Label>
-                <Input
-                  id="tokens_invite_create_stake"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_invite_create_stake}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_invite_create_stake: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="min_approved_reports_for_approval">
-                  {LABELS.min_approved_reports_for_approval}
-                </Label>
-                <Input
-                  id="min_approved_reports_for_approval"
-                  type="number"
-                  min={0}
-                  value={settings.min_approved_reports_for_approval}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      min_approved_reports_for_approval: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-                <p className="text-muted-foreground text-xs">
-                  کاربران با نقش اعتبارسنج یا با حداقل این تعداد گزارش تاییدشده می‌توانند گزارش‌های
-                  دیگران را تایید کنند.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="report_validator_sla_hours">
-                  {LABELS.report_validator_sla_hours}
-                </Label>
-                <Input
-                  id="report_validator_sla_hours"
-                  type="number"
-                  min={1}
-                  value={settings.report_validator_sla_hours}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      report_validator_sla_hours: Math.max(
-                        1,
-                        Number.parseInt(e.target.value, 10) || 1,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="report_unassigned_grace_minutes">
-                  {LABELS.report_unassigned_grace_minutes}
-                </Label>
-                <Input
-                  id="report_unassigned_grace_minutes"
-                  type="number"
-                  min={1}
-                  value={settings.report_unassigned_grace_minutes}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      report_unassigned_grace_minutes: Math.max(
-                        1,
-                        Number.parseInt(e.target.value, 10) || 1,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="report_parallel_validators">
-                  {LABELS.report_parallel_validators}
-                </Label>
-                <Input
-                  id="report_parallel_validators"
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={settings.report_parallel_validators}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      report_parallel_validators: Math.min(
-                        50,
-                        Math.max(1, Number.parseInt(e.target.value, 10) || 1),
-                      ),
-                    }))
-                  }
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>اکثریت رأی و تسویه توکن (صف RabbitMQ)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
-              پس از رسیدن به حد نصاب، نتیجه از روی سه سطح رأی محاسبه می‌شود: تأیید، رد با حسن‌نیت، رد
-              با سوءنیت (قوانین ۳ نفره در کد). تسویه توکن گزارش‌دهنده از تنظیمات کسر «مسئله‌دار / غلط»
-              و برای اعتبارسنج‌ها از بازپرداخت + پاداش هم‌رأیی (و جریمه رأی سوءنیت در برابر تأیید
-              نهایی) استفاده می‌کند.
-            </p>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="report_consensus_min_reviews">
-                  {LABELS.report_consensus_min_reviews}
-                </Label>
-                <Input
-                  id="report_consensus_min_reviews"
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={settings.report_consensus_min_reviews}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      report_consensus_min_reviews: Math.min(
-                        50,
-                        Math.max(1, Number.parseInt(e.target.value, 10) || 1),
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tokens_consensus_reporter_accept">
-                  {LABELS.tokens_consensus_reporter_accept}
-                </Label>
-                <Input
-                  id="tokens_consensus_reporter_accept"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_consensus_reporter_accept}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_consensus_reporter_accept: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tokens_consensus_reporter_reject_penalty">
-                  {LABELS.tokens_consensus_reporter_reject_penalty}
-                </Label>
-                <Input
-                  id="tokens_consensus_reporter_reject_penalty"
-                  type="number"
-                  min={0}
-                  value={settings.tokens_consensus_reporter_reject_penalty}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_consensus_reporter_reject_penalty: Math.max(
-                        0,
-                        Number.parseInt(e.target.value, 10) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tokens_consensus_validator_refund">
-                  {LABELS.tokens_consensus_validator_refund}
-                </Label>
-                <Input
-                  id="tokens_consensus_validator_refund"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={settings.tokens_consensus_validator_refund}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_consensus_validator_refund: Math.max(
-                        0,
-                        Number.parseFloat(e.target.value) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tokens_consensus_validator_bonus_match_3">
-                  {LABELS.tokens_consensus_validator_bonus_match_3}
-                </Label>
-                <Input
-                  id="tokens_consensus_validator_bonus_match_3"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={settings.tokens_consensus_validator_bonus_match_3}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_consensus_validator_bonus_match_3: Math.max(
-                        0,
-                        Number.parseFloat(e.target.value) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tokens_consensus_validator_bonus_match_5">
-                  {LABELS.tokens_consensus_validator_bonus_match_5}
-                </Label>
-                <Input
-                  id="tokens_consensus_validator_bonus_match_5"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={settings.tokens_consensus_validator_bonus_match_5}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_consensus_validator_bonus_match_5: Math.max(
-                        0,
-                        Number.parseFloat(e.target.value) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tokens_consensus_validator_wrong_penalty">
-                  {LABELS.tokens_consensus_validator_wrong_penalty}
-                </Label>
-                <Input
-                  id="tokens_consensus_validator_wrong_penalty"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={settings.tokens_consensus_validator_wrong_penalty}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_consensus_validator_wrong_penalty: Math.max(
-                        0,
-                        Number.parseFloat(e.target.value) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="tokens_consensus_validator_correct">
-                  {LABELS.tokens_consensus_validator_correct}
-                </Label>
-                <Input
-                  id="tokens_consensus_validator_correct"
-                  type="number"
-                  min={0}
-                  step={0.5}
-                  value={settings.tokens_consensus_validator_correct}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      tokens_consensus_validator_correct: Math.max(
-                        0,
-                        Number.parseFloat(e.target.value) || 0,
-                      ),
-                    }))
-                  }
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
 
         <div className="mt-6">
           <Button type="submit" disabled={saving}>
