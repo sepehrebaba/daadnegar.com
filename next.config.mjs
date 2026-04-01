@@ -9,7 +9,11 @@ const nextConfig = {
   output: "standalone",
   experimental: {
     serverActions: {
-      allowedOrigins: ["*"],
+      allowedOrigins: [
+        "http://localhost:3000",
+        "https://daadnegar.com",
+        "https://stage.daadnegar.com",
+      ],
       bodySizeLimit: "10mb", // Increase body size limit for file uploads
     },
   },
