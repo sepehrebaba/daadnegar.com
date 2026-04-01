@@ -144,7 +144,7 @@ jobs:
       - name: Create GHCR image pull secret
         run: |
           kubectl create secret docker-registry ghcr-secret \
-            --namespace default \
+            --namespace staging \
             --docker-server=ghcr.io \
             --docker-username=${{ github.repository_owner }} \
             --docker-password=${{ secrets.GITHUB_TOKEN }} \
@@ -152,12 +152,18 @@ jobs:
 
       - name: Deploy to Kubernetes with Helm Secrets
         run: |
-          helm secrets upgrade --install daadnegar ./daadnegar-chart \
-            --namespace default \
+          helm secrets upgrade --install daadnegar-stage ./daadnegar-chart \
+            --namespace staging \
+            --create-namespace \
             --set image.repository=ghcr.io/${{ env.IMAGE }} \
             --set image.tag=v${{ steps.version.outputs.version }} \
             --set adminPanel.enabled=true \
             --set adminPanel.image.repository=ghcr.io/${{ env.IMAGE }} \
             --set adminPanel.image.tag=v${{ steps.version.outputs.version }}-admin \
+            --set-string env.BETTER_AUTH_URL=https://stage.daadnegar.com \
+            --set-string env.FRONTEND_URL=https://stage.daadnegar.com \
+            --set-string env.NEXT_PUBLIC_APP_URL=https://stage.daadnegar.com \
+            --set-json 'ingress.hosts=[{"host":"stage.daadnegar.com","paths":[{"path":"/","pathType":"Prefix"}]}]' \
+            --set-json 'ingress.tls=[{"secretName":"daadnegar-stage-tls","hosts":["stage.daadnegar.com"]}]' \
             -f daadnegar-chart/secrets.yaml \
             --wait --timeout 5m
