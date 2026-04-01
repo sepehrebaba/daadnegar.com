@@ -68,6 +68,8 @@ ENV NODE_ENV=production
 
 EXPOSE 3000
 
+USER node
+
 CMD [ "dumb-init", "pnpm", "run", "start" ]
 
 # --- Release: admin panel only (build with: docker build --target release-admin) ---
@@ -94,6 +96,8 @@ ENV PORT=3000
 ENV NODE_ENV=production
 
 EXPOSE 3000
+
+USER node
 
 CMD [ "dumb-init", "pnpm", "run", "start" ]
 
