@@ -6,7 +6,7 @@ const paramsBody = t.Object({
   userId: t.String(),
 });
 
-export const membershipService = new Elysia({ prefix: "/membership", aot: false }).get(
+export const membershipService = new Elysia({ prefix: "/membership" }).get(
   "/:userId",
   async ({ params }) => {
     const memberships = await prisma.workspaceMember.findMany({

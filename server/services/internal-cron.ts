@@ -16,7 +16,6 @@ function timingSafeEqualString(a: string, b: string): boolean {
 export const internalCronService = new Elysia({
   name: "internalCron",
   prefix: "/internal",
-  aot: false,
 }).post("/report-queue-stale-scan", async ({ request, set }) => {
   const secret = process.env.CRON_SECRET ?? "";
   if (!secret) {

@@ -2,7 +2,7 @@ import { Elysia } from "elysia";
 import { prisma } from "../db";
 import { getSettingBool, SETTING_KEYS } from "../lib/settings";
 
-export const constantsService = new Elysia({ prefix: "/constants", aot: false })
+export const constantsService = new Elysia({ prefix: "/constants" })
   .get("/reports-enabled", async () => {
     const enabled = await getSettingBool(SETTING_KEYS.REPORTS_ENABLED);
     return { enabled };

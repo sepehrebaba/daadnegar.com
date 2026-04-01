@@ -8,7 +8,7 @@ import { adminPeopleRoutes } from "./people";
 import { adminReportsRoutes } from "./reports";
 import { adminPanelRoutes } from "./panel";
 
-export const adminService = new Elysia({ prefix: "/admin", aot: false })
+export const adminService = new Elysia({ prefix: "/admin" })
   .derive(async ({ request }) => ({
     auth: await resolveAdminAuth(request),
   }))

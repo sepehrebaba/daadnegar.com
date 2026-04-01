@@ -22,7 +22,7 @@ export function documentToServeUrl(doc: { id: string; name: string; url: string 
   return `${base}/api/upload/serve/${doc.id}`;
 }
 
-export const uploadService = new Elysia({ prefix: "/upload", aot: false })
+export const uploadService = new Elysia({ prefix: "/upload" })
   .derive(async ({ request }) => {
     let session = await getSession(request.headers);
     if (!session?.user && request.headers) {

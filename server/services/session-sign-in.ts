@@ -10,7 +10,6 @@ function isLooselyValidEmail(s: string): boolean {
 /** Sign-in with username or email: loads user from DB and creates Better Auth session with that email. */
 export const sessionSignInService = new Elysia({
   prefix: "/session",
-  aot: false,
 }).post(
   "/sign-in",
   async ({ body, request }) => {

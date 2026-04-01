@@ -11,7 +11,7 @@ const ipGenerator: Generator<{ ip: { address: string } }> = (_r, _s, { ip }) =>
 
 /** Shared middleware stack for all API bundles (public web, admin-only, full dev). */
 export function createBaseElysia() {
-  return new Elysia({ prefix: "/api", aot: false })
+  return new Elysia({ prefix: "/api" })
     .trace(async ({ onBeforeHandle, onAfterHandle, onError }) => {
       onBeforeHandle(({ begin, onStop }) => {
         onStop(({ set, end }) => {

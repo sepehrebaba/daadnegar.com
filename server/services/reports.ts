@@ -81,7 +81,7 @@ function parseValidatorReject(body: {
   return { tier, code, comment };
 }
 
-export const reportsService = new Elysia({ prefix: "/reports", aot: false })
+export const reportsService = new Elysia({ prefix: "/reports" })
   .derive(async ({ request }) => {
     let session = await getSession(request.headers);
     if (!session?.user && request.headers) {

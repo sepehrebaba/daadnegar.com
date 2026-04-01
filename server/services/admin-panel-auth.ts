@@ -21,7 +21,6 @@ function timingSafeEqualString(a: string, b: string): boolean {
 
 export const adminPanelAuthService = new Elysia({
   prefix: "/admin-panel/auth",
-  aot: false,
 })
   .post(
     "/login",

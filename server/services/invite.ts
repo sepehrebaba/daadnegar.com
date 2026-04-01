@@ -43,7 +43,7 @@ export async function ensureUniqueInviteCode(): Promise<string> {
   throw new Error("Failed to generate unique invite code");
 }
 
-export const inviteService = new Elysia({ prefix: "/invite", aot: false })
+export const inviteService = new Elysia({ prefix: "/invite" })
   .post(
     "/validate",
     async ({ body, request, ip }) => {

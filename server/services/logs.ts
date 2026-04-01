@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 
-export const logsService = new Elysia({ prefix: "/logs", aot: false }).get(
+export const logsService = new Elysia({ prefix: "/logs" }).get(
   "/",
   async ({ params, query }) => {
     const where: Record<string, unknown> = { workspaceId: params.workspaceId };

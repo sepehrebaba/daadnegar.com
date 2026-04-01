@@ -10,7 +10,7 @@ async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
 }
 
-export const meService = new Elysia({ prefix: "/me", aot: false })
+export const meService = new Elysia({ prefix: "/me" })
   .post("/logout", async ({ request, ip }) => {
     const authHeader = request.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {

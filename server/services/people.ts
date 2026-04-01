@@ -4,7 +4,7 @@ import { createAuditLog } from "./audit";
 
 const UNKNOWN_PERSON_SLUG = "unknown";
 
-export const peopleService = new Elysia({ prefix: "/people", aot: false })
+export const peopleService = new Elysia({ prefix: "/people" })
   .get("/unknown", async () => {
     let person = await prisma.person.findFirst({
       where: { firstName: "نامشخص", lastName: "عمومی" },
