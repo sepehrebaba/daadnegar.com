@@ -145,6 +145,7 @@ jobs:
         run: |
           kubectl create secret docker-registry ghcr-secret \
             --namespace staging \
+            --create-namespace \
             --docker-server=ghcr.io \
             --docker-username=${{ github.repository_owner }} \
             --docker-password=${{ secrets.GITHUB_TOKEN }} \
