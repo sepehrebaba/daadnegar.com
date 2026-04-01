@@ -8,6 +8,10 @@ import { TOKEN_TRANSACTION_TYPES } from "../lib/token-transaction";
 import { randomBytes } from "node:crypto";
 import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
 import { assertPasswordChangeNotRequired } from "../lib/must-change-password";
+import { DefaultContext, type Generator, rateLimit } from "elysia-rate-limit";
+
+const ipGenerator: Generator<{ ip: { address: string } }> = (_r, _s, { ip }) =>
+  (ip as { address?: string } | undefined)?.address ?? "unknown";
 
 const TOKEN_EXPIRY_DAYS = 365;
 const MIN_ACCOUNT_AGE_DAYS_FOR_INVITE = 3;
@@ -472,6 +476,20 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
       createdAt: c.createdAt.toISOString(),
     }));
   })
+  .use(
+    rateLimit({
+      duration: 60_000,
+      max: 10,
+      headers: false,
+      scoping: "scoped",
+      countFailedRequest: true,
+      errorResponse: new Response(JSON.stringify({ ok: false, error: "Too many requests" }), {
+        status: 429,
+      }),
+      generator: ipGenerator,
+      context: new DefaultContext(10_000),
+    }),
+  )
   .get(
     "/check-code",
     async ({ query }) => {
