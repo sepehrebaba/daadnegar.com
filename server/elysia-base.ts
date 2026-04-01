@@ -127,7 +127,7 @@ export function withGlobalHandlers<T extends Elysia>(app: T) {
               ? 403
               : 500;
 
-      set.headers["Content-Type"] = `charset=utf-8`;
+      set.headers["Content-Type"] = "application/json; charset=utf-8";
 
       if (code === "VALIDATION") return error.detail(error.message);
 
