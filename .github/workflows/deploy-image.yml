@@ -156,6 +156,10 @@ jobs:
           echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
           gpg --list-secret-keys
 
+      - name: Ensure namespace exists
+        run: |
+          kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Create GHCR image pull secret
         run: |
           kubectl create secret docker-registry ghcr-secret \
