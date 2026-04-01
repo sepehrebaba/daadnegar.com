@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write
   packages: write
+  deployments: write
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -119,6 +120,39 @@ jobs:
             NEXT_PUBLIC_APP_VERSION=${{ steps.version.outputs.version }}
           cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-admin
           cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-admin,mode=max
+
+      - name: Create GitHub deployment (production)
+        id: github_deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: "production",
+              auto_merge: false,
+              required_contexts: [],
+              description: `Deploy ${context.sha.substring(0, 8)} to daadnegar.com`,
+              transient_environment: false,
+              production_environment: true
+            });
+
+            core.setOutput("deployment_id", String(deployment.data.id));
+
+      - name: Mark GitHub deployment as in progress (production)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: Number("${{ steps.github_deployment.outputs.deployment_id }}"),
+              state: "in_progress",
+              environment: "production",
+              environment_url: "https://daadnegar.com",
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
       # Kubernetes deployment steps
       - name: Set up kubeconfig
         uses: azure/k8s-set-context@v3
@@ -170,6 +204,7 @@ jobs:
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy to Kubernetes with Helm Secrets
+        id: deploy_k8s
         run: |
           helm secrets upgrade --install daadnegar ./daadnegar-chart \
             --namespace production \
@@ -193,3 +228,33 @@ jobs:
             --set-string ingress.tls[0].hosts[1]=www.daadnegar.com \
             -f daadnegar-chart/secrets.yaml \
             --wait --timeout 5m
+
+      - name: Mark GitHub deployment as successful (production)
+        if: ${{ always() && steps.deploy_k8s.outcome == 'success' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: Number("${{ steps.github_deployment.outputs.deployment_id }}"),
+              state: "success",
+              environment: "production",
+              environment_url: "https://daadnegar.com",
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+
+      - name: Mark GitHub deployment as failed (production)
+        if: ${{ always() && steps.deploy_k8s.outcome != 'success' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: Number("${{ steps.github_deployment.outputs.deployment_id }}"),
+              state: "failure",
+              environment: "production",
+              environment_url: "https://daadnegar.com",
+              log_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
