@@ -103,7 +103,12 @@ export function withGlobalHandlers<T extends Elysia>(app: T) {
       const err = error instanceof Error ? error : new Error(String(error));
       const message = msg || err.message;
       const name = err.name;
-      console.error("API error handler", { name, message, code });
+      console.error("API error handler", {
+        name,
+        message,
+        code,
+        stack: err.stack,
+      });
       set.status =
         code === "NOT_FOUND"
           ? 404
@@ -116,6 +121,20 @@ export function withGlobalHandlers<T extends Elysia>(app: T) {
       set.headers["Content-Type"] = `charset=utf-8`;
 
       if (code === "VALIDATION") return error.detail(error.message);
+
+      if (err.message === "Unauthorized") {
+        return {
+          error: { name: "Unauthorized", message: "Unauthorized" },
+          status: 401,
+        };
+      }
+
+      if (code === "NOT_FOUND") {
+        return {
+          error: { name: "NotFound", message: "Not Found" },
+          status: 404,
+        };
+      }
 
       if (err.message === "MUST_CHANGE_PASSWORD") {
         return {
@@ -130,9 +149,11 @@ export function withGlobalHandlers<T extends Elysia>(app: T) {
       }
 
       return {
-        error: { name, message },
-        status: set.status,
-        code,
+        error: {
+          name: "InternalServerError",
+          message: "An unexpected error occurred.",
+        },
+        status: 500,
       };
     });
 }
