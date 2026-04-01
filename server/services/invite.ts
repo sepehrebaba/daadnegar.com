@@ -44,49 +44,68 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
     "/validate",
     async ({ body, request, ip }) => {
       const normalizedCode = body.code.trim().toUpperCase();
-      const inviteCode = await prisma.inviteCode.findFirst({
-        where: {
-          code: { equals: normalizedCode },
-          isActive: true,
-        },
-      });
-      if (!inviteCode) {
-        return { ok: false, error: "کد دعوت نامعتبر است" };
-      }
-      if (inviteCode.usedById) {
-        return { ok: false, error: "این کد دعوت قبلاً استفاده شده است" };
-      }
-
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + TOKEN_EXPIRY_DAYS);
       const token = generateToken();
 
-      const session = await prisma.inviteSession.create({
-        data: {
-          token,
-          inviteCodeId: inviteCode.id,
-          expiresAt,
-        },
-        include: { user: true },
+      // Atomically claim the invite code so concurrent validations cannot both succeed.
+      const claimed = await prisma.$transaction(async (tx) => {
+        const inviteCode = await tx.inviteCode.findFirst({
+          where: {
+            code: { equals: normalizedCode },
+            isActive: true,
+            usedById: null,
+          },
+          select: {
+            id: true,
+            code: true,
+          },
+        });
+        if (!inviteCode) return null;
+
+        const claim = await tx.inviteCode.updateMany({
+          where: {
+            id: inviteCode.id,
+            isActive: true,
+            usedById: null,
+          },
+          data: {
+            isActive: false,
+          },
+        });
+        if (claim.count === 0) return null;
+
+        const session = await tx.inviteSession.create({
+          data: {
+            token,
+            inviteCodeId: inviteCode.id,
+            expiresAt,
+          },
+        });
+
+        return { inviteCode, session };
       });
+      if (!claimed) {
+        return { ok: false, error: "کد دعوت نامعتبر یا قبلاً استفاده شده است" };
+      }
 
       await createAuditLog({
         action: "validate",
         entity: "InviteCode",
-        entityId: inviteCode.id,
-        details: JSON.stringify({ code: inviteCode.code }),
+        entityId: claimed.inviteCode.id,
+        details: JSON.stringify({ code: claimed.inviteCode.code }),
         ctx: {
           ipAddress: ip?.address,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
 
-      const hasPasskey = !!session.passkeyHash;
+      const hasPasskey = !!claimed.session.passkeyHash;
       return {
         ok: true,
         token,
         hasPasskey,
-        expiresAt: session.expiresAt.toISOString(),
+        expiresAt: claimed.session.expiresAt.toISOString(),
       };
     },
     {
@@ -147,6 +166,10 @@ export const inviteService = new Elysia({ prefix: "/invite", aot: false })
         await tx.inviteSession.update({
           where: { id: session.id },
           data: { passkeyHash, userId: u.id },
+        });
+        await tx.inviteCode.update({
+          where: { id: session.inviteCodeId },
+          data: { usedById: u.id, isActive: false },
         });
         return u;
       });
