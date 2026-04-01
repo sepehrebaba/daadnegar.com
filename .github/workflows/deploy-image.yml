@@ -182,7 +182,14 @@ jobs:
             --set-string env.BETTER_AUTH_URL=https://daadnegar.com \
             --set-string env.FRONTEND_URL=https://daadnegar.com \
             --set-string env.NEXT_PUBLIC_APP_URL=https://daadnegar.com \
-            --set-json 'ingress.hosts=[{"host":"daadnegar.com","paths":[{"path":"/","pathType":"Prefix"}]},{"host":"www.daadnegar.com","paths":[{"path":"/","pathType":"Prefix"}]}]' \
-            --set-json 'ingress.tls=[{"secretName":"daadnegar-tls","hosts":["daadnegar.com","www.daadnegar.com"]}]' \
+            --set-string ingress.hosts[0].host=daadnegar.com \
+            --set-string ingress.hosts[0].paths[0].path=/ \
+            --set-string ingress.hosts[0].paths[0].pathType=Prefix \
+            --set-string ingress.hosts[1].host=www.daadnegar.com \
+            --set-string ingress.hosts[1].paths[0].path=/ \
+            --set-string ingress.hosts[1].paths[0].pathType=Prefix \
+            --set-string ingress.tls[0].secretName=daadnegar-tls \
+            --set-string ingress.tls[0].hosts[0]=daadnegar.com \
+            --set-string ingress.tls[0].hosts[1]=www.daadnegar.com \
             -f daadnegar-chart/secrets.yaml \
             --wait --timeout 5m
