@@ -46,6 +46,11 @@ export function createBaseElysia() {
         },
         frameOptions: "DENY",
         referrerPolicy: "strict-origin-when-cross-origin",
+        csp: {
+          defaultSrc: ["'none'"],
+          baseUri: ["'none'"],
+          objectSrc: ["'none'"],
+        },
       }),
     )
     .use(ip())
