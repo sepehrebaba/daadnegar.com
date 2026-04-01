@@ -44,17 +44,42 @@ export function getPasswordStrength(password: string): number {
 
 const SPECIAL_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?";
 
+function secureRandomIndex(maxExclusive: number): number {
+  if (maxExclusive <= 0) throw new Error("maxExclusive must be greater than 0");
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new Error("Secure random generator is not available in this environment.");
+  }
+
+  const maxUint32 = 0x100000000;
+  const limit = Math.floor(maxUint32 / maxExclusive) * maxExclusive;
+  const random = new Uint32Array(1);
+
+  do {
+    globalThis.crypto.getRandomValues(random);
+  } while (random[0]! >= limit);
+
+  return random[0]! % maxExclusive;
+}
+
 /** Generate a strong random password that satisfies all security rules */
 export function generateRandomPassword(length = 16): string {
+  const targetLength = Math.max(length, 4);
   const parts: string[] = [];
-  parts.push(String.fromCharCode(65 + Math.floor(Math.random() * 26))); // A-Z
-  parts.push(String.fromCharCode(97 + Math.floor(Math.random() * 26))); // a-z
-  parts.push(String.fromCharCode(48 + Math.floor(Math.random() * 10))); // 0-9
-  parts.push(SPECIAL_CHARS[Math.floor(Math.random() * SPECIAL_CHARS.length)]!);
-  const rest = length - 4;
+  parts.push(String.fromCharCode(65 + secureRandomIndex(26))); // A-Z
+  parts.push(String.fromCharCode(97 + secureRandomIndex(26))); // a-z
+  parts.push(String.fromCharCode(48 + secureRandomIndex(10))); // 0-9
+  parts.push(SPECIAL_CHARS[secureRandomIndex(SPECIAL_CHARS.length)]!);
+  const rest = targetLength - 4;
   const allChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" + SPECIAL_CHARS;
   for (let i = 0; i < rest; i++) {
-    parts.push(allChars[Math.floor(Math.random() * allChars.length)]!);
+    parts.push(allChars[secureRandomIndex(allChars.length)]!);
   }
-  return parts.sort(() => Math.random() - 0.5).join("");
+
+  // Fisher-Yates shuffle using CSPRNG indices.
+  for (let i = parts.length - 1; i > 0; i--) {
+    const j = secureRandomIndex(i + 1);
+    [parts[i], parts[j]] = [parts[j]!, parts[i]!];
+  }
+
+  return parts.join("");
 }
