@@ -55,19 +55,23 @@ export function createBaseElysia() {
     )
     .use(ip())
     .use(
-      serverTiming({
-        trace: {
-          request: true,
-          parse: true,
-          transform: true,
-          beforeHandle: true,
-          handle: true,
-          afterHandle: true,
-          error: true,
-          mapResponse: true,
-          total: true,
-        },
-      }),
+      serverTiming(
+        process.env.NODE_ENV === "production"
+          ? { enabled: false }
+          : {
+              trace: {
+                request: true,
+                parse: true,
+                transform: true,
+                beforeHandle: true,
+                handle: true,
+                afterHandle: true,
+                error: true,
+                mapResponse: true,
+                total: true,
+              },
+            },
+      ),
     )
     .use(
       cors({
