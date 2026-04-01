@@ -89,7 +89,6 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-web
           cache-to: type=registry,ref=ghcr.io/${{ env.IMAGE }}/cache:release-web,mode=max
 
-
       - name: Build and Push (admin-only image)
         uses: docker/build-push-action@v5.3.0
         with:
@@ -172,7 +171,7 @@ jobs:
 
       - name: Setup GPG key
         run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
+          echo "${{ secrets.STAGE_GPG_PRIVATE_KEY }}" | base64 -d | gpg --batch --import
           gpg --list-secret-keys
 
       - name: Ensure namespace exists
@@ -199,15 +198,12 @@ jobs:
             --set adminPanel.enabled=true \
             --set adminPanel.image.repository=ghcr.io/${{ env.IMAGE }} \
             --set adminPanel.image.tag=v${{ steps.version.outputs.version }}-admin \
-            --set-string env.BETTER_AUTH_URL=https://stage.daadnegar.com \
-            --set-string env.FRONTEND_URL=https://stage.daadnegar.com \
-            --set-string env.NEXT_PUBLIC_APP_URL=https://stage.daadnegar.com \
             --set-string ingress.hosts[0].host=stage.daadnegar.com \
             --set-string ingress.hosts[0].paths[0].path=/ \
             --set-string ingress.hosts[0].paths[0].pathType=Prefix \
             --set-string ingress.tls[0].secretName=daadnegar-stage-tls \
             --set-string ingress.tls[0].hosts[0]=stage.daadnegar.com \
-            -f daadnegar-chart/secrets.yaml \
+            -f daadnegar-chart/secrets-stage.yaml \
             --wait --timeout 5m
 
       - name: Mark GitHub deployment as successful (stage)

@@ -48,7 +48,7 @@ sudo chmod +x /usr/local/bin/sops
 ### 2. Generate a GPG Key (if needed)
 
 ```bash
-gpg --gen-key
+gpg --full-generate-key
 gpg --list-keys
 gpg --export-secret-keys --armor KEY_ID | base64
 ```
@@ -83,6 +83,7 @@ Then encrypt (uses key from `.sops.yaml`):
 
 ```bash
 sops -e --input-type yaml --output-type yaml --output secrets.yaml secrets.yaml.dec
+SOPS_CONFIG=.sops-stage.yaml sops -e --input-type yaml --output-type yaml --output secrets-stage.yaml secrets-stage.yaml.dec
 ```
 
 Or edit in place (SOPS decrypts, opens editor, re-encrypts on save):

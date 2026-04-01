@@ -17,4 +17,6 @@ node_modules/
 # Helm Secrets
 daadnegar-chart/secrets.decrypted.yaml
 daadnegar-chart/secrets.yaml.dec
+daadnegar-chart/secrets-stage.yaml.dec
 daadnegar-chart/.sops.yaml
+daadnegar-chart/.sops-stage.yaml
