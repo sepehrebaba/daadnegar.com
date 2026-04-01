@@ -20,8 +20,9 @@ export const internalCronService = new Elysia({
 }).post("/report-queue-stale-scan", async ({ request, set }) => {
   const secret = process.env.CRON_SECRET ?? "";
   if (!secret) {
-    set.status = 503;
-    return { ok: false, error: "CRON_SECRET is not set" };
+    console.error("CRON_SECRET is not set");
+    set.status = 401;
+    return { ok: false, error: "Unauthorized" };
   }
   const auth = request.headers.get("authorization");
   const bearer = auth?.startsWith("Bearer ") ? auth.slice(7).trim() : null;
