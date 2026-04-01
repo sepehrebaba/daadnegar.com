@@ -1,5 +1,13 @@
 import { Elysia } from "elysia";
 import { publishReportQueueStaleScan } from "@/lib/rabbitmq";
+import { timingSafeEqual } from "node:crypto";
+
+function timingSafeEqualString(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, "utf8");
+  const bBuf = Buffer.from(b, "utf8");
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
+}
 
 /**
  * Machine-to-machine routes (Kubernetes CronJob, etc.).
@@ -19,7 +27,7 @@ export const internalCronService = new Elysia({
   const bearer = auth?.startsWith("Bearer ") ? auth.slice(7).trim() : null;
   const headerSecret = request.headers.get("x-cron-secret");
   const token = bearer ?? headerSecret ?? "";
-  if (token !== secret) {
+  if (!timingSafeEqualString(token, secret)) {
     set.status = 401;
     return { ok: false, error: "Unauthorized" };
   }

@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../db";
 import { auth } from "@/lib/auth";
 import { createAuditLog } from "./audit";
-import { randomBytes } from "node:crypto";
+import { randomBytes, timingSafeEqual } from "node:crypto";
 import { isPasswordSecure } from "@/lib/password-utils";
 
 const ADMIN_PANEL_COOKIE = "admin_panel_session";
@@ -10,6 +10,13 @@ const SESSION_MINUTES = 10;
 
 function generateToken() {
   return randomBytes(32).toString("hex");
+}
+
+function timingSafeEqualString(a: string, b: string): boolean {
+  const aBuf = Buffer.from(a, "utf8");
+  const bBuf = Buffer.from(b, "utf8");
+  if (aBuf.length !== bBuf.length) return false;
+  return timingSafeEqual(aBuf, bBuf);
 }
 
 export const adminPanelAuthService = new Elysia({
@@ -82,7 +89,7 @@ export const adminPanelAuthService = new Elysia({
         where: { token },
         include: { adminPanelUser: true },
       });
-      if (session) {
+      if (session && timingSafeEqualString(token, session.token)) {
         await createAuditLog({
           action: "logout",
           entity: "AdminPanel",
@@ -114,7 +121,11 @@ export const adminPanelAuthService = new Elysia({
       where: { token },
       include: { adminPanelUser: true },
     });
-    if (!session || session.expiresAt < new Date()) {
+    if (
+      !session ||
+      !timingSafeEqualString(token, session.token) ||
+      session.expiresAt < new Date()
+    ) {
       if (session) {
         await prisma.adminPanelSession.delete({ where: { id: session.id } });
       }
@@ -196,7 +207,7 @@ export async function getAdminPanelSession(request: Request): Promise<{
     where: { token },
     include: { adminPanelUser: true },
   });
-  if (!session || session.expiresAt < new Date()) {
+  if (!session || !timingSafeEqualString(token, session.token) || session.expiresAt < new Date()) {
     if (session) {
       await prisma.adminPanelSession.delete({ where: { id: session.id } });
     }
