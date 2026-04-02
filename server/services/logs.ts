@@ -36,6 +36,7 @@ export const logsService = new Elysia({ prefix: "/logs" }).get(
       search: t.Optional(t.String()),
       page: t.Optional(t.String()),
       perPage: t.Optional(t.String()),
+      workspaceId: t.Optional(t.String()),
     }),
   },
 );

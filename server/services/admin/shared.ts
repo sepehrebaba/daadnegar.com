@@ -1,8 +1,8 @@
 import { Elysia } from "elysia";
 import { prisma } from "../../db";
 import { auth as authLib } from "@/lib/auth";
-import { getAdminPanelSession } from "../admin-panel-auth";
-import { documentToServeUrl } from "../upload";
+import { getAdminPanelSession } from "./auth";
+import { documentToServeUrl } from "../panel/upload";
 
 export function mapReportDocuments<
   T extends { documents?: { id: string; name: string; url: string }[] },

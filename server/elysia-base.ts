@@ -11,10 +11,10 @@ const ipGenerator: Generator<{ ip: { address: string } }> = (_r, _s, { ip }) =>
 
 /** Shared middleware stack for all API bundles (public web, admin-only, full dev). */
 export function createBaseElysia() {
-  return new Elysia({ prefix: "/api" })
+  return new Elysia({ prefix: "/api", aot: false })
     .trace(async ({ onBeforeHandle, onAfterHandle, onError }) => {
       onBeforeHandle(({ begin, onStop }) => {
-        onStop(({ set, end }) => {
+        onStop(({ end }) => {
           console.info("BeforeHandle took", { duration: end - begin });
         });
       });
@@ -101,68 +101,66 @@ export function createBaseElysia() {
     );
 }
 
-export function withGlobalHandlers<T extends Elysia>(app: T) {
-  return app
-    .get("/health", () => ({
-      status: "ok",
-      timestamp: new Date().toISOString(),
-    }))
-    .onError(({ code, error, set }) => {
-      const msg = error.response;
-      const err = error instanceof Error ? error : new Error(String(error));
-      const message = msg || err.message;
-      const name = err.name;
-      console.error("API error handler", {
-        name,
-        message,
-        code,
-        stack: err.stack,
-      });
-      set.status =
-        code === "NOT_FOUND"
-          ? 404
-          : err.message === "Unauthorized"
-            ? 401
-            : err.message === "MUST_CHANGE_PASSWORD"
-              ? 403
-              : 500;
+export const globalHandlers = new Elysia()
+  .get("/health", () => ({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+  }))
+  .onError(({ code, error, set }) => {
+    const msg = (error as any).response;
+    const err = error instanceof Error ? error : new Error(String(error));
+    const message = msg || err.message;
+    const name = err.name;
+    console.error("API error handler", {
+      name,
+      message,
+      code,
+      stack: err.stack,
+    });
+    set.status =
+      code === "NOT_FOUND"
+        ? 404
+        : err.message === "Unauthorized"
+          ? 401
+          : err.message === "MUST_CHANGE_PASSWORD"
+            ? 403
+            : 500;
 
-      set.headers["Content-Type"] = "application/json; charset=utf-8";
+    set.headers["Content-Type"] = "application/json; charset=utf-8";
 
-      if (code === "VALIDATION") return error.detail(error.message);
+    if (code === "VALIDATION") return error.detail(error.message);
 
-      if (err.message === "Unauthorized") {
-        return {
-          error: { name: "Unauthorized", message: "Unauthorized" },
-          status: 401,
-        };
-      }
+    if (err.message === "Unauthorized") {
+      return {
+        error: { name: "Unauthorized", message: "Unauthorized" },
+        status: 401,
+      };
+    }
 
-      if (code === "NOT_FOUND") {
-        return {
-          error: { name: "NotFound", message: "Not Found" },
-          status: 404,
-        };
-      }
+    if (code === "NOT_FOUND") {
+      return {
+        error: { name: "NotFound", message: "Not Found" },
+        status: 404,
+      };
+    }
 
-      if (err.message === "MUST_CHANGE_PASSWORD") {
-        return {
-          error: {
-            name: "Forbidden",
-            message: "برای ادامه باید رمز عبور خود را تغییر دهید.",
-            code: "MUST_CHANGE_PASSWORD",
-          },
-          status: 403,
-          code,
-        };
-      }
-
+    if (err.message === "MUST_CHANGE_PASSWORD") {
       return {
         error: {
-          name: "InternalServerError",
-          message: "An unexpected error occurred.",
+          name: "Forbidden",
+          message: "برای ادامه باید رمز عبور خود را تغییر دهید.",
+          code: "MUST_CHANGE_PASSWORD",
         },
-        status: 500,
+        status: 403,
+        code,
       };
-    });
-}
+    }
+
+    return {
+      error: {
+        name: "InternalServerError",
+        message: "An unexpected error occurred.",
+      },
+      status: 500,
+    };
+  });

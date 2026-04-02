@@ -2,14 +2,13 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../../db";
 import { auth as authLib } from "@/lib/auth";
 import { createAuditLog } from "../audit";
-import { getAuditCtx } from "./shared";
 
 /** Admin-panel invite codes, panel user accounts, audit log viewer. */
 export const adminPanelRoutes = new Elysia({ name: "adminPanel" })
   .post(
     "/invitations",
-    async ({ body, request, ip, auth }) => {
-      const { ensureUniqueInviteCode } = await import("../invite");
+    async ({ body }) => {
+      const { ensureUniqueInviteCode } = await import("../panel/invite");
       const firstAdmin = await prisma.admin.findFirst();
       const inviterId = firstAdmin?.userId;
       if (!inviterId) throw new Error("No admin user found to create invitations");
@@ -29,10 +28,6 @@ export const adminPanelRoutes = new Elysia({ name: "adminPanel" })
         details: JSON.stringify({
           code: invite.code,
           assignedRole: invite.assignedRole,
-        }),
-        ctx: getAuditCtx(auth, {
-          ip,
-          userAgent: request.headers.get("user-agent") ?? undefined,
         }),
       });
       const baseURL =
@@ -63,7 +58,7 @@ export const adminPanelRoutes = new Elysia({ name: "adminPanel" })
   })
   .post(
     "/panel-users",
-    async ({ body, request, ip, auth }) => {
+    async ({ body }) => {
       const ctx = await authLib.$context;
       const passwordHash = await ctx.password.hash(body.password);
       const user = await prisma.adminPanelUser.create({
@@ -74,10 +69,6 @@ export const adminPanelRoutes = new Elysia({ name: "adminPanel" })
         entity: "AdminPanelUser",
         entityId: user.id,
         details: JSON.stringify({ username: user.username }),
-        ctx: getAuditCtx(auth, {
-          ip,
-          userAgent: request.headers.get("user-agent") ?? undefined,
-        }),
       });
       return {
         id: user.id,
@@ -99,6 +90,7 @@ export const adminPanelRoutes = new Elysia({ name: "adminPanel" })
     const page = Number(query.page ?? 1);
     const perPage = Math.min(Number(query.perPage ?? 50), 100);
     const skip = (page - 1) * perPage;
+
     const [data, total] = await Promise.all([
       prisma.auditLog.findMany({
         where,

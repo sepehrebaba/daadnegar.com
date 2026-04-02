@@ -34,12 +34,17 @@ export default function AdminLoginPage() {
       body: JSON.stringify({ username, password }),
     });
 
-    const data = (await res.json()) as { error?: string; success?: boolean };
-    if (!res.ok) {
-      setError(data.error || "خطا در ورود");
+    let data;
+    try {
+      data = (await res.json()) as { error?: string; success?: boolean };
+    } catch {}
+
+    if (!res.ok || !data || data.error) {
+      setError(data?.error || "خطا در ورود");
       setIsLoading(false);
       return;
     }
+
     router.replace("/admin");
     router.refresh();
   };
