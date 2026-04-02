@@ -36,10 +36,10 @@ import { toPersianNum } from "@/lib/utils";
 import { Eye, Filter, X } from "lucide-react";
 
 type AssignmentRow = {
-  assignedAt: string;
-  acceptedAt?: string | null;
+  assignedAt: Date | string;
+  acceptedAt?: Date | string | null;
   reason: string;
-  replacedAt?: string | null;
+  replacedAt?: Date | string | null;
   validator: { id: string; name: string; username: string };
 };
 
@@ -51,13 +51,13 @@ type QueueReport = {
   id: string;
   status: string;
   description: string;
-  createdAt: string;
-  assignedAt?: string | null;
+  createdAt: Date | string;
+  assignedAt?: Date | string | null;
   person: { firstName: string; lastName: string };
   user: { name: string; username: string };
   assignedToUser?: { id: string; name: string; username: string } | null;
   validatorAssignments?: AssignmentRow[];
-  reviews: { action: string; createdAt: string; reviewerId?: string | null }[];
+  reviews: { action: string; createdAt: Date | string; reviewerId?: string | null }[];
   city?: string | null;
   occurrenceDate?: string | null;
   wantsContact?: boolean | null;

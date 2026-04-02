@@ -38,7 +38,7 @@ type PendingPerson = {
   mobile?: string | null;
   phone?: string | null;
   status: string;
-  createdAt: string;
+  createdAt: Date | string;
 };
 
 const FIELD_LABELS: Record<string, string> = {

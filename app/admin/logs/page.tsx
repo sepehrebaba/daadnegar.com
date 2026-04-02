@@ -21,7 +21,7 @@ type Log = {
   entityId?: string | null;
   details?: string | null;
   ipAddress?: string | null;
-  createdAt: string;
+  createdAt: Date | string;
   user?: { id: string; name: string; username: string } | null;
 };
 
@@ -37,12 +37,7 @@ export default function AdminLogsPage() {
     const params: Record<string, string | number> = { page, perPage: 50 };
     if (entity) params.entity = entity;
     const { data } = await api.admin["audit-logs"].get(params);
-    setLogs(
-      (data?.data ?? []).map((l) => ({
-        ...l,
-        createdAt: l.createdAt instanceof Date ? l.createdAt.toISOString() : l.createdAt,
-      })),
-    );
+    setLogs(data?.data ?? []);
     setTotal(data?.total ?? 0);
     setLoading(false);
   };

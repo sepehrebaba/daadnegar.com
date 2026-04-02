@@ -34,7 +34,7 @@ type ReportReview = {
   rejectionTier?: string | null;
   rejectionCode?: string | null;
   reviewerComment?: string | null;
-  createdAt: string;
+  createdAt: Date | string;
   reviewerId?: string | null;
   reviewer?: { id: string; name: string; username: string } | null;
 };
@@ -42,9 +42,9 @@ type ReportReview = {
 type ValidatorAssignment = {
   id: string;
   validatorId: string;
-  assignedAt: string;
-  acceptedAt?: string | null;
-  replacedAt?: string | null;
+  assignedAt: Date | string;
+  acceptedAt?: Date | string | null;
+  replacedAt?: Date | string | null;
   reason: string;
   validator: { id: string; name: string; username: string };
 };
@@ -55,8 +55,8 @@ type ReportDetail = {
   description: string;
   status: string;
   rejectionReason?: string | null;
-  assignedAt?: string | null;
-  reviewedAt?: string | null;
+  assignedAt?: Date | string | null;
+  reviewedAt?: Date | string | null;
   reviews?: ReportReview[];
   validatorAssignments?: ValidatorAssignment[];
   organizationType?: string | null;
@@ -73,8 +73,8 @@ type ReportDetail = {
   contactEmail?: string | null;
   contactPhone?: string | null;
   contactSocial?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
   person: {
     id: string;
     firstName: string;
@@ -127,7 +127,7 @@ function assignmentReasonLabel(reason: string): string {
 }
 
 function assignmentForReview(
-  review: { reviewerId?: string | null; createdAt: string },
+  review: { reviewerId?: string | null; createdAt: Date | string },
   assignments?: ValidatorAssignment[],
 ): ValidatorAssignment | null {
   const list = assignments ?? [];

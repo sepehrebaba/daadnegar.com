@@ -23,7 +23,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserPlus } from "lucide-react";
 
-type PanelUser = { id: string; username: string; createdAt: string };
+type PanelUser = { id: string; username: string; createdAt: Date | string };
 
 export default function AdminPanelUsersPage() {
   const [panelUsers, setPanelUsers] = useState<PanelUser[]>([]);

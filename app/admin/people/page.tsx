@@ -41,14 +41,14 @@ type Person = {
   imageUrl?: string | null;
   title?: string | null;
   organization?: string | null;
-  dateOfBirth?: string | null;
+  dateOfBirth?: Date | string | null;
   address?: string | null;
   mobile?: string | null;
   phone?: string | null;
   isFamous: boolean;
   status?: string | null;
-  createdAt?: string | null;
-  updatedAt?: string | null;
+  createdAt?: Date | string | null;
+  updatedAt?: Date | string | null;
 };
 
 export default function AdminPeoplePage() {
