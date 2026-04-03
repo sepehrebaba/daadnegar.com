@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Languages, Moon, Monitor, Sun, KeyRound } from "lucide-react";
-import { useApp } from "@/context/app-context";
+import { useLanguage } from "@/context/language-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 
 export default function AdminUserSettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { state, setLanguage } = useApp();
+  const { language, setLanguage } = useLanguage();
   const [panelUsername, setPanelUsername] = useState<string | null>(null);
   const [panelMeReady, setPanelMeReady] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
@@ -103,7 +103,7 @@ export default function AdminUserSettingsPage() {
         <CardContent className="flex flex-wrap gap-2">
           <Button
             type="button"
-            variant={state.language === "fa" ? "default" : "outline"}
+            variant={language === "fa" ? "default" : "outline"}
             className="min-w-32 flex-1 gap-2"
             onClick={() => setLanguage("fa")}
           >
@@ -111,7 +111,7 @@ export default function AdminUserSettingsPage() {
           </Button>
           <Button
             type="button"
-            variant={state.language === "en" ? "default" : "outline"}
+            variant={language === "en" ? "default" : "outline"}
             className="min-w-32 flex-1 gap-2"
             onClick={() => setLanguage("en")}
           >

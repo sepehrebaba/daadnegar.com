@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Languages, Settings, Sun, Moon, Monitor, User } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
+import { useLanguage } from "@/context/language-context";
 
 export function SettingsForm() {
   const { theme, setTheme } = useTheme();
-  const { state, setLanguage } = useApp();
+  const { user } = useUser();
+  const { language, setLanguage } = useLanguage();
 
   return (
     <>
@@ -24,7 +26,7 @@ export function SettingsForm() {
           <h3 className="text-foreground text-sm font-medium">زبان</h3>
           <div className="flex gap-2">
             <Button
-              variant={state.language === "fa" ? "default" : "outline"}
+              variant={language === "fa" ? "default" : "outline"}
               className="flex-1 gap-2"
               onClick={() => setLanguage("fa")}
             >
@@ -32,7 +34,7 @@ export function SettingsForm() {
               فارسی
             </Button>
             <Button
-              variant={state.language === "en" ? "default" : "outline"}
+              variant={language === "en" ? "default" : "outline"}
               className="flex-1 gap-2"
               onClick={() => setLanguage("en")}
             >
@@ -73,7 +75,7 @@ export function SettingsForm() {
         <div className="border-border my-2 border-t" />
         <div className="text-foreground/80 flex items-center justify-center gap-2 text-center text-sm font-medium">
           <User className="text-muted-foreground h-4 w-4" />
-          {state.user?.username ?? "—"}
+          {user?.username ?? "—"}
         </div>
       </CardContent>
     </>

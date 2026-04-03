@@ -1,5 +1,5 @@
-import { RedirectValidatorsFromUserReportFlow } from "@/components/panel/redirect-validators-from-user-report-flow";
+import { ReportProvider } from "@/context/report-context";
 
 export default function ReportWizardLayout({ children }: { children: React.ReactNode }) {
-  return <RedirectValidatorsFromUserReportFlow>{children}</RedirectValidatorsFromUserReportFlow>;
+  return <ReportProvider>{children}</ReportProvider>;
 }

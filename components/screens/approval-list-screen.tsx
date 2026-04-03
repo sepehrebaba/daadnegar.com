@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -123,7 +123,6 @@ function StatusLegendTable() {
 
 export function ApprovalListScreen() {
   const router = useRouter();
-  const { getPendingRequests } = useApp();
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingRequests, setPendingRequests] = useState<ReportCase[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,11 +130,15 @@ export function ApprovalListScreen() {
   const itemsPerPage = 5;
 
   useEffect(() => {
-    getPendingRequests()
-      .then(setPendingRequests)
+    api.reports.pending
+      .get()
+      .then(({ data, error }) => {
+        if (error) throw new Error(String(error));
+        setPendingRequests((data ?? []) as unknown as ReportCase[]);
+      })
       .catch(() => setPendingRequests([]))
       .finally(() => setLoading(false));
-  }, [getPendingRequests]);
+  }, []);
   const totalPages = Math.ceil(pendingRequests.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentRequests = pendingRequests.slice(startIndex, startIndex + itemsPerPage);

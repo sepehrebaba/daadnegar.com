@@ -2,17 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { api, getInviteToken } from "@/lib/edyen";
+import { useUser } from "@/context/user-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Fingerprint } from "lucide-react";
+import type { User } from "@/types";
+
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message) || fallback;
+  }
+  return fallback;
+}
 
 export function PasskeyRegisterScreen() {
   const router = useRouter();
-  const { registerPasskey, setUser } = useApp();
+  const { setUser } = useUser();
   const [passkey, setPasskey] = useState("");
   const [confirmPasskey, setConfirmPasskey] = useState("");
   const [error, setError] = useState("");
@@ -21,8 +30,6 @@ export function PasskeyRegisterScreen() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    console.log("[v0] User attempting to register passkey");
 
     if (passkey.length < 6) {
       setError("رمز عبور باید حداقل ۶ کاراکتر باشد");
@@ -36,15 +43,33 @@ export function PasskeyRegisterScreen() {
 
     setIsLoading(true);
 
-    const result = await registerPasskey(passkey);
-
-    if (result.ok) {
-      setUser(result.user);
-      router.push(routes.mainMenu);
-    } else {
-      setError(result.error);
+    const token = getInviteToken();
+    if (!token) {
+      setError("لطفاً ابتدا کد دعوت را وارد کنید");
+      setIsLoading(false);
+      return;
     }
 
+    const { data, error: apiError } = await api.invite.register.post({ token, passkey });
+    if (apiError || !data) {
+      setError(extractErrorMessage(apiError, "خطا در ثبت رمز عبور"));
+      setIsLoading(false);
+      return;
+    }
+    const result = data as { ok?: boolean; error?: string; user?: User };
+    if (!result.ok) {
+      setError(result.error ?? "خطا در ثبت رمز عبور");
+      setIsLoading(false);
+      return;
+    }
+    if (!result.user) {
+      setError("خطا در دریافت اطلاعات کاربر");
+      setIsLoading(false);
+      return;
+    }
+
+    setUser(result.user);
+    router.push(routes.mainMenu);
     setIsLoading(false);
   };
 

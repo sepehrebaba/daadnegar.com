@@ -2,14 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { routes } from "@/lib/routes";
 
-/** Validators should not see the report wizard or “my requests”. */
+/** Validators should not see the report wizard or "my requests". */
 export function RedirectValidatorsFromUserReportFlow({ children }: { children: React.ReactNode }) {
-  const { state } = useApp();
+  const { user } = useUser();
   const router = useRouter();
-  const block = state.user?.role === "validator";
+  const block = user?.role === "validator";
 
   useEffect(() => {
     if (block) router.replace(routes.mainMenu);

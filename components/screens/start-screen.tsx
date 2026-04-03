@@ -1,16 +1,18 @@
 "use client";
 
-import { useApp } from "@/context/app-context";
+import { useRouter } from "next/navigation";
+import { useLanguage } from "@/context/language-context";
+import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function StartScreen() {
-  const { navigate, setLanguage } = useApp();
+  const router = useRouter();
+  const { setLanguage } = useLanguage();
 
   const handleLanguageSelect = (lang: "fa" | "en") => {
-    console.log("[v0] User selected language:", lang);
     setLanguage(lang);
-    navigate("welcome");
+    router.push(routes.home);
   };
 
   return (

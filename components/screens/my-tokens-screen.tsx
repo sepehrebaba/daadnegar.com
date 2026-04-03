@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { api } from "@/lib/edyen";
 import { formatTimeAgo, toPersianNum } from "@/lib/utils";
 import { DAADNEGAR_INVITE_TOKEN_KEY } from "@/lib/edyen";
@@ -39,8 +39,7 @@ type Transaction = {
 
 export function MyTokensScreen() {
   const router = useRouter();
-  const { state, setUser } = useApp();
-  const user = state.user;
+  const { user, setUser } = useUser();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
 

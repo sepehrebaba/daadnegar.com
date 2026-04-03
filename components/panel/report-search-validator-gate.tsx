@@ -2,13 +2,12 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { routes } from "@/lib/routes";
 
 export function ReportSearchValidatorGate({ children }: { children: React.ReactNode }) {
-  const { state } = useApp();
+  const { user } = useUser();
   const router = useRouter();
-  const user = state.user;
   const allowed = user?.role === "validator";
 
   useEffect(() => {

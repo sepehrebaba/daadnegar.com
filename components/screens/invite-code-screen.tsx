@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { api, setInviteTokenStorage } from "@/lib/edyen";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,9 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, KeyRound } from "lucide-react";
 
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message) || fallback;
+  }
+  return fallback;
+}
+
 export function InviteCodeScreen() {
   const router = useRouter();
-  const { validateInviteCode } = useApp();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,13 +28,20 @@ export function InviteCodeScreen() {
     setError("");
     setIsLoading(true);
 
-    const result = await validateInviteCode(code);
-
-    if (result.ok) {
-      router.push(`${routes.register}?code=${encodeURIComponent(code)}`);
-    } else {
-      setError(result.error);
+    const { data, error: apiError } = await api.invite.validate.post({ code });
+    if (apiError || !data) {
+      setError(extractErrorMessage(apiError, "کد دعوت نامعتبر است"));
+      setIsLoading(false);
+      return;
     }
+    const result = data as { ok?: boolean; error?: string; token?: string; hasPasskey?: boolean };
+    if (!result.ok) {
+      setError(result.error ?? "کد دعوت نامعتبر است");
+      setIsLoading(false);
+      return;
+    }
+    setInviteTokenStorage(result.token);
+    router.push(`${routes.register}?code=${encodeURIComponent(code)}`);
 
     setIsLoading(false);
   };

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -10,8 +10,7 @@ import { KeyRound, LogIn, UserCircle, ShieldCheck, FileText, ArrowLeft } from "l
 import { routes } from "@/lib/routes";
 
 export function WelcomeScreen() {
-  const { state } = useApp();
-  const user = state.user;
+  const { user } = useUser();
 
   return (
     <div className="w-full">

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -15,9 +15,9 @@ import { ReportWizardProgress } from "@/components/report-wizard-progress";
 
 export function ReportBasicInfoScreen() {
   const router = useRouter();
-  const { updateReport, state } = useApp();
-  const [title, setTitle] = useState(state.currentReport?.title || "");
-  const [description, setDescription] = useState(state.currentReport?.description || "");
+  const { updateReport, currentReport } = useReport();
+  const [title, setTitle] = useState(currentReport?.title || "");
+  const [description, setDescription] = useState(currentReport?.description || "");
 
   const titleLength = title.length;
   const descriptionLength = description.length;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
@@ -27,10 +27,10 @@ type CategoryFromApi = {
 
 export function ReportCategoryScreen() {
   const router = useRouter();
-  const { updateReport, state } = useApp();
+  const { updateReport, currentReport } = useReport();
   const [categories, setCategories] = useState<CategoryFromApi[]>([]);
-  const [categoryId, setCategoryId] = useState(state.currentReport?.categoryId || "");
-  const [subcategoryId, setSubcategoryId] = useState(state.currentReport?.subcategoryId || "");
+  const [categoryId, setCategoryId] = useState(currentReport?.categoryId || "");
+  const [subcategoryId, setSubcategoryId] = useState(currentReport?.subcategoryId || "");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

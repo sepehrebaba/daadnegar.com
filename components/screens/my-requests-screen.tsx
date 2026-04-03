@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { api } from "@/lib/edyen";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,19 +29,21 @@ const statusConfig: Record<RequestStatus, { label: string; icon: typeof Clock; c
 
 export function MyRequestsScreen() {
   const router = useRouter();
-  const { getMyRequests } = useApp();
   const [requests, setRequests] = useState<ReportCase[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getMyRequests()
-      .then(setRequests)
+    api.reports.my
+      .get()
+      .then(({ data, error }) => {
+        if (error) throw new Error(String(error));
+        setRequests((data ?? []) as unknown as ReportCase[]);
+      })
       .catch(() => setRequests([]))
       .finally(() => setLoading(false));
-  }, [getMyRequests]);
+  }, []);
 
   const handleSelectRequest = (request: (typeof requests)[0]) => {
-    console.log("[v0] User selected request:", request.id);
     router.push(routes.requestDetail(request.id));
   };
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -32,19 +32,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function ReportEvidenceScreen() {
   const router = useRouter();
-  const { updateReport, state } = useApp();
+  const { updateReport, currentReport } = useReport();
   const [hasEvidence, setHasEvidence] = useState<"yes" | "no" | "">(
-    state.currentReport?.hasEvidence === true
-      ? "yes"
-      : state.currentReport?.hasEvidence === false
-        ? "no"
-        : "",
+    currentReport?.hasEvidence === true ? "yes" : currentReport?.hasEvidence === false ? "no" : "",
   );
   const [evidenceTypes, setEvidenceTypes] = useState<EvidenceType[]>(
-    state.currentReport?.evidenceTypes ?? [],
+    currentReport?.evidenceTypes ?? [],
   );
   const [evidenceFiles, setEvidenceFiles] = useState<{ name: string; url: string }[]>(
-    (state.currentReport?.documents ?? []).map((d, i) =>
+    (currentReport?.documents ?? []).map((d, i) =>
       typeof d === "string"
         ? { name: `doc-${i}`, url: d }
         : {
@@ -54,7 +50,7 @@ export function ReportEvidenceScreen() {
     ),
   );
   const [evidenceDescription, setEvidenceDescription] = useState(
-    state.currentReport?.evidenceDescription ?? "",
+    currentReport?.evidenceDescription ?? "",
   );
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");

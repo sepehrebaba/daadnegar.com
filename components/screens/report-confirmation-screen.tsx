@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { ArrowRight, CheckCircle, Shield } from "lucide-react";
 
 export function ReportConfirmationScreen() {
   const router = useRouter();
-  const { updateReport, submitReport, state } = useApp();
+  const { updateReport, submitReport, currentReport } = useReport();
   const [confirmAccuracy, setConfirmAccuracy] = useState(false);
   const [confirmNoPersonalInfo, setConfirmNoPersonalInfo] = useState(false);
   const [confirmProcessAgreement, setConfirmProcessAgreement] = useState(false);
@@ -51,12 +51,10 @@ export function ReportConfirmationScreen() {
           <div className="bg-muted/50 space-y-2 rounded-lg p-4">
             <h3 className="text-sm font-semibold">خلاصه گزارش:</h3>
             <p className="text-sm">
-              <span className="text-muted-foreground">عنوان:</span>{" "}
-              {state.currentReport?.title || "-"}
+              <span className="text-muted-foreground">عنوان:</span> {currentReport?.title || "-"}
             </p>
             <p className="text-sm">
-              <span className="text-muted-foreground">استان:</span>{" "}
-              {state.currentReport?.province || "-"}
+              <span className="text-muted-foreground">استان:</span> {currentReport?.province || "-"}
             </p>
           </div>
 

@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
+import { useLanguage } from "@/context/language-context";
 import { SettingsModal } from "@/components/settings-modal";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -50,8 +51,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const appVersion = process.env.NEXT_PUBLIC_APP_VERSION;
-  const { state, setLanguage, setUser, logout } = useApp();
-  const user = state.user;
+  const { user, setUser, logout } = useUser();
+  const { language, setLanguage } = useLanguage();
   const isSettingsOpen = searchParams.get("settings") === "open";
 
   const closeSettings = () => {
@@ -122,7 +123,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            {user ? (
+            {user != null ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
@@ -165,19 +166,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
                     <Languages className="h-4 w-4" />
-                    {state.language === "fa" ? "فارسی" : "English"}
+                    {language === "fa" ? "فارسی" : "English"}
                     <ChevronDown />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="bottom">
                   <DropdownMenuCheckboxItem
-                    checked={state.language === "fa"}
+                    checked={language === "fa"}
                     onCheckedChange={() => setLanguage("fa")}
                   >
                     فارسی
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
-                    checked={state.language === "en"}
+                    checked={language === "en"}
                     onCheckedChange={() => setLanguage("en")}
                   >
                     English

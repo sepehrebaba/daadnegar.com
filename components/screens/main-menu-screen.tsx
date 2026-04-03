@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,8 +24,7 @@ import { api } from "@/lib/edyen";
 
 export function MainMenuScreen() {
   const router = useRouter();
-  const { state, startReport, setUser, logout } = useApp();
-  const user = state.user;
+  const { user, setUser, logout } = useUser();
   const [minApprovedForApproval, setMinApprovedForApproval] = useState(5);
   const [pendingReviewCount, setPendingReviewCount] = useState<number | null>(null);
   const [reportsEnabled, setReportsEnabled] = useState(true);
@@ -137,7 +136,6 @@ export function MainMenuScreen() {
               <Button
                 onClick={() => {
                   if (!reportsEnabled) return;
-                  startReport();
                   router.push(routes.reportCategory);
                 }}
                 className="w-full justify-start gap-3 py-6 text-base font-black"

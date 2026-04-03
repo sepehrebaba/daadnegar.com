@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { routes } from "@/lib/routes";
 import { getAppBaseUrl } from "@/lib/app-base-url";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,7 @@ import { api } from "@/lib/edyen";
 
 export function LoginScreen() {
   const router = useRouter();
-  const { setUser } = useApp();
+  const { setUser } = useUser();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

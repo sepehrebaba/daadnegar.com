@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
@@ -27,12 +27,10 @@ type CategoryWithChildren = {
 
 export default function ReportCategoryPage() {
   const router = useRouter();
-  const { updateReport, state, startReport } = useApp();
+  const { updateReport, currentReport, startReport } = useReport();
   const [categories, setCategories] = useState<CategoryWithChildren[]>([]);
-  const [categoryId, setCategoryId] = useState<string>(state.currentReport?.categoryId ?? "");
-  const [subcategoryId, setSubcategoryId] = useState<string>(
-    state.currentReport?.subcategoryId ?? "",
-  );
+  const [categoryId, setCategoryId] = useState<string>(currentReport?.categoryId ?? "");
+  const [subcategoryId, setSubcategoryId] = useState<string>(currentReport?.subcategoryId ?? "");
 
   useEffect(() => {
     startReport();

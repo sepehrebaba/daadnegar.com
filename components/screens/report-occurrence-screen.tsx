@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,12 +16,12 @@ import { cn } from "@/lib/utils";
 
 export function ReportOccurrenceScreen() {
   const router = useRouter();
-  const { updateReport, state } = useApp();
+  const { updateReport, currentReport } = useReport();
   const [frequency, setFrequency] = useState<OccurrenceFrequency | "">(
-    (state.currentReport?.occurrenceFrequency as OccurrenceFrequency) ?? "",
+    (currentReport?.occurrenceFrequency as OccurrenceFrequency) ?? "",
   );
   const [date, setDate] = useState<Date | undefined>(
-    state.currentReport?.occurrenceDate ? new Date(state.currentReport.occurrenceDate) : undefined,
+    currentReport?.occurrenceDate ? new Date(currentReport.occurrenceDate) : undefined,
   );
 
   const [hydrate, setHydrate] = useState(false);

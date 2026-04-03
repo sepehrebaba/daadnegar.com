@@ -2,17 +2,26 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { api, getInviteToken } from "@/lib/edyen";
+import { useUser } from "@/context/user-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, KeyRound } from "lucide-react";
+import type { User } from "@/types";
+
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message) || fallback;
+  }
+  return fallback;
+}
 
 export function PasskeyVerifyScreen() {
   const router = useRouter();
-  const { verifyPasskey, setUser } = useApp();
+  const { setUser } = useUser();
   const [passkey, setPasskey] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,15 +31,33 @@ export function PasskeyVerifyScreen() {
     setError("");
     setIsLoading(true);
 
-    const result = await verifyPasskey(passkey);
-
-    if (result.ok) {
-      setUser(result.user);
-      router.push(routes.mainMenu);
-    } else {
-      setError(result.error);
+    const token = getInviteToken();
+    if (!token) {
+      setError("لطفاً ابتدا کد دعوت را وارد کنید");
+      setIsLoading(false);
+      return;
     }
 
+    const { data, error: apiError } = await api.invite.verify.post({ token, passkey });
+    if (apiError || !data) {
+      setError(extractErrorMessage(apiError, "رمز عبور نادرست است"));
+      setIsLoading(false);
+      return;
+    }
+    const result = data as { ok?: boolean; error?: string; user?: User };
+    if (!result.ok) {
+      setError(result.error ?? "رمز عبور نادرست است");
+      setIsLoading(false);
+      return;
+    }
+    if (!result.user) {
+      setError("خطا در دریافت اطلاعات کاربر");
+      setIsLoading(false);
+      return;
+    }
+
+    setUser(result.user);
+    router.push(routes.mainMenu);
     setIsLoading(false);
   };
 

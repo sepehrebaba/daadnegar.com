@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { routes } from "@/lib/routes";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
@@ -46,7 +46,7 @@ const PASSWORD_REQUIREMENTS = [
 
 export function ChangePasswordScreen() {
   const router = useRouter();
-  const { setUser } = useApp();
+  const { setUser } = useUser();
   const [checking, setChecking] = useState(true);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

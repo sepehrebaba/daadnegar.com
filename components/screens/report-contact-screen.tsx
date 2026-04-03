@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,13 +13,13 @@ import { ReportWizardProgress } from "@/components/report-wizard-progress";
 
 export function ReportContactScreen() {
   const router = useRouter();
-  const { updateReport, state } = useApp();
+  const { updateReport, currentReport } = useReport();
   const [wantsContact, setWantsContact] = useState<"yes" | "no">(
-    state.currentReport?.wantsContact ? "yes" : "no",
+    currentReport?.wantsContact ? "yes" : "no",
   );
-  const [email, setEmail] = useState(state.currentReport?.contactEmail ?? "");
-  const [phone, setPhone] = useState(state.currentReport?.contactPhone ?? "");
-  const [social, setSocial] = useState(state.currentReport?.contactSocial ?? "");
+  const [email, setEmail] = useState(currentReport?.contactEmail ?? "");
+  const [phone, setPhone] = useState(currentReport?.contactPhone ?? "");
+  const [social, setSocial] = useState(currentReport?.contactSocial ?? "");
 
   const handleNext = () => {
     updateReport({

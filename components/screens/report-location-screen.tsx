@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
@@ -22,13 +22,13 @@ import { ReportWizardProgress } from "@/components/report-wizard-progress";
 
 export function ReportLocationScreen() {
   const router = useRouter();
-  const { updateReport, state } = useApp();
+  const { updateReport, currentReport } = useReport();
   const [provinces, setProvinces] = useState<
     { id: string; name: string; cities: { id: string; name: string }[] }[]
   >([]);
-  const [provinceId, setProvinceId] = useState(state.currentReport?.province ?? "");
-  const [cityId, setCityId] = useState(state.currentReport?.city ?? "");
-  const [exactLocation, setExactLocation] = useState(state.currentReport?.exactLocation ?? "");
+  const [provinceId, setProvinceId] = useState(currentReport?.province ?? "");
+  const [cityId, setCityId] = useState(currentReport?.city ?? "");
+  const [exactLocation, setExactLocation] = useState(currentReport?.exactLocation ?? "");
 
   useEffect(() => {
     api.constants.provinces.get().then(({ data }) => {

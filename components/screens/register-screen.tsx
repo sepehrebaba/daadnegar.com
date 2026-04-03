@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useUser } from "@/context/user-context";
 import { api } from "@/lib/edyen";
 import { setInviteTokenStorage } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
@@ -47,7 +47,7 @@ const PASSWORD_REQUIREMENTS = [
 export function RegisterScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setUser } = useApp();
+  const { setUser } = useUser();
   const codeParam = searchParams.get("code");
 
   const [username, setUsername] = useState("");

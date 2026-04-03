@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -21,13 +21,11 @@ import { ORGANIZATION_TYPES, type OrganizationType } from "@/types";
 
 export function ReportOrganizationScreen() {
   const router = useRouter();
-  const { updateReport, state } = useApp();
+  const { updateReport, currentReport } = useReport();
   const [organizationType, setOrganizationType] = useState<OrganizationType | "">(
-    (state.currentReport?.organizationType as OrganizationType) || "",
+    (currentReport?.organizationType as OrganizationType) || "",
   );
-  const [organizationName, setOrganizationName] = useState(
-    state.currentReport?.organizationName || "",
-  );
+  const [organizationName, setOrganizationName] = useState(currentReport?.organizationName || "");
 
   const isValid = organizationType !== "";
 

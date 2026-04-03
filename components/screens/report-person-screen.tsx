@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useApp } from "@/context/app-context";
+import { useReport } from "@/context/report-context";
 import { routes } from "@/lib/routes";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
@@ -43,17 +43,17 @@ import type { Person } from "@/types";
 
 export function ReportPersonScreen() {
   const router = useRouter();
-  const { updateReport, state, getFamousPeople, setReportPerson } = useApp();
+  const { updateReport, currentReport, setReportPerson } = useReport();
   const [hasInvolvedPerson, setHasInvolvedPerson] = useState<"yes" | "no" | "">(
-    state.currentReport?.hasInvolvedPerson === true
+    currentReport?.hasInvolvedPerson === true
       ? "yes"
-      : state.currentReport?.hasInvolvedPerson === false
+      : currentReport?.hasInvolvedPerson === false
         ? "no"
         : "",
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(
-    state.currentReport?.involvedPerson || state.currentReport?.person || null,
+    currentReport?.involvedPerson || currentReport?.person || null,
   );
   const [showAddNew, setShowAddNew] = useState(false);
   const [showSimilarWarning, setShowSimilarWarning] = useState(false);
@@ -72,10 +72,13 @@ export function ReportPersonScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getFamousPeople(searchQuery)
-      .then(setFamousPeople)
+    api.people.famous
+      .get({ query: { search: searchQuery || undefined } })
+      .then(({ data, error }) => {
+        if (!error && data) setFamousPeople(data as Person[]);
+      })
       .finally(() => setLoading(false));
-  }, [getFamousPeople, searchQuery]);
+  }, [searchQuery]);
 
   const filteredPeople = useMemo(() => {
     if (!searchQuery) return famousPeople;
@@ -160,7 +163,8 @@ export function ReportPersonScreen() {
     if (!newPersonFirstName || !newPersonLastName) return;
     const firstName = newPersonFirstName.trim();
     const lastName = newPersonLastName.trim();
-    const similar = await getFamousPeople(firstName);
+    const { data: similarData } = await api.people.famous.get({ query: { search: firstName } });
+    const similar = (similarData as Person[]) ?? [];
     const hasSimilar = similar.some(
       (p) =>
         p.firstName.trim().toLowerCase() === firstName.toLowerCase() &&
