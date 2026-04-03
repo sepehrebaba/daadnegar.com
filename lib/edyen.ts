@@ -6,8 +6,8 @@ export const DAADNEGAR_INVITE_TOKEN_KEY = "daadnegar_invite_token";
 export const daadnegar_INVITE_TOKEN_COOKIE = "daadnegar_invite_token";
 
 /** Sets invite token in both localStorage and cookie (for middleware auth check). */
-export function setInviteTokenStorage(token: string) {
-  if (typeof window === "undefined") return;
+export function setInviteTokenStorage(token?: string) {
+  if (typeof window === "undefined" || !token) return;
   localStorage.setItem(DAADNEGAR_INVITE_TOKEN_KEY, token);
   document.cookie = `${daadnegar_INVITE_TOKEN_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=31536000; samesite=strict`;
 }
@@ -19,7 +19,7 @@ export function clearInviteTokenStorage() {
   document.cookie = `${daadnegar_INVITE_TOKEN_COOKIE}=; path=/; max-age=0`;
 }
 
-function getInviteToken(): string | null {
+export function getInviteToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY);
 }

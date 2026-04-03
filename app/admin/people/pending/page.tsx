@@ -55,7 +55,7 @@ const FIELD_LABELS: Record<string, string> = {
   imageUrl: "لینک تصویر",
 };
 
-function formatDate(d: string | null | undefined) {
+function formatDate(d: Date | string | null | undefined) {
   if (!d) return "—";
   const date = new Date(d);
   return date.toLocaleDateString("fa-IR");
@@ -132,7 +132,7 @@ export default function AdminPendingPeoplePage() {
 
   const searchExistingPerson = async () => {
     if (!mergeSearch.trim()) return;
-    const { data } = await api.admin.people.get({ search: mergeSearch.trim() });
+    const { data } = await api.admin.people.get({ query: { search: mergeSearch.trim() } });
     const list = (data?.data ?? []) as PendingPerson[];
     setMergeResults(list.filter((p) => p.id !== selectedPerson?.id));
   };
@@ -174,7 +174,21 @@ export default function AdminPendingPeoplePage() {
     if (!selectedPerson || !mergeTarget) return;
     setActionLoading(true);
     try {
-      const body: Record<string, string | undefined> = {
+      const body: {
+        targetPersonId: string;
+        firstName?: string;
+        lastName?: string;
+        fatherName?: string;
+        nationalCode?: string;
+        imageUrl?: string;
+        title?: string;
+        organization?: string;
+        dateOfBirth?: string;
+        address?: string;
+        mobile?: string;
+        phone?: string;
+        [key: string]: string | undefined;
+      } = {
         targetPersonId: mergeTarget.id,
       };
       for (const [k, v] of Object.entries(mergedFields)) {

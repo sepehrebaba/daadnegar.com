@@ -26,7 +26,7 @@ export function toPersianNum(n: number | string): string {
 }
 
 /** Relative time in Persian: now, N minutes ago, N hours ago, etc. */
-export function formatTimeAgo(dateStr: string): string {
+export function formatTimeAgo(dateStr: Date | string): string {
   const date = new Date(dateStr);
   const now = new Date();
   const sec = Math.floor((now.getTime() - date.getTime()) / 1000);

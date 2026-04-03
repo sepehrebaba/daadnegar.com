@@ -89,7 +89,7 @@ function reportStatusLabel(status: string): {
   return { label: "در انتظار بررسی", variant: "secondary" };
 }
 
-function formatDateTime(iso: string) {
+function formatDateTime(iso: Date | string) {
   return new Date(iso).toLocaleDateString("fa-IR", {
     year: "numeric",
     month: "long",

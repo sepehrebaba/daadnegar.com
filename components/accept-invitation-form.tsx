@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth-client";
-import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
+import { api, setInviteTokenStorage } from "@/lib/edyen";
+import { isValidPublicUsername, normalizeUsername } from "@/lib/username";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,20 +32,29 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
     }
     setIsLoading(true);
 
-    const { data, error: acceptError } = await authClient.acceptInvitation({
-      invitationId,
-      name: name || undefined,
-      email: u ? usernameToInternalEmail(u) : undefined,
-      password,
+    const { data, error: acceptError } = await api.invite["register-by-code"].post({
+      code: invitationId,
+      username: u || invitationId,
+      passkey: password,
     });
 
     if (acceptError) {
-      setError(acceptError.message || "خطا در پذیرش دعوت. لطفاً دوباره تلاش کنید.");
+      setError("خطا در پذیرش دعوت. لطفاً دوباره تلاش کنید.");
       setIsLoading(false);
       return;
     }
 
-    if (data?.user) {
+    if (!data?.ok) {
+      setError((data as { error?: string })?.error || "پذیرش دعوت با خطا مواجه شد.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (data.token) {
+      setInviteTokenStorage(data.token);
+    }
+
+    if (data.user) {
       router.push("/");
     } else {
       setError("پذیرش دعوت با خطا مواجه شد.");

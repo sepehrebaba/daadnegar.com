@@ -1,18 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from "react";
 import type { AppState, AppScreen, Language, User, ReportCase, Person } from "@/types";
-import {
-  api,
-  DAADNEGAR_INVITE_TOKEN_KEY,
-  setInviteTokenStorage,
-  clearInviteTokenStorage,
-} from "@/lib/edyen";
+import { api, getInviteToken, setInviteTokenStorage, clearInviteTokenStorage } from "@/lib/edyen";
 import { authClient } from "@/lib/auth-client";
 import { routes } from "@/lib/routes";
 
 export type ValidateInviteResult =
-  | { ok: true; token: string; hasPasskey: boolean }
+  | { ok: true; token?: string; hasPasskey?: boolean }
   | { ok: false; error: string };
 
 export type PasskeyResult = { ok: true; user: User } | { ok: false; error: string };
@@ -58,112 +53,84 @@ const initialState: AppState = {
   selectedRequest: null,
 };
 
-// Screen history for back navigation
-let screenHistory: AppScreen[] = ["welcome"];
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === "object" && "message" in error) {
+    return String((error as { message: unknown }).message) || fallback;
+  }
+  return fallback;
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>(initialState);
+  const screenHistory = useRef<AppScreen[]>(["welcome"]);
 
   const navigate = useCallback((screen: AppScreen) => {
-    console.log("[v0] Navigating to:", screen);
-    screenHistory.push(screen);
+    screenHistory.current.push(screen);
     setState((prev) => ({ ...prev, currentScreen: screen }));
   }, []);
 
   const goBack = useCallback(() => {
-    if (screenHistory.length > 1) {
-      screenHistory.pop();
-      const previousScreen = screenHistory[screenHistory.length - 1];
-      console.log("[v0] Going back to:", previousScreen);
+    if (screenHistory.current.length > 1) {
+      screenHistory.current.pop();
+      const previousScreen = screenHistory.current[screenHistory.current.length - 1];
       setState((prev) => ({ ...prev, currentScreen: previousScreen }));
     }
   }, []);
 
   const setLanguage = useCallback((lang: Language) => {
-    console.log("[v0] Language set to:", lang);
     setState((prev) => ({ ...prev, language: lang }));
   }, []);
 
   const validateInviteCode = useCallback(async (code: string): Promise<ValidateInviteResult> => {
     const { data, error } = await api.invite.validate.post({ code });
     if (error || !data) {
-      return {
-        ok: false,
-        error: (error as Error)?.message ?? "کد دعوت نامعتبر است",
-      };
+      return { ok: false, error: extractErrorMessage(error, "کد دعوت نامعتبر است") };
     }
-    if (!("ok" in data) || !data.ok) {
-      return {
-        ok: false,
-        error: (data as { error?: string }).error ?? "کد دعوت نامعتبر است",
-      };
+    const result = data as { ok?: boolean; error?: string; token?: string; hasPasskey?: boolean };
+    if (!result.ok) {
+      return { ok: false, error: result.error ?? "کد دعوت نامعتبر است" };
     }
-    const { token, hasPasskey } = data;
-    setInviteTokenStorage(token);
-    return { ok: true, token, hasPasskey };
+    setInviteTokenStorage(result.token);
+    return { ok: true, token: result.token, hasPasskey: result.hasPasskey };
   }, []);
 
   const registerPasskey = useCallback(async (passkey: string): Promise<PasskeyResult> => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
-    if (!token) {
-      return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
-    }
-    const { data, error } = await api.invite.register.post({
-      token,
-      passkey,
-    });
+    const token = getInviteToken();
+    if (!token) return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
+
+    const { data, error } = await api.invite.register.post({ token, passkey });
     if (error || !data) {
-      return {
-        ok: false,
-        error: (error as Error)?.message ?? "خطا در ثبت رمز عبور",
-      };
+      return { ok: false, error: extractErrorMessage(error, "خطا در ثبت رمز عبور") };
     }
-    if (!("ok" in data) || !data.ok) {
-      return {
-        ok: false,
-        error: (data as { error?: string }).error ?? "خطا در ثبت رمز عبور",
-      };
-    }
-    const user = (data as { user?: User }).user;
-    if (!user) return { ok: false, error: "خطا در دریافت اطلاعات کاربر" };
-    setState((prev) => ({ ...prev, user }));
-    return { ok: true, user };
+    const result = data as { ok?: boolean; error?: string; user?: User };
+    if (!result.ok) return { ok: false, error: result.error ?? "خطا در ثبت رمز عبور" };
+    if (!result.user) return { ok: false, error: "خطا در دریافت اطلاعات کاربر" };
+
+    setState((prev) => ({ ...prev, user: result.user! }));
+    return { ok: true, user: result.user };
   }, []);
 
   const verifyPasskey = useCallback(async (passkey: string): Promise<PasskeyResult> => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
-    if (!token) {
-      return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
-    }
+    const token = getInviteToken();
+    if (!token) return { ok: false, error: "لطفاً ابتدا کد دعوت را وارد کنید" };
+
     const { data, error } = await api.invite.verify.post({ token, passkey });
     if (error || !data) {
-      return {
-        ok: false,
-        error: (error as Error)?.message ?? "رمز عبور نادرست است",
-      };
+      return { ok: false, error: extractErrorMessage(error, "رمز عبور نادرست است") };
     }
-    if (!("ok" in data) || !data.ok) {
-      return {
-        ok: false,
-        error: (data as { error?: string }).error ?? "رمز عبور نادرست است",
-      };
-    }
-    const user = (data as { user?: User }).user;
-    if (!user) return { ok: false, error: "خطا در دریافت اطلاعات کاربر" };
-    setState((prev) => ({ ...prev, user }));
-    return { ok: true, user };
+    const result = data as { ok?: boolean; error?: string; user?: User };
+    if (!result.ok) return { ok: false, error: result.error ?? "رمز عبور نادرست است" };
+    if (!result.user) return { ok: false, error: "خطا در دریافت اطلاعات کاربر" };
+
+    setState((prev) => ({ ...prev, user: result.user! }));
+    return { ok: true, user: result.user };
   }, []);
 
   const setUser = useCallback((user: User | null) => {
-    console.log("[v0] Setting user:", user);
-    // TODO: API call to save/update user
     setState((prev) => ({ ...prev, user }));
   }, []);
 
   const startReport = useCallback(() => {
-    console.log("[v0] Starting new report");
     setState((prev) => ({
       ...prev,
       currentReport: { id: crypto.randomUUID() },
@@ -178,7 +145,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setReportPerson = useCallback((person: Person) => {
-    console.log("[v0] Setting report person:", person);
     setState((prev) => ({
       ...prev,
       currentReport: { ...prev.currentReport, person, personId: person.id },
@@ -186,7 +152,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setReportDocuments = useCallback((docs: string[]) => {
-    console.log("[v0] Setting report documents:", docs);
     setState((prev) => ({
       ...prev,
       currentReport: { ...prev.currentReport, documents: docs },
@@ -194,7 +159,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setReportDescription = useCallback((desc: string) => {
-    console.log("[v0] Setting report description:", desc);
     setState((prev) => ({
       ...prev,
       currentReport: { ...prev.currentReport, description: desc },
@@ -204,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const submitReport = useCallback(async (): Promise<{ tokensAwarded?: number } | undefined> => {
     const report = state.currentReport;
     if (!report?.personId || !report?.description) return;
+
     const { data, error } = await api.reports.post({
       personId: report.personId,
       description: report.description,
@@ -224,35 +189,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
       contactEmail: report.contactEmail,
       contactPhone: report.contactPhone,
       contactSocial: report.contactSocial,
-      documents: (report.documents ?? []).map((url, i) =>
-        typeof url === "string" ? { name: `doc-${i}`, url } : url,
-      ),
+      documents: (report.documents ?? []).map((url, i) => ({ name: `doc-${i}`, url })),
     });
     if (error) throw new Error(String(error));
+
     setState((prev) => ({ ...prev, currentReport: null }));
-    // New tokens (e.g. invite_activity) are recorded by the backend; reload user
+
     const { data: me } = await api.me.get();
     if (me) {
-      const m = me as {
-        tokensCount?: number;
-        approvedRequestsCount?: number;
-        mustChangePassword?: boolean;
-      };
+      const { tokensCount, approvedRequestsCount, mustChangePassword } = me as Pick<
+        User,
+        "tokensCount" | "approvedRequestsCount" | "mustChangePassword"
+      >;
       setState((prev) => ({
         ...prev,
         user: prev.user
           ? {
               ...prev.user,
-              tokensCount: m.tokensCount ?? 0,
-              approvedRequestsCount: m.approvedRequestsCount ?? 0,
-              mustChangePassword: m.mustChangePassword ?? prev.user.mustChangePassword,
+              tokensCount: tokensCount ?? 0,
+              approvedRequestsCount: approvedRequestsCount ?? 0,
+              mustChangePassword: mustChangePassword ?? prev.user.mustChangePassword,
             }
           : null,
       }));
     }
-    return {
-      tokensAwarded: (data as { tokensAwarded?: number })?.tokensAwarded,
-    };
+
+    return { tokensAwarded: (data as { tokensAwarded?: number })?.tokensAwarded };
   }, [state.currentReport]);
 
   const selectRequest = useCallback((request: ReportCase) => {
@@ -288,18 +250,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getMyRequests = useCallback(async () => {
     const { data, error } = await api.reports.my.get();
     if (error) throw new Error(String(error));
-    return (data ?? []) as ReportCase[];
+    return data ?? [];
   }, []);
 
   const getPendingRequests = useCallback(async () => {
     const { data, error } = await api.reports.pending.get();
     if (error) throw new Error(String(error));
-    return (data ?? []) as ReportCase[];
+    return data ?? [];
   }, []);
 
   const logout = useCallback(async () => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) : null;
+    const token = getInviteToken();
     if (token) {
       await fetch("/api/me/logout", {
         method: "POST",

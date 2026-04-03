@@ -160,7 +160,15 @@ export interface ReportCase {
   userId: string;
   personId: string;
   person: Person;
-  documents: string[];
+  documents: Array<
+    Partial<{
+      id: string;
+      name: string;
+      createdAt: Date;
+      url: string;
+      reportId: string;
+    }>
+  >;
   description: string;
   status: RequestStatus;
   createdAt: Date;
@@ -189,6 +197,9 @@ export interface ReportCase {
   contactSocial?: string;
   /** Only set on the pending-list API response for reviewers */
   listReviewerStatus?: ReviewerListStatus | null;
+  confirmAccuracy?: boolean;
+  confirmNoPersonalInfo?: boolean;
+  confirmProcessAgreement?: boolean;
 }
 
 export interface AppState {

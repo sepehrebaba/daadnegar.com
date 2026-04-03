@@ -12,7 +12,6 @@ export const routes = {
   passkeyRegister: "/auth/passkey/register",
   passkeyVerify: "/auth/passkey/verify",
   mainMenu: "/panel",
-  settings: "/panel/settings",
   myTokens: "/panel/my-tokens",
   reportCategory: "/panel/report/category",
   reportBasicInfo: "/panel/report/basic-info",

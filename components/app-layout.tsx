@@ -54,15 +54,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const user = state.user;
   const isSettingsOpen = searchParams.get("settings") === "open";
 
-  const openSettings = () => {
-    router.push(`${pathname}?settings=open`);
-  };
-
   const closeSettings = () => {
     router.replace(pathname ?? "/");
   };
-
-  const handleLogout = logout;
 
   // Show logout toast after redirect (full page load)
   useEffect(() => {
@@ -88,6 +82,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       (localStorage.getItem(DAADNEGAR_INVITE_TOKEN_KEY) || document.cookie.includes("better-auth"));
     if (!hasAuth) return;
     let cancelled = false;
+
     api.me.get().then(({ data, error }) => {
       if (cancelled || error || !data) return;
       setUser({
@@ -103,6 +98,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         mustChangePassword: (data as { mustChangePassword?: boolean }).mustChangePassword ?? false,
       } as Parameters<typeof setUser>[0]);
     });
+
     return () => {
       cancelled = true;
     };
@@ -198,16 +194,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Settings modal */}
       {user && (
-        <SettingsModal
-          open={isSettingsOpen}
-          onOpenChange={(open) => !open && closeSettings()}
-          onLogout={() => logout()}
-        />
+        <SettingsModal open={isSettingsOpen} onOpenChange={(open) => !open && closeSettings()} />
       )}
 
       {/* Footer - visible on all pages */}
       <footer className="border-border bg-muted/30 border-t px-4 py-4 pt-8">
-        {/* Links below the card */}
         <div className="mb-4 flex flex-row justify-center gap-5 sm:mb-6 sm:gap-7">
           <Link
             href={routes.home}

@@ -111,7 +111,7 @@ function InfoRow({
   );
 }
 
-function formatDateTime(iso: string) {
+function formatDateTime(iso: string | Date) {
   return new Date(iso).toLocaleDateString("fa-IR", {
     year: "numeric",
     month: "long",
@@ -169,7 +169,7 @@ function ReportTimeline({ report }: { report: ReportDetail }) {
 
   const steps: {
     label: string;
-    date?: string | null;
+    date?: Date | string | null;
     status: StepStatus;
   }[] = [
     {

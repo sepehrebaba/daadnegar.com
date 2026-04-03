@@ -34,7 +34,7 @@ type Transaction = {
   id: string;
   amount: number;
   type: string;
-  createdAt: string;
+  createdAt: Date | string;
 };
 
 export function MyTokensScreen() {

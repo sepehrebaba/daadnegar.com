@@ -96,7 +96,7 @@ export function ReportEvidenceScreen() {
         evidenceTypes: hasEvidence === "yes" ? evidenceTypes : undefined,
         evidenceDescription:
           hasEvidence === "yes" && evidenceDescription ? evidenceDescription : undefined,
-        documents: hasEvidence === "yes" ? evidenceFiles.map((f) => f.url) : [],
+        documents: hasEvidence === "yes" ? evidenceFiles : [],
       });
       router.push(routes.reportContact);
     }
