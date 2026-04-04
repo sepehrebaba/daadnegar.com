@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { resolveAdminAuth } from "./shared";
+import { adminGuard, resolveAdminAuth } from "./shared";
 import { adminSettingsRoutes } from "./settings";
 import { adminCategoriesRoutes } from "./categories";
 import { adminGeoRoutes } from "./geo";
@@ -9,9 +9,7 @@ import { adminReportsRoutes } from "./reports";
 import { adminPanelRoutes } from "./panel";
 
 export const adminService = new Elysia({ prefix: "/admin" })
-  .derive(async ({ request }) => ({
-    auth: await resolveAdminAuth(request),
-  }))
+  .use(adminGuard)
   .get("/me", () => ({ ok: true }))
   .use(adminSettingsRoutes)
   .use(adminCategoriesRoutes)

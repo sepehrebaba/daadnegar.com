@@ -1,10 +1,11 @@
 import { Elysia, t } from "elysia";
 import { prisma } from "../../db";
 import { createAuditLog } from "../audit";
-import { getAuditCtx } from "./shared";
+import { adminGuard, getAuditCtx } from "./shared";
 
 // /people/pending must come before /people (so "pending" is not captured as :id)
 export const adminPeopleRoutes = new Elysia({ name: "adminPeople" })
+  .use(adminGuard)
   .get(
     "/people/pending",
     async ({ query }) => {

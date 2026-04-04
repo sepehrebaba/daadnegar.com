@@ -1,8 +1,8 @@
-import amqp, { Channel, Connection } from "amqplib";
+import amqp, { Channel, ChannelModel } from "amqplib";
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL ?? "amqp://guest:guest@localhost:5672";
 
-let connection: Connection | null = null;
+let connection: ChannelModel | null = null;
 let channel: Channel | null = null;
 
 function resetConnection(): void {
@@ -97,19 +97,6 @@ export async function publishReportTokenSettlement(reportId: string): Promise<bo
  */
 export async function publishValidatorDemoted(validatorId: string): Promise<boolean> {
   return publish(QUEUE_NAMES.VALIDATOR_DEMOTED, { validatorId });
-}
-
-/**
- * Publish slack notification event.
- */
-export async function publishSlackNotification(
-  webhookUrl: string,
-  notification: object,
-): Promise<boolean> {
-  return publish(QUEUE_NAMES.SLACK_NOTIFICATION, {
-    webhookUrl,
-    notification,
-  });
 }
 
 /**

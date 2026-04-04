@@ -1,9 +1,10 @@
 import { Elysia, t } from "elysia";
 import { prisma } from "../../db";
 import { createAuditLog } from "../audit";
-import { getAuditCtx } from "./shared";
+import { adminGuard, getAuditCtx } from "./shared";
 
 export const adminCategoriesRoutes = new Elysia({ name: "adminCategories" })
+  .use(adminGuard)
   .get("/categories", async () => {
     const data = await prisma.category.findMany({
       orderBy: { sortOrder: "asc" },

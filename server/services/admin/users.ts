@@ -2,7 +2,7 @@ import { Elysia, t } from "elysia";
 import { prisma } from "../../db";
 import { auth as authLib } from "@/lib/auth";
 import { createAuditLog } from "../audit";
-import { getAuditCtx } from "./shared";
+import { adminGuard, getAuditCtx } from "./shared";
 import { addTokenTransaction, TOKEN_TRANSACTION_TYPES } from "../../lib/token-transaction";
 import { getSettingNumber, SETTING_KEYS } from "../../lib/settings";
 import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } from "@/lib/username";
@@ -10,6 +10,7 @@ import { generateRandomPassword } from "@/lib/password-utils";
 import { publishValidatorDemoted } from "@/lib/rabbitmq";
 
 export const adminUsersRoutes = new Elysia({ name: "adminUsers" })
+  .use(adminGuard)
   .get("/users", async () => {
     const data = await prisma.user.findMany({
       select: {

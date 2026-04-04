@@ -1,9 +1,10 @@
 import { Elysia, t } from "elysia";
 import { prisma } from "../../db";
 import { createAuditLog } from "../audit";
-import { getAuditCtx } from "./shared";
+import { adminGuard, getAuditCtx } from "./shared";
 
 export const adminGeoRoutes = new Elysia({ name: "adminGeo" })
+  .use(adminGuard)
   .get("/provinces", async () => {
     const data = await prisma.province.findMany({
       include: { cities: { orderBy: { sortOrder: "asc" } } },

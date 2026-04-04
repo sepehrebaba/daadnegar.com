@@ -1,9 +1,10 @@
 import { Elysia, t } from "elysia";
 import { getAllSettings, setSettings, SETTING_KEYS, type SettingsMap } from "../../lib/settings";
 import { createAuditLog } from "../audit";
-import { getAuditCtx } from "./shared";
+import { adminGuard, getAuditCtx } from "./shared";
 
 export const adminSettingsRoutes = new Elysia({ name: "adminSettings" })
+  .use(adminGuard)
   .get("/settings", async () => {
     const data = await getAllSettings();
     return { data };

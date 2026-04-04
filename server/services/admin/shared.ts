@@ -1,4 +1,5 @@
 import { Elysia } from "elysia";
+import { ip } from "elysia-ip";
 import { prisma } from "../../db";
 import { auth as authLib } from "@/lib/auth";
 import { getAdminPanelSession } from "./auth";
@@ -42,7 +43,7 @@ export async function resolveAdminAuth(request: Request): Promise<AdminAuth> {
 
 export function getAuditCtx(
   auth: AdminAuth | undefined,
-  ctx: { ip?: { address?: string }; userAgent?: string },
+  ctx: { ip?: string; userAgent?: string },
 ): {
   userId?: string;
   adminPanelUserId?: string;
@@ -52,7 +53,7 @@ export function getAuditCtx(
 } {
   if (!auth) {
     return {
-      ipAddress: ctx.ip?.address,
+      ipAddress: ctx.ip,
       userAgent: ctx.userAgent,
     };
   }
@@ -60,11 +61,13 @@ export function getAuditCtx(
     userId: auth.type === "user" ? auth.session.user.id : undefined,
     adminPanelUserId: auth.type === "panel" ? auth.adminPanelUser.id : undefined,
     adminPanelUsername: auth.type === "panel" ? auth.adminPanelUser.username : undefined,
-    ipAddress: ctx.ip?.address,
+    ipAddress: ctx.ip,
     userAgent: ctx.userAgent,
   };
 }
 
-export const adminGuard = new Elysia({ name: "adminGuard" }).derive(async ({ request }) => ({
-  auth: await resolveAdminAuth(request),
-}));
+export const adminGuard = new Elysia({ name: "adminGuard" })
+  .use(ip())
+  .derive({ as: "scoped" }, async ({ request }) => ({
+    auth: await resolveAdminAuth(request),
+  }));
