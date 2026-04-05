@@ -49,13 +49,13 @@ FROM base AS release-web
 RUN apt update && apt install -y dumb-init --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=node:node --from=build-web /app/package.json /app/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts && chown -R node:node node_modules
 
 COPY --chown=node:node --from=build-web /app/.next ./.next
 COPY --chown=node:node --from=build-web /app/public ./public
 COPY --chown=node:node --from=build-web /app/prisma ./prisma
 COPY --chown=node:node --from=build-web /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build-web /app/generated/prisma ./generated/prisma
+COPY --chown=node:node --from=build-web /app/generated/prisma ./generated/prisma
 
 COPY --chown=node:node --from=build-web /app/tsconfig.json ./tsconfig.json
 COPY --chown=node:node --from=build-web /app/workers ./workers
@@ -78,13 +78,13 @@ FROM base AS release-admin
 RUN apt update && apt install -y dumb-init --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
 COPY --chown=node:node --from=build-admin /app/package.json /app/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts && chown -R node:node node_modules
 
 COPY --chown=node:node --from=build-admin /app/.next ./.next
 COPY --chown=node:node --from=build-admin /app/public ./public
 COPY --chown=node:node --from=build-admin /app/prisma ./prisma
 COPY --chown=node:node --from=build-admin /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build-admin /app/generated/prisma ./generated/prisma
+COPY --chown=node:node --from=build-admin /app/generated/prisma ./generated/prisma
 
 COPY --chown=node:node --from=build-admin /app/tsconfig.json ./tsconfig.json
 COPY --chown=node:node --from=build-admin /app/workers ./workers
