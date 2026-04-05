@@ -1,10 +1,11 @@
 import { Elysia, t } from "elysia";
 import { prisma } from "../../db";
 import { createAuditLog } from "../audit";
-import { getAuditCtx, mapReportDocuments } from "./shared";
+import { adminGuard, getAuditCtx, mapReportDocuments } from "./shared";
 import { syncReportPrimaryAssignee } from "../../lib/report-validator-assignment";
 
 export const adminReportsRoutes = new Elysia({ name: "adminReports" })
+  .use(adminGuard)
   .get("/reports/pending-count", async () => {
     const count = await prisma.report.count({ where: { status: "pending" } });
     return { count };

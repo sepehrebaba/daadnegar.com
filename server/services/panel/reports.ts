@@ -1,4 +1,6 @@
 import { Elysia, t } from "elysia";
+import { ip } from "elysia-ip";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "../../db";
 import { createAuditLog } from "../audit";
 import { auth } from "@/lib/auth";
@@ -82,6 +84,7 @@ function parseValidatorReject(body: {
 }
 
 export const reportsService = new Elysia({ prefix: "/reports" })
+  .use(ip())
   .derive(async ({ request }) => {
     let session = await getSession(request.headers);
     if (!session?.user && request.headers) {
@@ -94,13 +97,13 @@ export const reportsService = new Elysia({ prefix: "/reports" })
             email: inviteUser.email,
             username: inviteUser.username,
             image: null,
-            emailVerified: null,
+            emailVerified: false,
             role: inviteUser.role ?? "user",
             createdAt: new Date(),
             updatedAt: new Date(),
           },
           session: null,
-        };
+        } as unknown as NonNullable<Awaited<ReturnType<typeof getSession>>>;
       }
     }
     if (session?.user?.id) {
@@ -168,7 +171,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
         details: JSON.stringify({ personId: body.personId }),
         ctx: {
           userId: session.user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -255,7 +258,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
       const fromDate = fromRaw ? new Date(fromRaw) : null;
       const toDate = toRaw ? new Date(toRaw) : null;
 
-      const where: Parameters<typeof prisma.report.findMany>[0]["where"] = {
+      const where: Prisma.ReportWhereInput = {
         isPublic: true,
         status: "accepted",
       };
@@ -329,7 +332,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
     },
   )
   .get("/public/filters", async () => {
-    const baseWhere: Parameters<typeof prisma.report.findMany>[0]["where"] = {
+    const baseWhere: Prisma.ReportWhereInput = {
       isPublic: true,
       status: "accepted",
     };
@@ -362,7 +365,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
   .get(
     "/public/person/:personId",
     async ({ params }) => {
-      const baseWhere: Parameters<typeof prisma.report.findMany>[0]["where"] = {
+      const baseWhere: Prisma.ReportWhereInput = {
         personId: params.personId,
         isPublic: true,
         status: "accepted",
@@ -816,7 +819,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
         entityId: report.id,
         ctx: {
           userId: session.user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -922,7 +925,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
           entityId: report.id,
           ctx: {
             userId: session.user.id,
-            ipAddress: ip?.address,
+            ipAddress: ip,
             userAgent: request.headers.get("user-agent") ?? undefined,
           },
         });
@@ -987,7 +990,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
         details: JSON.stringify({ phase: finalized ? "finalized" : "vote", vote: "accepted" }),
         ctx: {
           userId: session.user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -1083,7 +1086,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
           details: JSON.stringify({ rejectionReason: rr }),
           ctx: {
             userId: session.user.id,
-            ipAddress: ip?.address,
+            ipAddress: ip,
             userAgent: request.headers.get("user-agent") ?? undefined,
           },
         });
@@ -1165,7 +1168,7 @@ export const reportsService = new Elysia({ prefix: "/reports" })
         }),
         ctx: {
           userId: session.user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });

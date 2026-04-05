@@ -12,10 +12,11 @@ export const adminSettingsRoutes = new Elysia({ name: "adminSettings" })
   .put(
     "/settings",
     async ({ body, request, ip, auth }) => {
-      const allowedKeys = new Set(Object.values(SETTING_KEYS));
+      const allowedKeys = new Set<string>(Object.values(SETTING_KEYS));
       const toSet: SettingsMap = {};
       for (const [key, value] of Object.entries(body)) {
-        if (allowedKeys.has(key)) toSet[key] = value;
+        if (!allowedKeys.has(key) || value === undefined) continue;
+        toSet[key] = value;
       }
       await setSettings(toSet);
       await createAuditLog({

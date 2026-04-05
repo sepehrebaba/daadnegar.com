@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "../../db";
 import { createAuditLog } from "../audit";
 import { adminGuard, getAuditCtx } from "./shared";
@@ -9,7 +10,7 @@ export const adminPeopleRoutes = new Elysia({ name: "adminPeople" })
   .get(
     "/people/pending",
     async ({ query }) => {
-      const where: { status: "pending"; OR?: unknown[] } = {
+      const where: Prisma.PersonWhereInput = {
         status: "pending",
       };
       const s = query.search?.trim();
@@ -37,7 +38,7 @@ export const adminPeopleRoutes = new Elysia({ name: "adminPeople" })
     },
   )
   .get("/people", async ({ query }) => {
-    const where: Record<string, unknown> = {};
+    const where: Prisma.PersonWhereInput = {};
     if (query.pending !== "true") {
       where.status = "approved";
     }

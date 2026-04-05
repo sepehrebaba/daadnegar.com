@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { ip } from "elysia-ip";
 import { prisma } from "../../db";
 import { createAuditLog } from "../audit";
 import { auth } from "@/lib/auth";
@@ -10,8 +11,7 @@ import { isValidPublicUsername, normalizeUsername, usernameToInternalEmail } fro
 import { assertPasswordChangeNotRequired } from "../../lib/must-change-password";
 import { DefaultContext, type Generator, rateLimit } from "elysia-rate-limit";
 
-const ipGenerator: Generator<{ ip: { address: string } }> = (_r, _s, { ip }) =>
-  (ip as { address?: string } | undefined)?.address ?? "unknown";
+const ipGenerator: Generator<{ ip: string }> = (_r, _s, { ip }) => ip ?? "unknown";
 
 const TOKEN_EXPIRY_DAYS = 365;
 const MIN_ACCOUNT_AGE_DAYS_FOR_INVITE = 3;
@@ -44,6 +44,7 @@ export async function ensureUniqueInviteCode(): Promise<string> {
 }
 
 export const inviteService = new Elysia({ prefix: "/invite" })
+  .use(ip())
   .post(
     "/validate",
     async ({ body, request, ip }) => {
@@ -99,7 +100,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         entityId: claimed.inviteCode.id,
         details: JSON.stringify({ code: claimed.inviteCode.code }),
         ctx: {
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -185,7 +186,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         details: JSON.stringify({ inviteCode: session.inviteCode.code }),
         ctx: {
           userId: user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -248,7 +249,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         details: JSON.stringify({ inviteCode: session.inviteCode?.code }),
         ctx: {
           userId: user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -417,7 +418,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         details: JSON.stringify({ code, type: body.type }),
         ctx: {
           userId: inviterId ?? undefined,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
@@ -612,7 +613,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         }),
         ctx: {
           userId: user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });

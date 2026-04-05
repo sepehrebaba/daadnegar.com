@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { ip } from "elysia-ip";
 import { prisma } from "../../db";
 import { auth } from "@/lib/auth";
 import { resolveInviteToken } from "../../lib/auth-invite";
@@ -9,6 +10,7 @@ async function getSession(headers: Headers) {
 }
 
 export const peopleService = new Elysia({ prefix: "/people" })
+  .use(ip())
   .derive(async ({ request }) => {
     let session = await getSession(request.headers);
     if (!session?.user && request.headers) {
@@ -21,13 +23,13 @@ export const peopleService = new Elysia({ prefix: "/people" })
             email: inviteUser.email,
             username: inviteUser.username,
             image: null,
-            emailVerified: null,
+            emailVerified: false,
             role: inviteUser.role ?? "user",
             createdAt: new Date(),
             updatedAt: new Date(),
           },
           session: null,
-        };
+        } as unknown as NonNullable<Awaited<ReturnType<typeof getSession>>>;
       }
     }
     return { session };
@@ -94,7 +96,7 @@ export const peopleService = new Elysia({ prefix: "/people" })
         }),
         ctx: {
           userId: session.user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });

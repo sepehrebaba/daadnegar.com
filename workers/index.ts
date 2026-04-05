@@ -1,5 +1,5 @@
 import "dotenv/config";
-import amqp, { type Channel, type Connection } from "amqplib";
+import amqp, { type Channel, type ChannelModel } from "amqplib";
 import { QUEUE_NAMES, REPORT_SUBMITTED_MESSAGE_TYPE } from "@/lib/rabbitmq";
 import { handleReportAssign, handleReportQueueStaleScan } from "./handlers/report-assign";
 import { handleReportTokenSettlement } from "./handlers/report-token-settlement";
@@ -14,7 +14,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 let shuttingDown = false;
-const active: { connection?: Connection; channel?: Channel } = {};
+const active: { connection?: ChannelModel; channel?: Channel } = {};
 
 async function main() {
   process.on("SIGTERM", async () => {
@@ -35,7 +35,7 @@ async function main() {
       "[worker] Connecting to RabbitMQ at",
       RABBITMQ_URL.replace(/\/\/.*@/, "//<credentials>@"),
     );
-    let connection: Connection;
+    let connection: ChannelModel;
     try {
       connection = await amqp.connect(RABBITMQ_URL);
     } catch (err) {

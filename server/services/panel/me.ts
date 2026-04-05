@@ -1,4 +1,5 @@
 import { Elysia, t } from "elysia";
+import { ip } from "elysia-ip";
 import { prisma } from "../../db";
 import { auth } from "@/lib/auth";
 import { createAuditLog } from "../audit";
@@ -11,6 +12,7 @@ async function getSession(headers: Headers) {
 }
 
 export const meService = new Elysia({ prefix: "/me" })
+  .use(ip())
   .post("/logout", async ({ request, ip }) => {
     const authHeader = request.headers.get("Authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -28,7 +30,7 @@ export const meService = new Elysia({ prefix: "/me" })
             details: JSON.stringify({ inviteCode: session.inviteCode?.code }),
             ctx: {
               userId: session.userId,
-              ipAddress: ip?.address,
+              ipAddress: ip,
               userAgent: request.headers.get("user-agent") ?? undefined,
             },
           });
@@ -50,13 +52,13 @@ export const meService = new Elysia({ prefix: "/me" })
             email: inviteUser.email,
             username: inviteUser.username,
             image: null,
-            emailVerified: null,
+            emailVerified: false,
             role: inviteUser.role ?? "user",
             createdAt: new Date(),
             updatedAt: new Date(),
           },
           session: null,
-        };
+        } as unknown as NonNullable<Awaited<ReturnType<typeof getSession>>>;
       }
     }
     return { session };
@@ -90,7 +92,7 @@ export const meService = new Elysia({ prefix: "/me" })
       isActivated: true,
       tokensCount: user?.tokenBalance ?? 0,
       approvedRequestsCount,
-      role: user?.role ?? session.user.role ?? "user",
+      role: user?.role ?? "user",
       minApprovedReportsForApproval,
       mustChangePassword: user?.mustChangePassword ?? false,
     };
@@ -150,7 +152,7 @@ export const meService = new Elysia({ prefix: "/me" })
         details: JSON.stringify({ field: "password", selfService: true }),
         ctx: {
           userId: ba.user.id,
-          ipAddress: ip?.address,
+          ipAddress: ip,
           userAgent: request.headers.get("user-agent") ?? undefined,
         },
       });
