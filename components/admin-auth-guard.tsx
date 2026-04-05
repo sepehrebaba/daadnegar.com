@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { api } from "@/lib/edyen";
+import { getAppBaseUrl } from "@/lib/app-base-url";
+import { getInviteToken } from "@/lib/edyen";
 
+/** Uses fetch instead of Eden `api.admin` so this file type-checks when `App` is the web-only bundle (Docker `build-web`). */
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -16,8 +18,14 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     const check = async () => {
-      const { data, error } = await api.admin.categories.get();
-      if (error) {
+      const token = getInviteToken();
+      const headers = new Headers();
+      if (token) headers.set("Authorization", `Bearer ${token}`);
+      const res = await fetch(`${getAppBaseUrl()}/api/admin/me`, {
+        credentials: "include",
+        headers,
+      });
+      if (!res.ok) {
         router.replace("/admin/login");
         return;
       }
