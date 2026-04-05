@@ -1,5 +1,5 @@
 import { treaty } from "@elysiajs/eden";
-import type { App } from "@/server/app";
+import type { App } from "@/server/app-api-types";
 import { getAppBaseUrl } from "@/lib/app-base-url";
 
 export const DAADNEGAR_INVITE_TOKEN_KEY = "daadnegar_invite_token";
