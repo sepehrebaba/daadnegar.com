@@ -20,3 +20,4 @@ daadnegar-chart/secrets.yaml.dec
 daadnegar-chart/secrets-stage.yaml.dec
 daadnegar-chart/.sops.yaml
 daadnegar-chart/.sops-stage.yaml
+daadnegar-chart/secrests

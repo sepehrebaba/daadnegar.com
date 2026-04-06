@@ -227,6 +227,7 @@ jobs:
             --set-string ingress.tls[0].hosts[0]=daadnegar.com \
             --set-string ingress.tls[0].hosts[1]=www.daadnegar.com \
             --set tor.enabled=true \
+            --set tor.existingKeySecret=daadnegar-tor-keys \
             -f daadnegar-chart/secrets.yaml \
             --wait --timeout 5m
 
