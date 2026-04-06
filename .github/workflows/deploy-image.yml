@@ -238,7 +238,7 @@ jobs:
           for i in $(seq 1 12); do
             ONION=$(kubectl exec -n production \
               deploy/daadnegar-daadnegar-chart-tor \
-              -- cat /var/lib/tor/hidden_service/hostname 2>/dev/null || true)
+              -- cat /tor-data/hidden_service/hostname 2>/dev/null || true)
             if [ -n "$ONION" ]; then
               echo "::notice title=Tor .onion address::http://${ONION}"
               break

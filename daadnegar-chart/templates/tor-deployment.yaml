@@ -31,12 +31,9 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       initContainers:
-        # Pre-create the HiddenServiceDir owned by uid 101 before Tor starts.
-        # /tmp/tor-data (DataDirectory) is created by Tor itself in /tmp which
-        # is world-writable, so no ownership issue there. /tor-data (the PVC)
-        # needs this directory to exist with uid 101 ownership so Tor's
-        # check_private_dir() check passes. fsGroup gives supplemental gid 101
-        # and group-write on the PVC root, so mkdir succeeds as uid 101.
+        # tor-data is an emptyDir so fsGroup makes it drwxrwsr-x (group-write).
+        # Running as uid 101 we can always create the hidden_service directory
+        # here regardless of storage-class permissions on the PVC.
         - name: tor-dir-init
           image: busybox:1.36
           securityContext:
@@ -49,9 +46,33 @@ spec:
           volumeMounts:
             - name: tor-data
               mountPath: /tor-data
+        {{- if .Values.tor.persistence.enabled }}
+        # Restore previously generated keypair from the PVC into the emptyDir so
+        # the .onion address survives pod restarts even without existingKeySecret.
+        # Failures are silent — a fresh keypair is generated if nothing is found.
+        - name: tor-pvc-restore
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 101
+            runAsGroup: 101
+          command:
+            - sh
+            - -c
+            - |
+              if [ -f /tor-pvc/hidden_service/hs_ed25519_secret_key ]; then
+                cp /tor-pvc/hidden_service/* /tor-data/hidden_service/ 2>/dev/null || true
+                chmod 600 /tor-data/hidden_service/* 2>/dev/null || true
+              fi
+          volumeMounts:
+            - name: tor-data
+              mountPath: /tor-data
+            - name: tor-data-pvc
+              mountPath: /tor-pvc
+              readOnly: true
+        {{- end }}
         {{- if .Values.tor.existingKeySecret }}
-        # Copy the pinned v3 keypair into the (already created) hidden service
-        # directory so the .onion address is stable across pod restarts.
+        # Copy the pinned v3 keypair from the Secret into the emptyDir.
+        # Runs last so it takes precedence over any PVC-restored keys.
         - name: tor-key-init
           image: busybox:1.36
           securityContext:
@@ -95,17 +116,46 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+        {{- if and .Values.tor.persistence.enabled (empty .Values.tor.existingKeySecret) }}
+        # Periodically sync the generated keypair from the emptyDir back to the
+        # PVC so it survives pod restarts (best-effort; silently skipped if the
+        # storage class does not give group-write on the PVC root).
+        - name: tor-key-sync
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 101
+            runAsGroup: 101
+          command:
+            - sh
+            - -c
+            - |
+              while true; do
+                if [ -f /tor-data/hidden_service/hostname ]; then
+                  mkdir -p /tor-pvc/hidden_service 2>/dev/null || true
+                  cp /tor-data/hidden_service/* /tor-pvc/hidden_service/ 2>/dev/null || true
+                fi
+                sleep 60
+              done
+          volumeMounts:
+            - name: tor-data
+              mountPath: /tor-data
+            - name: tor-data-pvc
+              mountPath: /tor-pvc
+        {{- end }}
       volumes:
         - name: torrc
           configMap:
             name: {{ include "daadnegar-chart.fullname" . }}-tor-config
+        # Always an emptyDir so uid 101 can write here without depending on
+        # storage-class fsGroup behaviour. Keys that must persist across restarts
+        # are either injected via existingKeySecret or synced to/from the PVC.
         - name: tor-data
-          {{- if .Values.tor.persistence.enabled }}
+          emptyDir: {}
+        {{- if .Values.tor.persistence.enabled }}
+        - name: tor-data-pvc
           persistentVolumeClaim:
             claimName: {{ include "daadnegar-chart.fullname" . }}-tor-data
-          {{- else }}
-          emptyDir: {}
-          {{- end }}
+        {{- end }}
         {{- if .Values.tor.existingKeySecret }}
         - name: tor-keys
           secret:
