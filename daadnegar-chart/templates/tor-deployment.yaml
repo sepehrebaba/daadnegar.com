@@ -1,0 +1,99 @@
+{{- if .Values.tor.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "daadnegar-chart.fullname" . }}-tor
+  labels:
+    {{- include "daadnegar-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tor
+spec:
+  replicas: 1
+  # Recreate ensures only one tor pod holds the PVC at a time (ReadWriteOnce)
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "daadnegar-chart.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: tor
+  template:
+    metadata:
+      labels:
+        {{- include "daadnegar-chart.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: tor
+    spec:
+      # tor user in osminogin/tor-simple is uid/gid 101
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        {{- if .Values.tor.existingKeySecret }}
+        # Copy pre-generated keypair into the hidden service directory so the
+        # .onion address is pinned regardless of pod restarts.
+        - name: tor-key-init
+          image: busybox:1.36
+          securityContext:
+            runAsUser: 101
+            runAsGroup: 101
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /var/lib/tor/hidden_service
+              chmod 700 /var/lib/tor/hidden_service
+              cp /tor-keys/hs_ed25519_secret_key /var/lib/tor/hidden_service/
+              cp /tor-keys/hs_ed25519_public_key /var/lib/tor/hidden_service/
+              cp /tor-keys/hostname /var/lib/tor/hidden_service/
+              chmod 600 /var/lib/tor/hidden_service/*
+          volumeMounts:
+            - name: tor-data
+              mountPath: /var/lib/tor
+            - name: tor-keys
+              mountPath: /tor-keys
+              readOnly: true
+        {{- end }}
+      containers:
+        - name: tor
+          image: "{{ .Values.tor.image.repository }}:{{ .Values.tor.image.tag }}"
+          imagePullPolicy: {{ .Values.tor.image.pullPolicy }}
+          command: ["tor", "-f", "/etc/tor/torrc"]
+          volumeMounts:
+            - name: torrc
+              mountPath: /etc/tor/torrc
+              subPath: torrc
+              readOnly: true
+            - name: tor-data
+              mountPath: /var/lib/tor
+          # Wait up to 5 min for tor to bootstrap and write the hostname file
+          livenessProbe:
+            exec:
+              command: ["test", "-f", "/var/lib/tor/hidden_service/hostname"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 10
+          {{- with .Values.tor.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: torrc
+          configMap:
+            name: {{ include "daadnegar-chart.fullname" . }}-tor-config
+        - name: tor-data
+          {{- if .Values.tor.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "daadnegar-chart.fullname" . }}-tor-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.tor.existingKeySecret }}
+        - name: tor-keys
+          secret:
+            secretName: {{ .Values.tor.existingKeySecret }}
+            defaultMode: 0400
+        {{- end }}
+{{- end }}

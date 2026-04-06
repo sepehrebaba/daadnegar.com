@@ -226,8 +226,25 @@ jobs:
             --set-string ingress.tls[0].secretName=daadnegar-tls \
             --set-string ingress.tls[0].hosts[0]=daadnegar.com \
             --set-string ingress.tls[0].hosts[1]=www.daadnegar.com \
+            --set tor.enabled=true \
             -f daadnegar-chart/secrets.yaml \
             --wait --timeout 5m
+
+      - name: Print .onion address
+        if: steps.deploy_k8s.outcome == 'success'
+        run: |
+          echo "Waiting for Tor hidden service to bootstrap..."
+          for i in $(seq 1 12); do
+            ONION=$(kubectl exec -n production \
+              deploy/daadnegar-daadnegar-chart-tor \
+              -- cat /var/lib/tor/hidden_service/hostname 2>/dev/null || true)
+            if [ -n "$ONION" ]; then
+              echo "::notice title=Tor .onion address::http://${ONION}"
+              break
+            fi
+            echo "Attempt $i/12: hostname not ready yet, retrying in 10s..."
+            sleep 10
+          done
 
       - name: Mark GitHub deployment as successful (production)
         if: ${{ always() && steps.deploy_k8s.outcome == 'success' }}

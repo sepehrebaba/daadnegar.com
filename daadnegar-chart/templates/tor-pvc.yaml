@@ -1,0 +1,21 @@
+{{- if and .Values.tor.enabled .Values.tor.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "daadnegar-chart.fullname" . }}-tor-data
+  labels:
+    {{- include "daadnegar-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tor
+  annotations:
+    # Prevent accidental deletion of the keypair that backs the .onion address
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.tor.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.tor.persistence.size }}
+{{- end }}

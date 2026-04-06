@@ -1,0 +1,16 @@
+{{- if .Values.tor.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "daadnegar-chart.fullname" . }}-tor-config
+  labels:
+    {{- include "daadnegar-chart.labels" . | nindent 4 }}
+    app.kubernetes.io/component: tor
+data:
+  torrc: |
+    DataDirectory /var/lib/tor
+    HiddenServiceDir /var/lib/tor/hidden_service/
+    HiddenServicePort 80 {{ include "daadnegar-chart.fullname" . }}:{{ .Values.service.port }}
+    SocksPort 0
+    Log notice stdout
+{{- end }}

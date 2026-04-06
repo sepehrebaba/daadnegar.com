@@ -119,6 +119,41 @@ tolerations: []
 affinity: {}
 
 # =============================================================================
+# Tor Hidden Service — exposes the app as a .onion v3 address.
+# The tor daemon connects outward to the Tor network; no extra public ports
+# are needed. The hidden service proxies port 80 → app ClusterIP:service.port.
+#
+# Stable .onion address: tor generates a keypair on first start and stores it
+# in HiddenServiceDir. Enable persistence so the PVC survives pod restarts.
+# To *pin* an address, pre-generate a v3 keypair and store it in a Secret
+# (hs_ed25519_secret_key + hs_ed25519_public_key + hostname), then set
+# tor.existingKeySecret to the Secret name.
+#
+# Retrieve your .onion address after first deploy:
+#   kubectl exec -n <namespace> deploy/<release>-daadnegar-chart-tor \
+#     -- cat /var/lib/tor/hidden_service/hostname
+# =============================================================================
+tor:
+  enabled: false
+  image:
+    repository: osminogin/tor-simple
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  # Pre-existing Secret with pinned v3 onion keypair (optional).
+  # Expected keys: hs_ed25519_secret_key, hs_ed25519_public_key, hostname
+  existingKeySecret: ""
+  persistence:
+    enabled: true
+    size: 100Mi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+
+# =============================================================================
 # Database (MySQL) - from docker-compose daadnegar_db
 # Set enabled: false to use external MySQL; provide DATABASE_* via env or existingEnvSecret
 # =============================================================================
