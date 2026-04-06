@@ -32,11 +32,9 @@ spec:
       {{- end }}
       {{- if .Values.tor.existingKeySecret }}
       initContainers:
-        # Copy pre-generated keypair into the hidden service directory so the
-        # .onion address is pinned regardless of pod restarts.
-        # Runs as uid 101 — it can write into /var/lib/tor because fsGroup gives
-        # group-write on the PVC root, and any sub-directory it creates is
-        # automatically owned by uid 101, satisfying Tor's ownership check.
+        # Copy the pinned v3 keypair into the PVC-backed hidden service directory.
+        # Runs as uid 101; fsGroup gives group-write on /tor-data so the mkdir
+        # succeeds, and the created directory is owned by uid 101.
         - name: tor-key-init
           image: busybox:1.36
           securityContext:
@@ -46,15 +44,15 @@ spec:
             - sh
             - -c
             - |
-              mkdir -p /var/lib/tor/data/hidden_service
-              chmod 700 /var/lib/tor/data/hidden_service
-              cp /tor-keys/hs_ed25519_secret_key /var/lib/tor/data/hidden_service/
-              cp /tor-keys/hs_ed25519_public_key /var/lib/tor/data/hidden_service/
-              cp /tor-keys/hostname /var/lib/tor/data/hidden_service/
-              chmod 600 /var/lib/tor/data/hidden_service/*
+              mkdir -p /tor-data/hidden_service
+              chmod 700 /tor-data/hidden_service
+              cp /tor-keys/hs_ed25519_secret_key /tor-data/hidden_service/
+              cp /tor-keys/hs_ed25519_public_key /tor-data/hidden_service/
+              cp /tor-keys/hostname /tor-data/hidden_service/
+              chmod 600 /tor-data/hidden_service/*
           volumeMounts:
             - name: tor-data
-              mountPath: /var/lib/tor
+              mountPath: /tor-data
             - name: tor-keys
               mountPath: /tor-keys
               readOnly: true
@@ -70,11 +68,11 @@ spec:
               subPath: torrc
               readOnly: true
             - name: tor-data
-              mountPath: /var/lib/tor
+              mountPath: /tor-data
           # Wait up to 5 min for tor to bootstrap and write the hostname file
           livenessProbe:
             exec:
-              command: ["test", "-f", "/var/lib/tor/data/hidden_service/hostname"]
+              command: ["test", "-f", "/tor-data/hidden_service/hostname"]
             initialDelaySeconds: 60
             periodSeconds: 30
             failureThreshold: 10
