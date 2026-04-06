@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/component: tor
 data:
   torrc: |
-    DataDirectory /var/lib/tor
+    DataDirectory /tmp/tor-data
     HiddenServiceDir /tor-data/hidden_service/
     HiddenServicePort 80 {{ include "daadnegar-chart.fullname" . }}:{{ .Values.service.port }}
     SocksPort 0
