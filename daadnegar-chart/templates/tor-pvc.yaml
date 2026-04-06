@@ -1,4 +1,4 @@
-{{- if and .Values.tor.enabled .Values.tor.persistence.enabled }}
+{{- if and .Values.tor.enabled ((.Values.tor.persistence | default dict).enabled) }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -12,10 +12,10 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  {{- with .Values.tor.persistence.storageClass }}
+  {{- with (.Values.tor.persistence | default dict).storageClass }}
   storageClassName: {{ . }}
   {{- end }}
   resources:
     requests:
-      storage: {{ .Values.tor.persistence.size }}
+      storage: {{ (.Values.tor.persistence | default dict).size | default "100Mi" }}
 {{- end }}

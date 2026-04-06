@@ -46,7 +46,7 @@ spec:
           volumeMounts:
             - name: tor-data
               mountPath: /tor-data
-        {{- if .Values.tor.persistence.enabled }}
+        {{- if ((.Values.tor.persistence | default dict).enabled) }}
         # Restore previously generated keypair from the PVC into the emptyDir so
         # the .onion address survives pod restarts even without existingKeySecret.
         # Failures are silent — a fresh keypair is generated if nothing is found.
@@ -116,7 +116,7 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-        {{- if and .Values.tor.persistence.enabled (empty .Values.tor.existingKeySecret) }}
+        {{- if and ((.Values.tor.persistence | default dict).enabled) (empty .Values.tor.existingKeySecret) }}
         # Periodically sync the generated keypair from the emptyDir back to the
         # PVC so it survives pod restarts (best-effort; silently skipped if the
         # storage class does not give group-write on the PVC root).
@@ -151,7 +151,7 @@ spec:
         # are either injected via existingKeySecret or synced to/from the PVC.
         - name: tor-data
           emptyDir: {}
-        {{- if .Values.tor.persistence.enabled }}
+        {{- if ((.Values.tor.persistence | default dict).enabled) }}
         - name: tor-data-pvc
           persistentVolumeClaim:
             claimName: {{ include "daadnegar-chart.fullname" . }}-tor-data
