@@ -29,10 +29,12 @@ import { uploadReportFile } from "@/lib/edyen";
 import { EVIDENCE_TYPES, type EvidenceType } from "@/types";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useTranslation } from "react-i18next";
 
 export function ReportEvidenceScreen() {
   const router = useRouter();
   const { updateReport, currentReport } = useReport();
+  const { t } = useTranslation();
   const [hasEvidence, setHasEvidence] = useState<"yes" | "no" | "">(
     currentReport?.hasEvidence === true ? "yes" : currentReport?.hasEvidence === false ? "no" : "",
   );
@@ -74,7 +76,7 @@ export function ReportEvidenceScreen() {
         setEvidenceFiles((prev) => [...prev, { name, url: key }]);
       }
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "خطا در آپلود فایل");
+      setUploadError(err instanceof Error ? err.message : t("report.evidence.uploadError"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -98,6 +100,14 @@ export function ReportEvidenceScreen() {
     }
   };
 
+  const evidenceTypeLabels: Record<string, string> = {
+    document: t("report.evidence.types.document"),
+    image: t("report.evidence.types.image"),
+    video: t("report.evidence.types.video"),
+    audio: t("report.evidence.types.audio"),
+    witness: t("report.evidence.types.witness"),
+  };
+
   return (
     <div className="bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-lg">
@@ -105,8 +115,8 @@ export function ReportEvidenceScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <FileCheck className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">مدارک و شواهد</CardTitle>
-          <CardDescription>آیا مدرکی برای این گزارش دارید؟</CardDescription>
+          <CardTitle className="text-2xl">{t("report.evidence.title")}</CardTitle>
+          <CardDescription>{t("report.evidence.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -131,7 +141,7 @@ export function ReportEvidenceScreen() {
               <span
                 className={`font-medium ${hasEvidence === "yes" ? "text-primary" : "text-foreground"}`}
               >
-                بله
+                {t("common.yes")}
               </span>
             </button>
 
@@ -161,7 +171,7 @@ export function ReportEvidenceScreen() {
               <span
                 className={`font-medium ${hasEvidence === "no" ? "text-primary" : "text-foreground"}`}
               >
-                خیر
+                {t("common.no")}
               </span>
             </button>
           </div>
@@ -170,7 +180,7 @@ export function ReportEvidenceScreen() {
             <>
               <div className="space-y-3">
                 <Label>
-                  نوع مدرک <span className="text-destructive">*</span>
+                  {t("report.evidence.evidenceType")} <span className="text-destructive">*</span>
                 </Label>
                 <div className="grid grid-cols-2 gap-3">
                   {EVIDENCE_TYPES.map((type) => {
@@ -217,7 +227,7 @@ export function ReportEvidenceScreen() {
                               isSelected ? "text-primary" : "text-foreground",
                             )}
                           >
-                            {type.label}
+                            {evidenceTypeLabels[type.value] ?? type.label}
                           </span>
                         </div>
                         {isSelected && (
@@ -232,24 +242,19 @@ export function ReportEvidenceScreen() {
               </div>
 
               <div className="space-y-3">
-                <Label>بارگذاری مدارک (اختیاری)</Label>
+                <Label>{t("report.evidence.uploadLabel")}</Label>
                 <Alert
                   variant="default"
                   className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30"
                 >
                   <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   <AlertTitle className="text-blue-800 dark:text-blue-200">
-                    درباره متادیتای فایل‌ها
+                    {t("report.evidence.metadataTitle")}
                   </AlertTitle>
                   <AlertDescription className="text-blue-700 dark:text-blue-300">
-                    <p>
-                      فایل‌ها دارای متادیتا هستند. عکس‌ها (مثلاً JPEG) معمولاً EXIF/IPTC/XMP دارند که شامل
-                      اطلاعات دوربین، GPS، زمان ثبت، پروفایل رنگ و… می‌شود. PDF بیشتر روی اطلاعات سند و
-                      نرم‌افزار تمرکز دارد. ZIP به‌طور پیش‌فرض فقط یک comment متنی و اطلاعات فایل‌ها را
-                      دارد.
-                    </p>
+                    <p>{t("report.evidence.metadataDescription")}</p>
                     <p className="mt-2">
-                      ما این موارد را پاک می‌کنیم، ولی توصیه می‌کنیم از سایتی مشابه{" "}
+                      {t("report.evidence.metadataAdvice")}{" "}
                       <a
                         href="https://www.metadata2go.com/"
                         target="_blank"
@@ -257,8 +262,7 @@ export function ReportEvidenceScreen() {
                         className="underline hover:no-underline"
                       >
                         metadata2go.com
-                      </a>{" "}
-                      استفاده کنید تا خودتان نیز از پاک شدن متادیتا مطمئن شوید.
+                      </a>
                     </p>
                   </AlertDescription>
                 </Alert>
@@ -281,7 +285,7 @@ export function ReportEvidenceScreen() {
                     ) : (
                       <Upload className="ml-2 h-4 w-4" />
                     )}
-                    {uploading ? "در حال آپلود..." : "انتخاب فایل"}
+                    {uploading ? t("common.uploading") : t("report.evidence.chooseFile")}
                     <input
                       type="file"
                       multiple
@@ -314,12 +318,12 @@ export function ReportEvidenceScreen() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="evidence-desc">توضیحات درباره مدارک (اختیاری)</Label>
+                <Label htmlFor="evidence-desc">{t("report.evidence.descriptionLabel")}</Label>
                 <Textarea
                   id="evidence-desc"
                   value={evidenceDescription}
                   onChange={(e) => setEvidenceDescription(e.target.value)}
-                  placeholder="توضیحات بیشتر درباره مدارک..."
+                  placeholder={t("report.evidence.descriptionPlaceholder")}
                   rows={3}
                 />
               </div>
@@ -329,10 +333,10 @@ export function ReportEvidenceScreen() {
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} disabled={!isValid} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
           </div>

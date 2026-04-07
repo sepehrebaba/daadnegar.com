@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,29 +37,6 @@ type SettingsData = {
   tokens_consensus_validator_bonus_match_5: number;
 };
 
-const LABELS: Record<keyof SettingsData, string> = {
-  reports_enabled: "فعال‌سازی دریافت گزارش جدید",
-  default_tokens_new_user: "تعداد توکن‌های پیش‌فرض کاربر جدید",
-  tokens_report_submit_stake: "مقدار توکن وثیقه در زمان ثبت گزارش",
-  tokens_reward_approved_report: "تعداد توکن هدیه بعد از تأیید گزارش",
-  tokens_deduct_false_report: "تعداد توکن کسر شده در صورت گزارش غلط",
-  tokens_deduct_problematic_report: "تعداد توکن کسر شده در صورت گزارش مشکل‌دار",
-  tokens_reward_invited_activity: "تعداد توکن هدیه در صورت فعالیت کاربر دعوت‌شده",
-  tokens_invite_create_stake: "مقدار توکن وثیقه هنگام ساخت کد دعوت",
-  max_invite_codes_unused: "حداکثر کد دعوت مجاز (استفاده‌نشده)",
-  report_validator_sla_hours: "مهلت بررسی اعتبارسنج (ساعت)",
-  report_unassigned_grace_minutes:
-    "تاخیر اختصاص خودکار (دقیقه) اگر ورکر هنوز گزارش را به کسی نداده باشد",
-  report_parallel_validators: "تعداد اعتبارسنج همزمان",
-  report_consensus_min_reviews: "حداقل رأی برای اجماع",
-  tokens_consensus_reporter_accept:
-    "پاداش گزارش‌دهنده وقتی اکثریت گزارش را تأیید کردند (تسویه از طریق صف)",
-  tokens_consensus_validator_wrong_penalty: "جریمه رأی اشتباه اعتبارسنج",
-  tokens_consensus_validator_refund: "بازپرداخت پایه اعتبارسنج",
-  tokens_consensus_validator_bonus_match_3: "پاداش تطابق رأی (۳ نفره)",
-  tokens_consensus_validator_bonus_match_5: "پاداش تطابق رأی (۵ نفره)",
-};
-
 const defaults: SettingsData = {
   reports_enabled: true,
   default_tokens_new_user: 10,
@@ -88,26 +66,26 @@ const NUMERIC_FIELDS: Array<{
   max?: number;
   step?: number;
   parse: "int" | "float";
-  hint?: string;
+  hintKey?: string;
 }> = [
   { key: "default_tokens_new_user", min: 0, parse: "int" },
   {
     key: "tokens_report_submit_stake",
     min: 0,
     parse: "int",
-    hint: "توکن وثیقه",
+    hintKey: "tokens_report_submit_stake",
   },
   { key: "tokens_reward_approved_report", min: 0, parse: "int" },
   { key: "tokens_deduct_false_report", min: 0, parse: "int" },
   { key: "tokens_deduct_problematic_report", min: 0, parse: "int" },
   { key: "tokens_reward_invited_activity", min: 0, parse: "int" },
   { key: "tokens_invite_create_stake", min: 0, parse: "int" },
-  { key: "max_invite_codes_unused", min: 0, parse: "int", hint: "۰ = نامحدود" },
+  { key: "max_invite_codes_unused", min: 0, parse: "int", hintKey: "max_invite_codes_unused" },
   {
     key: "report_validator_sla_hours",
     min: 1,
     parse: "int",
-    hint: "پس از این زمان، Cron می‌تواند گزارش را به نفر بعد بدهد.",
+    hintKey: "report_validator_sla_hours",
   },
   { key: "report_unassigned_grace_minutes", min: 1, parse: "int" },
   {
@@ -115,14 +93,14 @@ const NUMERIC_FIELDS: Array<{
     min: 1,
     max: 50,
     parse: "int",
-    hint: "هر گزارش جدید به این تعداد اعتبارسنج به‌صورت همزمان اساین می‌شود.",
+    hintKey: "report_parallel_validators",
   },
   {
     key: "report_consensus_min_reviews",
     min: 1,
     max: 50,
     parse: "int",
-    hint: "حداقل رأی ثبت‌شده قبل از تعیین وضعیت نهایی با اکثریت.",
+    hintKey: "report_consensus_min_reviews",
   },
   { key: "tokens_consensus_reporter_accept", min: 0, parse: "int" },
   {
@@ -130,28 +108,28 @@ const NUMERIC_FIELDS: Array<{
     min: 0,
     step: 0.5,
     parse: "float",
-    hint: "بازپرداخت اسمی به هر اعتبارسنج پس از تسویه اجماع.",
+    hintKey: "tokens_consensus_validator_refund",
   },
   {
     key: "tokens_consensus_validator_bonus_match_3",
     min: 0,
     step: 0.5,
     parse: "float",
-    hint: "وقتی رأی با نتیجه نهایی یکی باشد (برای سناریوی ۳ اعتبارسنج).",
+    hintKey: "tokens_consensus_validator_bonus_match_3",
   },
   {
     key: "tokens_consensus_validator_bonus_match_5",
     min: 0,
     step: 0.5,
     parse: "float",
-    hint: "وقتی رأی با اکثریت یکی باشد (برای سناریوی ۵ اعتبارسنج).",
+    hintKey: "tokens_consensus_validator_bonus_match_5",
   },
   {
     key: "tokens_consensus_validator_wrong_penalty",
     min: 0,
     step: 0.5,
     parse: "float",
-    hint: "جریمه رأی اشتباه وقتی نتیجه نهایی «تأیید» باشد (عدد مثبت).",
+    hintKey: "tokens_consensus_validator_wrong_penalty",
   },
 ];
 
@@ -161,21 +139,21 @@ const NUMERIC_FIELD_MAP: Record<NumericSettingKey, (typeof NUMERIC_FIELDS)[numbe
     (typeof NUMERIC_FIELDS)[number]
   >;
 
-const SETTING_SECTIONS: Array<{
+const SETTING_SECTION_KEYS: Array<{
   id: string;
-  title: string;
+  sectionKey: string;
   keys: NumericSettingKey[];
   includeReportsToggle?: boolean;
 }> = [
   {
     id: "system",
-    title: "بخش سیستم",
+    sectionKey: "system",
     includeReportsToggle: true,
     keys: ["report_unassigned_grace_minutes"],
   },
   {
     id: "validator",
-    title: "بخش اعتبارسنج",
+    sectionKey: "validator",
     keys: [
       "report_validator_sla_hours",
       "report_parallel_validators",
@@ -188,7 +166,7 @@ const SETTING_SECTIONS: Array<{
   },
   {
     id: "user",
-    title: "بخش کاربر",
+    sectionKey: "user",
     keys: [
       "default_tokens_new_user",
       "tokens_report_submit_stake",
@@ -204,6 +182,7 @@ const SETTING_SECTIONS: Array<{
 ];
 
 export default function AdminSystemSettingsPage() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<SettingsData>(defaults);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -295,35 +274,37 @@ export default function AdminSystemSettingsPage() {
   if (loading) {
     return (
       <div className="p-6" dir="rtl">
-        <p>در حال بارگذاری...</p>
+        <p>{t("common.loading")}</p>
       </div>
     );
   }
 
   return (
     <div dir="rtl" className="text-right">
-      <h1 className="mb-6 text-2xl font-bold">تنظیمات سیستم</h1>
+      <h1 className="mb-6 text-2xl font-bold">{t("adminSystemSettings.title")}</h1>
 
       <form onSubmit={handleSubmit}>
-        {SETTING_SECTIONS.map((section) => (
+        {SETTING_SECTION_KEYS.map((section) => (
           <Card key={section.id} className="mb-6">
             <CardHeader>
-              <CardTitle>{section.title}</CardTitle>
+              <CardTitle>{t(`adminSystemSettings.sections.${section.sectionKey}`)}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[45%]">تنظیم</TableHead>
-                      <TableHead className="w-[20%]">مقدار</TableHead>
-                      <TableHead className="w-[35%]">راهنما</TableHead>
+                      <TableHead className="w-[45%]">{t("adminSystemSettings.setting")}</TableHead>
+                      <TableHead className="w-[20%]">{t("adminSystemSettings.value")}</TableHead>
+                      <TableHead className="w-[35%]">{t("adminSystemSettings.guide")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {section.includeReportsToggle ? (
                       <TableRow>
-                        <TableCell className="font-medium">{LABELS.reports_enabled}</TableCell>
+                        <TableCell className="font-medium">
+                          {t("adminSystemSettings.labels.reports_enabled")}
+                        </TableCell>
                         <TableCell>
                           <Switch
                             id="reports_enabled"
@@ -334,7 +315,7 @@ export default function AdminSystemSettingsPage() {
                           />
                         </TableCell>
                         <TableCell className="text-muted-foreground text-xs">
-                          خاموش بودن این گزینه ثبت گزارش جدید را در API و پنل کاربر غیرفعال می‌کند.
+                          {t("adminSystemSettings.reportsEnabledHint")}
                         </TableCell>
                       </TableRow>
                     ) : null}
@@ -342,7 +323,9 @@ export default function AdminSystemSettingsPage() {
                       const field = NUMERIC_FIELD_MAP[key];
                       return (
                         <TableRow key={field.key}>
-                          <TableCell className="font-medium">{LABELS[field.key]}</TableCell>
+                          <TableCell className="font-medium">
+                            {t(`adminSystemSettings.labels.${field.key}`)}
+                          </TableCell>
                           <TableCell>
                             <Input
                               id={field.key}
@@ -365,7 +348,7 @@ export default function AdminSystemSettingsPage() {
                             />
                           </TableCell>
                           <TableCell className="text-muted-foreground text-xs">
-                            {field.hint ?? "—"}
+                            {field.hintKey ? t(`adminSystemSettings.hints.${field.hintKey}`) : "—"}
                           </TableCell>
                         </TableRow>
                       );
@@ -379,7 +362,7 @@ export default function AdminSystemSettingsPage() {
 
         <div className="mt-6">
           <Button type="submit" disabled={saving}>
-            {saving ? "در حال ذخیره..." : "ذخیره تنظیمات"}
+            {saving ? t("common.saving") : t("adminSystemSettings.saveSettings")}
           </Button>
         </div>
       </form>

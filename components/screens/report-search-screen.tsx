@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, FileText, ChevronLeft, ChevronRight, User } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type Row = {
   id: string;
@@ -30,15 +31,10 @@ type Row = {
   validatorAssignmentCount: number;
 };
 
-const statusLabels: Record<string, string> = {
-  pending: "در انتظار",
-  accepted: "تایید شده",
-  rejected: "رد شده",
-};
-
 export function ReportSearchScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const reviewedByMe =
     searchParams.get("reviewedByMe") === "1" || searchParams.get("reviewedByMe") === "true";
   const [personQ, setPersonQ] = useState("");
@@ -56,6 +52,12 @@ export function ReportSearchScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [didSearch, setDidSearch] = useState(false);
+
+  const statusLabels: Record<string, string> = {
+    pending: t("report.search.statusPending"),
+    accepted: t("report.search.statusAccepted"),
+    rejected: t("report.search.statusRejected"),
+  };
 
   const fetchPage = useCallback(
     async (p: number) => {
@@ -81,7 +83,7 @@ export function ReportSearchScreen() {
         setError(
           typeof res.error === "object" && res.error && "message" in res.error
             ? String((res.error as { message?: string }).message)
-            : "خطا در جستجو",
+            : t("report.search.error"),
         );
         setRows([]);
         setTotal(0);
@@ -92,7 +94,18 @@ export function ReportSearchScreen() {
       setTotal(typeof data?.total === "number" ? data.total : 0);
       setPage(typeof data?.page === "number" ? data.page : p);
     },
-    [personQ, text, status, createdFrom, createdTo, minReviews, maxReviews, perPage, reviewedByMe],
+    [
+      personQ,
+      text,
+      status,
+      createdFrom,
+      createdTo,
+      minReviews,
+      maxReviews,
+      perPage,
+      reviewedByMe,
+      t,
+    ],
   );
 
   const onSearch = () => {
@@ -121,53 +134,53 @@ export function ReportSearchScreen() {
       <Card className="mx-auto w-full max-w-lg">
         <CardHeader>
           <CardTitle className="text-center text-xl font-bold">
-            {reviewedByMe ? "گزارش‌های بررسی‌شده" : "جستجوی گزارشات"}
+            {reviewedByMe ? t("report.search.reviewedTitle") : t("report.search.title")}
           </CardTitle>
           <p className="text-muted-foreground mt-1 text-center text-sm">
             {reviewedByMe
-              ? "فهرست گزارش‌هایی که توسط شما بررسی شده‌اند"
-              : "فیلتر بر اساس شخص، متن، وضعیت، تاریخ ثبت و تعداد بررسی‌ها"}
+              ? t("report.search.reviewedDescription")
+              : t("report.search.searchDescription")}
           </p>
         </CardHeader>
         {!reviewedByMe && (
           <CardContent className="flex flex-col gap-4">
             <div className="space-y-2">
-              <Label htmlFor="personQ">شخص (نام، نام خانوادگی یا کد ملی)</Label>
+              <Label htmlFor="personQ">{t("report.search.personLabel")}</Label>
               <Input
                 id="personQ"
                 value={personQ}
                 onChange={(e) => setPersonQ(e.target.value)}
-                placeholder="مثلاً بخشی از نام یا کد ملی"
+                placeholder={t("report.search.personPlaceholder")}
                 dir="rtl"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="text">متن گزارش یا عنوان</Label>
+              <Label htmlFor="text">{t("report.search.textLabel")}</Label>
               <Input
                 id="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="جستجو در توضیحات و عنوان"
+                placeholder={t("report.search.textPlaceholder")}
                 dir="rtl"
               />
             </div>
             <div className="space-y-2">
-              <Label>وضعیت</Label>
+              <Label>{t("report.search.statusLabel")}</Label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger className="w-full" dir="rtl">
-                  <SelectValue placeholder="همه" />
+                  <SelectValue placeholder={t("report.search.statusAll")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">همه</SelectItem>
-                  <SelectItem value="pending">در انتظار</SelectItem>
-                  <SelectItem value="accepted">تایید شده</SelectItem>
-                  <SelectItem value="rejected">رد شده</SelectItem>
+                  <SelectItem value="all">{t("report.search.statusAll")}</SelectItem>
+                  <SelectItem value="pending">{t("report.search.statusPending")}</SelectItem>
+                  <SelectItem value="accepted">{t("report.search.statusAccepted")}</SelectItem>
+                  <SelectItem value="rejected">{t("report.search.statusRejected")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="createdFrom">از تاریخ ثبت</Label>
+                <Label htmlFor="createdFrom">{t("report.search.dateFromLabel")}</Label>
                 <Input
                   id="createdFrom"
                   type="date"
@@ -176,7 +189,7 @@ export function ReportSearchScreen() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="createdTo">تا تاریخ ثبت</Label>
+                <Label htmlFor="createdTo">{t("report.search.dateToLabel")}</Label>
                 <Input
                   id="createdTo"
                   type="date"
@@ -187,25 +200,25 @@ export function ReportSearchScreen() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="minReviews">حداقل تعداد بررسی</Label>
+                <Label htmlFor="minReviews">{t("report.search.minReviewsLabel")}</Label>
                 <Input
                   id="minReviews"
                   inputMode="numeric"
                   value={minReviews}
                   onChange={(e) => setMinReviews(e.target.value.replace(/\D/g, ""))}
-                  placeholder="۰"
+                  placeholder="0"
                   dir="ltr"
                   className="text-end"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="maxReviews">حداکثر تعداد بررسی</Label>
+                <Label htmlFor="maxReviews">{t("report.search.maxReviewsLabel")}</Label>
                 <Input
                   id="maxReviews"
                   inputMode="numeric"
                   value={maxReviews}
                   onChange={(e) => setMaxReviews(e.target.value.replace(/\D/g, ""))}
-                  placeholder="بدون سقف"
+                  placeholder={t("report.search.maxReviewsPlaceholder")}
                   dir="ltr"
                   className="text-end"
                 />
@@ -214,7 +227,7 @@ export function ReportSearchScreen() {
             {error && <p className="text-destructive text-sm">{error}</p>}
             <Button type="button" className="w-full gap-2" onClick={onSearch} disabled={loading}>
               <Search className="h-4 w-4" />
-              {loading ? "در حال جستجو..." : "جستجو"}
+              {loading ? t("report.search.searching") : t("report.search.submit")}
             </Button>
           </CardContent>
         )}
@@ -228,7 +241,7 @@ export function ReportSearchScreen() {
         <Card className="mx-auto mt-4 w-full max-w-lg">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold">
-              نتایج ({toPersianNum(total)} مورد)
+              {t("report.search.results", { count: toPersianNum(total) })}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
@@ -261,8 +274,10 @@ export function ReportSearchScreen() {
                     {statusLabels[r.status] ?? r.status}
                   </span>
                   <span>
-                    بررسی‌ها: {toPersianNum(r.reviewCount)} — تخصیص اعتبارسنج:{" "}
-                    {toPersianNum(r.validatorAssignmentCount)}
+                    {t("report.search.reviewStats", {
+                      reviews: toPersianNum(r.reviewCount),
+                      validators: toPersianNum(r.validatorAssignmentCount),
+                    })}
                   </span>
                 </div>
               </button>
@@ -281,10 +296,13 @@ export function ReportSearchScreen() {
                   }}
                 >
                   <ChevronRight className="h-4 w-4" />
-                  قبلی
+                  {t("common.previous")}
                 </Button>
                 <span className="text-muted-foreground text-sm">
-                  صفحه {toPersianNum(page)} از {toPersianNum(totalPages)}
+                  {t("report.search.page", {
+                    page: toPersianNum(page),
+                    total: toPersianNum(totalPages),
+                  })}
                 </span>
                 <Button
                   type="button"
@@ -297,7 +315,7 @@ export function ReportSearchScreen() {
                     void fetchPage(np);
                   }}
                 >
-                  بعدی
+                  {t("common.next")}
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
@@ -309,13 +327,13 @@ export function ReportSearchScreen() {
       {!loading && didSearch && rows.length === 0 && !error && (
         <div className="text-muted-foreground mx-auto mt-8 flex max-w-md flex-col items-center gap-2 px-4 text-center text-sm">
           <FileText className="h-10 w-10 opacity-40" />
-          <p>نتیجه‌ای یافت نشد.</p>
+          <p>{t("report.search.noResults")}</p>
         </div>
       )}
 
       <div className="mx-auto mt-6 w-full max-w-lg">
         <Button type="button" variant="outline" className="w-full" onClick={() => router.back()}>
-          بازگشت
+          {t("common.back")}
         </Button>
       </div>
     </div>

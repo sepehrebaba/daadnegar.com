@@ -24,9 +24,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function LogoutButton() {
   const router = useRouter();
+  const { t } = useTranslation();
   const handleLogout = async () => {
     await fetch("/api/admin-panel/auth/logout", {
       method: "POST",
@@ -42,32 +44,34 @@ function LogoutButton() {
       onClick={handleLogout}
     >
       <LogOut className="h-5 w-5" />
-      خروج
+      {t("admin.logout")}
     </Button>
   );
 }
 
-const navItems = [
-  { href: "/admin/reports", label: "گزارش‌ها", icon: FileText },
-  { href: "/admin/users", label: "کاربران سیستم", icon: Users },
-  { href: "/admin/logs", label: "لاگ‌ها", icon: ScrollText },
-];
-
-const reportSettingsSubItems = [
-  { href: "/admin/categories", label: "دسته‌بندی‌ها", icon: FolderTree },
-  { href: "/admin/people", label: "اشخاص", icon: UserCircle },
-  { href: "/admin/provinces", label: "استان‌ها و شهرها", icon: MapPin },
-];
-
-const settingsSubItems = [
-  { href: "/admin/settings", label: "تنظیمات سیستم", icon: Settings },
-  { href: "/admin/settings/user", label: "تنظیمات کاربر", icon: UserRound },
-  { href: "/admin/settings/panel-users", label: "کاربران پنل", icon: UserCog },
-];
-
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [pendingCount, setPendingCount] = useState(0);
+
+  const navItems = [
+    { href: "/admin/reports", label: t("admin.nav.reports"), icon: FileText },
+    { href: "/admin/users", label: t("admin.nav.users"), icon: Users },
+    { href: "/admin/logs", label: t("admin.nav.logs"), icon: ScrollText },
+  ];
+
+  const reportSettingsSubItems = [
+    { href: "/admin/categories", label: t("admin.nav.categories"), icon: FolderTree },
+    { href: "/admin/people", label: t("admin.nav.people"), icon: UserCircle },
+    { href: "/admin/provinces", label: t("admin.nav.provinces"), icon: MapPin },
+  ];
+
+  const settingsSubItems = [
+    { href: "/admin/settings", label: t("admin.nav.systemSettings"), icon: Settings },
+    { href: "/admin/settings/user", label: t("admin.nav.userSettings"), icon: UserRound },
+    { href: "/admin/settings/panel-users", label: t("admin.nav.panelUsers"), icon: UserCog },
+  ];
+
   const isReportSettingsActive = reportSettingsSubItems.some((item) => pathname === item.href);
   const isSettingsActive = settingsSubItems.some((s) => pathname === s.href);
 
@@ -86,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {pathname !== "/admin/login" && (
           <aside className="border-border bg-muted/70 flex w-64 min-w-64 shrink-0 flex-col gap-2 border-s p-4">
             <div className="mb-4 flex items-center justify-between gap-2 px-2">
-              <h2 className="text-lg font-bold">پنل ادمین</h2>
+              <h2 className="text-lg font-bold">{t("admin.panel")}</h2>
               <ThemeToggle />
             </div>
             {navItems.map(({ href, label, icon: Icon }) => (
@@ -119,7 +123,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <span className="flex items-center gap-3">
                   <SlidersHorizontal className="h-5 w-5 shrink-0" />
-                  فرم ثبت گزارش
+                  {t("admin.nav.reportForm")}
                 </span>
                 <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-180" />
               </CollapsibleTrigger>
@@ -150,7 +154,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 <span className="flex items-center gap-3">
                   <Shield className="h-5 w-5 shrink-0" />
-                  تنظیمات
+                  {t("admin.nav.settings")}
                 </span>
                 <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-data-[state=open]/collapsible:rotate-180" />
               </CollapsibleTrigger>

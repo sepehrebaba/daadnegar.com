@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,7 @@ type City = {
 };
 
 export default function AdminProvincesPage() {
+  const { t } = useTranslation();
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -140,13 +142,13 @@ export default function AdminProvincesPage() {
   };
 
   const handleDeleteProvince = async (id: string) => {
-    if (!confirm("حذف این استان و شهرهای مرتبط؟")) return;
+    if (!confirm(t("adminProvinces.deleteProvinceConfirm"))) return;
     const { error } = await api.admin.provinces({ id }).delete();
     if (!error) load();
   };
 
   const handleDeleteCity = async (id: string) => {
-    if (!confirm("حذف این شهر؟")) return;
+    if (!confirm(t("adminProvinces.deleteCityConfirm"))) return;
     const { error } = await api.admin.cities({ id }).delete();
     if (!error) load();
   };
@@ -180,7 +182,13 @@ export default function AdminProvincesPage() {
                 }
               : undefined
           }
-          aria-label={hasChildren ? (isExpanded ? "بستن" : "باز کردن") : undefined}
+          aria-label={
+            hasChildren
+              ? isExpanded
+                ? t("adminProvinces.collapse")
+                : t("adminProvinces.expand")
+              : undefined
+          }
         >
           {hasChildren ? (
             <span className="shrink-0">
@@ -201,7 +209,7 @@ export default function AdminProvincesPage() {
       <React.Fragment key={p.id}>
         <TableRow className={cn("w-full", hasChildren ? "bg-muted/70" : "bg-muted/30")}>
           {nameCell}
-          <TableCell>استان</TableCell>
+          <TableCell>{t("adminProvinces.province")}</TableCell>
           <TableCell dir="ltr">{p.sortOrder}</TableCell>
           <TableCell>
             <div className="flex justify-start gap-2">
@@ -212,7 +220,7 @@ export default function AdminProvincesPage() {
                   e.stopPropagation();
                   openCreateCity(p.id);
                 }}
-                title="افزودن شهر"
+                title={t("adminProvinces.addCity")}
               >
                 <Plus className="h-4 w-4" />
               </Button>
@@ -235,7 +243,7 @@ export default function AdminProvincesPage() {
                   <span className="min-w-0 truncate">{c.name}</span>
                 </div>
               </TableCell>
-              <TableCell>شهر</TableCell>
+              <TableCell>{t("adminProvinces.city")}</TableCell>
               <TableCell dir="ltr">{c.sortOrder}</TableCell>
               <TableCell>
                 <div className="flex justify-start gap-2">
@@ -256,23 +264,23 @@ export default function AdminProvincesPage() {
   if (loading)
     return (
       <div className="p-6" dir="rtl">
-        در حال بارگذاری...
+        {t("common.loading")}
       </div>
     );
 
   return (
     <div dir="rtl" className="text-start">
       <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">استان‌ها و شهرها</h1>
+        <h1 className="text-2xl font-bold">{t("adminProvinces.title")}</h1>
         <Button onClick={openCreateProvince}>
           <Plus className="me-2 h-4 w-4" />
-          افزودن استان
+          {t("adminProvinces.addProvince")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>لیست استان‌ها و شهرها</CardTitle>
+          <CardTitle>{t("adminProvinces.listTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table className="w-full min-w-full table-fixed" dir="rtl">
@@ -284,10 +292,10 @@ export default function AdminProvincesPage() {
             </colgroup>
             <TableHeader>
               <TableRow>
-                <TableHead>نام</TableHead>
-                <TableHead>نوع</TableHead>
-                <TableHead>ترتیب</TableHead>
-                <TableHead className="w-32">عملیات</TableHead>
+                <TableHead>{t("adminProvinces.name")}</TableHead>
+                <TableHead>{t("adminProvinces.type")}</TableHead>
+                <TableHead>{t("adminProvinces.order")}</TableHead>
+                <TableHead className="w-32">{t("adminProvinces.actions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>{provinces.map((p) => renderRow(p))}</TableBody>
@@ -298,11 +306,13 @@ export default function AdminProvincesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent dir="rtl" className="text-start">
           <DialogHeader>
-            <DialogTitle>{editingProvince ? "ویرایش استان" : "افزودن استان"}</DialogTitle>
+            <DialogTitle>
+              {editingProvince ? t("adminProvinces.editProvince") : t("adminProvinces.addProvince")}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleProvinceSubmit} className="space-y-4">
             <div>
-              <Label>نام</Label>
+              <Label>{t("adminProvinces.name")}</Label>
               <Input
                 value={provinceForm.name}
                 onChange={(e) => setProvinceForm((f) => ({ ...f, name: e.target.value }))}
@@ -310,7 +320,7 @@ export default function AdminProvincesPage() {
               />
             </div>
             <div>
-              <Label>ترتیب</Label>
+              <Label>{t("adminProvinces.order")}</Label>
               <Input
                 type="number"
                 value={provinceForm.sortOrder}
@@ -325,9 +335,11 @@ export default function AdminProvincesPage() {
               />
             </div>
             <DialogFooter className="gap-2">
-              <Button type="submit">{editingProvince ? "ذخیره" : "افزودن"}</Button>
+              <Button type="submit">
+                {editingProvince ? t("common.save") : t("adminProvinces.addProvince")}
+              </Button>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                انصراف
+                {t("common.cancel")}
               </Button>
             </DialogFooter>
           </form>
@@ -337,11 +349,13 @@ export default function AdminProvincesPage() {
       <Dialog open={cityDialogOpen} onOpenChange={setCityDialogOpen}>
         <DialogContent dir="rtl" className="text-start">
           <DialogHeader>
-            <DialogTitle>{editingCity ? "ویرایش شهر" : "افزودن شهر"}</DialogTitle>
+            <DialogTitle>
+              {editingCity ? t("adminProvinces.editCity") : t("adminProvinces.addCity")}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCitySubmit} className="space-y-4">
             <div>
-              <Label>نام شهر</Label>
+              <Label>{t("adminProvinces.cityName")}</Label>
               <Input
                 value={cityForm.name}
                 onChange={(e) => setCityForm((f) => ({ ...f, name: e.target.value }))}
@@ -349,7 +363,7 @@ export default function AdminProvincesPage() {
               />
             </div>
             <div>
-              <Label>استان</Label>
+              <Label>{t("adminProvinces.province")}</Label>
               <select
                 value={cityForm.provinceId}
                 onChange={(e) => setCityForm((f) => ({ ...f, provinceId: e.target.value }))}
@@ -357,7 +371,7 @@ export default function AdminProvincesPage() {
                 dir="rtl"
                 required
               >
-                <option value="">انتخاب استان</option>
+                <option value="">{t("adminProvinces.selectProvince")}</option>
                 {provinces.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -366,7 +380,7 @@ export default function AdminProvincesPage() {
               </select>
             </div>
             <div>
-              <Label>ترتیب</Label>
+              <Label>{t("adminProvinces.order")}</Label>
               <Input
                 type="number"
                 value={cityForm.sortOrder}
@@ -382,9 +396,11 @@ export default function AdminProvincesPage() {
             </div>
             <DialogFooter className="flex flex-row-reverse gap-2">
               <Button type="button" variant="outline" onClick={() => setCityDialogOpen(false)}>
-                انصراف
+                {t("common.cancel")}
               </Button>
-              <Button type="submit">{editingCity ? "ذخیره" : "افزودن"}</Button>
+              <Button type="submit">
+                {editingCity ? t("common.save") : t("adminProvinces.addCity")}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

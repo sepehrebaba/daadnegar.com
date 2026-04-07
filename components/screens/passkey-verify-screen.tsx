@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, KeyRound } from "lucide-react";
 import type { User } from "@/types";
+import { useTranslation } from "react-i18next";
 
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === "object" && "message" in error) {
@@ -22,6 +23,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 export function PasskeyVerifyScreen() {
   const router = useRouter();
   const { setUser } = useUser();
+  const { t } = useTranslation();
   const [passkey, setPasskey] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -33,25 +35,25 @@ export function PasskeyVerifyScreen() {
 
     const token = getInviteToken();
     if (!token) {
-      setError("لطفاً ابتدا کد دعوت را وارد کنید");
+      setError(t("auth.passkey.noToken"));
       setIsLoading(false);
       return;
     }
 
     const { data, error: apiError } = await api.invite.verify.post({ token, passkey });
     if (apiError || !data) {
-      setError(extractErrorMessage(apiError, "رمز عبور نادرست است"));
+      setError(extractErrorMessage(apiError, t("auth.passkey.wrongPassword")));
       setIsLoading(false);
       return;
     }
     const result = data as { ok?: boolean; error?: string; user?: User };
     if (!result.ok) {
-      setError(result.error ?? "رمز عبور نادرست است");
+      setError(result.error ?? t("auth.passkey.wrongPassword"));
       setIsLoading(false);
       return;
     }
     if (!result.user) {
-      setError("خطا در دریافت اطلاعات کاربر");
+      setError(t("auth.passkey.userError"));
       setIsLoading(false);
       return;
     }
@@ -68,17 +70,19 @@ export function PasskeyVerifyScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <KeyRound className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-foreground text-xl font-bold">ورود به حساب</CardTitle>
-          <CardDescription>رمز عبور خود را وارد کنید</CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("auth.passkey.verifyTitle")}
+          </CardTitle>
+          <CardDescription>{t("auth.passkey.verifyDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="passkey">رمز عبور</Label>
+              <Label htmlFor="passkey">{t("auth.passkey.passkey")}</Label>
               <Input
                 id="passkey"
                 type="password"
-                placeholder="رمز عبور خود را وارد کنید"
+                placeholder={t("auth.passkey.passkeyPlaceholder")}
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
                 dir="ltr"
@@ -93,11 +97,11 @@ export function PasskeyVerifyScreen() {
             )}
 
             <Button type="submit" className="w-full" disabled={!passkey || isLoading}>
-              {isLoading ? "در حال بررسی..." : "ورود"}
+              {isLoading ? t("auth.passkey.submittingVerify") : t("auth.passkey.submitVerify")}
             </Button>
 
             <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
-              بازگشت
+              {t("common.back")}
             </Button>
           </form>
         </CardContent>

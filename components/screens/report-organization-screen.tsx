@@ -18,10 +18,12 @@ import {
 import { ArrowRight, ArrowLeft, Building2 } from "lucide-react";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
 import { ORGANIZATION_TYPES, type OrganizationType } from "@/types";
+import { useTranslation } from "react-i18next";
 
 export function ReportOrganizationScreen() {
   const router = useRouter();
   const { updateReport, currentReport } = useReport();
+  const { t } = useTranslation();
   const [organizationType, setOrganizationType] = useState<OrganizationType | "">(
     (currentReport?.organizationType as OrganizationType) || "",
   );
@@ -39,6 +41,15 @@ export function ReportOrganizationScreen() {
     }
   };
 
+  const orgTypeLabels: Record<string, string> = {
+    government: t("report.organization.types.government"),
+    municipality: t("report.organization.types.municipality"),
+    judiciary: t("report.organization.types.judiciary"),
+    military: t("report.organization.types.military"),
+    private: t("report.organization.types.private"),
+    other: t("report.organization.types.other"),
+  };
+
   return (
     <div className="bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-lg">
@@ -46,25 +57,25 @@ export function ReportOrganizationScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <Building2 className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">نهاد یا سازمان مرتبط</CardTitle>
-          <CardDescription>نوع نهاد یا سازمان مرتبط با گزارش را مشخص کنید</CardDescription>
+          <CardTitle className="text-2xl">{t("report.organization.title")}</CardTitle>
+          <CardDescription>{t("report.organization.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="org-type">
-              نوع نهاد یا سازمان <span className="text-destructive">*</span>
+              {t("report.organization.orgType")} <span className="text-destructive">*</span>
             </Label>
             <Select
               value={organizationType}
               onValueChange={(v) => setOrganizationType(v as OrganizationType)}
             >
               <SelectTrigger id="org-type" className="w-full">
-                <SelectValue placeholder="انتخاب نوع نهاد..." />
+                <SelectValue placeholder={t("report.organization.selectOrgType")} />
               </SelectTrigger>
               <SelectContent>
                 {ORGANIZATION_TYPES.map((org) => (
                   <SelectItem key={org.value} value={org.value}>
-                    {org.label}
+                    {orgTypeLabels[org.value] ?? org.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -73,23 +84,26 @@ export function ReportOrganizationScreen() {
 
           <div className="space-y-2">
             <Label htmlFor="org-name">
-              نام دقیق نهاد یا سازمان <span className="text-muted-foreground">(اختیاری)</span>
+              {t("report.organization.orgName")}{" "}
+              <span className="text-muted-foreground">
+                {t("report.organization.orgNameOptional")}
+              </span>
             </Label>
             <Input
               id="org-name"
               value={organizationName}
               onChange={(e) => setOrganizationName(e.target.value)}
-              placeholder="مثال: شهرداری منطقه ۵ تهران"
+              placeholder={t("report.organization.orgNamePlaceholder")}
             />
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} disabled={!isValid} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
           </div>

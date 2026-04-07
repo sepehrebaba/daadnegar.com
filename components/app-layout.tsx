@@ -30,6 +30,7 @@ import {
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { api, DAADNEGAR_INVITE_TOKEN_KEY, setInviteTokenStorage } from "@/lib/edyen";
+import { useTranslation } from "react-i18next";
 
 const ChevronDown = () => (
   <svg
@@ -54,6 +55,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, setUser, logout } = useUser();
   const { language, setLanguage } = useLanguage();
   const isSettingsOpen = searchParams.get("settings") === "open";
+  const { t } = useTranslation();
 
   const closeSettings = () => {
     router.replace(pathname ?? "/");
@@ -64,9 +66,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem("daadnegar_logout_toast")) {
       sessionStorage.removeItem("daadnegar_logout_toast");
-      toast("با موفقیت خارج شدید!");
+      toast(t("auth.logout.success"));
     }
-  }, []);
+  }, [t]);
 
   // Sync invite token from localStorage to cookie (for middleware) when token exists
   useEffect(() => {
@@ -118,8 +120,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
         <div className="container flex h-14 items-center justify-between px-4">
           <Link href={routes.home} className="flex items-center gap-2">
-            <Image src="/logo.png" alt="دادنگار" width={36} height={36} className="h-9 w-9" />
-            <span className="text-foreground text-lg font-bold">دادنگار</span>
+            <Image src="/logo.png" alt="Dadnegar" width={36} height={36} className="h-9 w-9" />
+            <span className="text-foreground text-lg font-bold">{t("appName")}</span>
           </Link>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -128,7 +130,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
                     <UserCircle className="h-4 w-4" />
-                    پنل کاربری
+                    {t("nav.panel")}
                     <ChevronDown />
                   </Button>
                 </DropdownMenuTrigger>
@@ -136,7 +138,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   <DropdownMenuItem asChild>
                     <Link href={routes.mainMenu} className="flex items-center gap-2">
                       <UserCircle className="h-4 w-4" />
-                      پنل کاربری
+                      {t("nav.panel")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -147,7 +149,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       className="flex items-center gap-2"
                     >
                       <Settings className="h-4 w-4" />
-                      تنظیمات
+                      {t("nav.settings")}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -157,7 +159,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     className="gap-2"
                   >
                     <LogOut className="h-4 w-4" />
-                    خروج
+                    {t("nav.logout")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -166,7 +168,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
                     <Languages className="h-4 w-4" />
-                    {language === "fa" ? "فارسی" : "English"}
+                    {language === "fa" ? t("nav.persian") : t("nav.english")}
                     <ChevronDown />
                   </Button>
                 </DropdownMenuTrigger>
@@ -175,7 +177,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     checked={language === "fa"}
                     onCheckedChange={() => setLanguage("fa")}
                   >
-                    فارسی
+                    {t("nav.persian")}
                   </DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem
                     checked={language === "en"}
@@ -206,36 +208,33 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
           >
             <House className="h-4 w-4" />
-            خانه
+            {t("nav.home")}
           </Link>
           <Link
             href={routes.security}
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
           >
             <Shield className="h-4 w-4" />
-            نگرانی‌های امنیتی
+            {t("nav.security")}
           </Link>
           <Link
             href={routes.publicReports}
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
           >
             <FileText className="h-4 w-4" />
-            گزارش‌های عمومی
+            {t("nav.publicReports")}
           </Link>
           <Link
             href={routes.about}
             className="text-muted-foreground hover:text-foreground inline-flex items-center gap-2 text-sm transition-colors"
           >
             <HelpCircle className="h-4 w-4" />
-            ما چه کاری انجام می‌دهیم؟
+            {t("nav.aboutUs")}
           </Link>
         </div>
 
         <div className="text-muted-foreground/70 container mx-auto mb-2 text-center text-xs">
-          <p>
-            © {new Date().getFullYear()} دادنگار — ما اینجا هستیم تا مطمئن شویم هیچ‌کس از عدالت فرار
-            نمی‌کند
-          </p>
+          <p>{t("footer.copyright", { year: new Date().getFullYear() })}</p>
           {appVersion ? <p className="mt-1">Version: {appVersion}</p> : null}
         </div>
       </footer>

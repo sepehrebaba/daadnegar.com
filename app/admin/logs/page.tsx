@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import {
   Table,
@@ -26,6 +27,7 @@ type Log = {
 };
 
 export default function AdminLogsPage() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<Log[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -49,9 +51,9 @@ export default function AdminLogsPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">لاگ‌های حسابرسی</h1>
+        <h1 className="text-2xl font-bold">{t("adminLogs.title")}</h1>
         <Input
-          placeholder="فیلتر entity..."
+          placeholder={t("adminLogs.filterEntity")}
           value={entity}
           onChange={(e) => setEntity(e.target.value)}
           className="max-w-xs"
@@ -59,21 +61,21 @@ export default function AdminLogsPage() {
       </div>
 
       {loading ? (
-        <p>در حال بارگذاری...</p>
+        <p>{t("common.loading")}</p>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>لیست لاگ‌های حسابرسی</CardTitle>
+            <CardTitle>{t("adminLogs.listTitle")}</CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>تاریخ</TableHead>
-                  <TableHead>عملیات</TableHead>
-                  <TableHead>موجودیت</TableHead>
-                  <TableHead>کاربر</TableHead>
-                  <TableHead>جزئیات</TableHead>
+                  <TableHead>{t("adminLogs.date")}</TableHead>
+                  <TableHead>{t("adminLogs.action")}</TableHead>
+                  <TableHead>{t("adminLogs.entity")}</TableHead>
+                  <TableHead>{t("adminLogs.user")}</TableHead>
+                  <TableHead>{t("common.details")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -94,15 +96,13 @@ export default function AdminLogsPage() {
               </TableBody>
             </Table>
             <div className="mt-4 flex justify-between">
-              <span>
-                صفحه {page} از {Math.ceil(total / 50) || 1}
-              </span>
+              <span>{t("adminLogs.pagination", { page, total: Math.ceil(total / 50) || 1 })}</span>
               <div className="flex gap-2">
                 <Button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                  قبلی
+                  {t("common.previous")}
                 </Button>
                 <Button disabled={page * 50 >= total} onClick={() => setPage((p) => p + 1)}>
-                  بعدی
+                  {t("adminLogs.next")}
                 </Button>
               </div>
             </div>

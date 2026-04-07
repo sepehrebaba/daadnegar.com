@@ -6,11 +6,12 @@ import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
-import { toPersianNum } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function ReportSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const tokensAwarded = Number(searchParams.get("tokens") || 0);
 
   const handleBackToMenu = () => {
@@ -25,27 +26,24 @@ function ReportSuccessContent() {
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
           <CardTitle className="text-foreground text-xl font-bold">
-            گزارش شما با موفقیت ثبت شد
+            {t("report.success.title")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="bg-secondary rounded-lg p-4 text-center">
-            <p className="text-muted-foreground">
-              از همکاری شما سپاسگزاریم. گزارش شما توسط تیم ما بررسی خواهد شد و نتیجه از طریق بخش
-              «درخواست‌های من» قابل پیگیری است.
-            </p>
+            <p className="text-muted-foreground">{t("report.success.description")}</p>
           </div>
 
           {tokensAwarded > 0 && (
             <div className="bg-primary/5 border-primary/20 rounded-lg border p-4 text-center">
               <p className="text-primary text-sm font-medium">
-                {toPersianNum(tokensAwarded)} توکن به حساب شما اضافه شد!
+                {t("report.success.tokensAwarded", { count: tokensAwarded })}
               </p>
             </div>
           )}
 
           <Button onClick={handleBackToMenu} className="w-full">
-            بازگشت به منوی اصلی
+            {t("report.success.backToMenu")}
           </Button>
         </CardContent>
       </Card>

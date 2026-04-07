@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ type PersonReportsPayload = {
 };
 
 export default function PublicPersonReportsPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const router = useRouter();
   const personId = params?.personId as string | undefined;
@@ -49,7 +51,7 @@ export default function PublicPersonReportsPage() {
       setLoading(true);
       const res = await fetch(`/api/reports/public/person/${personId}`);
       if (!res.ok) {
-        setError("اطلاعات این فرد یا گزارش‌های عمومی او پیدا نشد.");
+        setError(t("publicPersonReports.notFound"));
         setLoading(false);
         return;
       }
@@ -71,7 +73,7 @@ export default function PublicPersonReportsPage() {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <Card>
-          <CardContent className="py-10 text-center text-sm">در حال بارگذاری...</CardContent>
+          <CardContent className="py-10 text-center text-sm">{t("common.loading")}</CardContent>
         </Card>
       </div>
     );
@@ -82,9 +84,13 @@ export default function PublicPersonReportsPage() {
       <div className="mx-auto w-full max-w-5xl px-4 py-8">
         <Card>
           <CardContent className="space-y-4 py-10 text-center">
-            <p className="text-destructive text-sm">{error ?? "اطلاعاتی یافت نشد."}</p>
+            <p className="text-destructive text-sm">
+              {error ?? t("publicPersonReports.notFoundFallback")}
+            </p>
             <Button asChild variant="outline">
-              <Link href={routes.publicReports}>بازگشت به گزارش‌های عمومی</Link>
+              <Link href={routes.publicReports}>
+                {t("publicPersonReports.backToPublicReports")}
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -97,10 +103,10 @@ export default function PublicPersonReportsPage() {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <Button type="button" variant="outline" onClick={() => router.back()}>
           <ArrowRight className="h-4 w-4" />
-          بازگشت
+          {t("common.back")}
         </Button>
         <Button asChild variant="ghost">
-          <Link href={routes.publicReports}>همه گزارش‌های عمومی</Link>
+          <Link href={routes.publicReports}>{t("publicPersonReports.backToPublicReports")}</Link>
         </Button>
       </div>
 
@@ -113,7 +119,7 @@ export default function PublicPersonReportsPage() {
           <div>
             <h1 className="text-xl font-black md:text-2xl">{fullName}</h1>
             <p className="text-muted-foreground text-sm">
-              {data.person.title?.trim() || "عنوان ثبت نشده"}
+              {data.person.title?.trim() || t("publicPersonReports.personNoTitle")}
             </p>
           </div>
         </CardContent>
@@ -121,13 +127,15 @@ export default function PublicPersonReportsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>گزارش‌های ثبت‌شده برای این فرد ({data.reports.length})</CardTitle>
+          <CardTitle>
+            {t("publicPersonReports.reportsFor", { count: data.reports.length })}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {data.reports.length === 0 ? (
             <div className="text-muted-foreground flex flex-col items-center gap-2 py-10 text-sm">
               <FileSearch className="h-7 w-7" />
-              گزارشی برای نمایش وجود ندارد.
+              {t("publicPersonReports.noReports")}
             </div>
           ) : (
             data.reports.map((report) => (
@@ -144,24 +152,28 @@ export default function PublicPersonReportsPage() {
                     <Badge variant="outline">
                       <span className="inline-flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" />
-                        {[report.province, report.city].filter(Boolean).join("، ")}
+                        {[report.province, report.city]
+                          .filter(Boolean)
+                          .join(t("common.listSeparator"))}
                       </span>
                     </Badge>
                   )}
                 </div>
                 <h2 className="mb-1 text-base font-bold">
-                  {report.title?.trim() || "گزارش عمومی تاییدشده"}
+                  {report.title?.trim() || t("publicReportDetail.noTitle")}
                 </h2>
                 <p className="text-muted-foreground line-clamp-3 text-sm leading-7">
                   {report.description}
                 </p>
                 <div className="text-muted-foreground mt-2 inline-flex items-center gap-1 text-xs">
                   <Calendar className="h-3.5 w-3.5" />
-                  انتشار: {new Date(report.createdAt).toLocaleDateString("fa-IR")}
+                  {t("publicPersonReports.publishDate")}{" "}
+                  {new Date(report.createdAt).toLocaleDateString("fa-IR")}
                   {report.occurrenceDate ? (
                     <>
                       <span className="mx-1">|</span>
-                      وقوع: {new Date(report.occurrenceDate).toLocaleDateString("fa-IR")}
+                      {t("publicPersonReports.occurrenceDate")}{" "}
+                      {new Date(report.occurrenceDate).toLocaleDateString("fa-IR")}
                     </>
                   ) : null}
                 </div>

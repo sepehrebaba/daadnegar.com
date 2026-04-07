@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, KeyRound } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === "object" && "message" in error) {
@@ -19,6 +20,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 
 export function InviteCodeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -30,13 +32,13 @@ export function InviteCodeScreen() {
 
     const { data, error: apiError } = await api.invite.validate.post({ code });
     if (apiError || !data) {
-      setError(extractErrorMessage(apiError, "کد دعوت نامعتبر است"));
+      setError(extractErrorMessage(apiError, t("auth.inviteCode.invalid")));
       setIsLoading(false);
       return;
     }
     const result = data as { ok?: boolean; error?: string; token?: string; hasPasskey?: boolean };
     if (!result.ok) {
-      setError(result.error ?? "کد دعوت نامعتبر است");
+      setError(result.error ?? t("auth.inviteCode.invalid"));
       setIsLoading(false);
       return;
     }
@@ -53,17 +55,19 @@ export function InviteCodeScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <KeyRound className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-foreground text-xl font-bold">کد دعوت را وارد کنید</CardTitle>
-          <CardDescription>کد دعوت خود را وارد نمایید: INVITE2024</CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("auth.inviteCode.title")}
+          </CardTitle>
+          <CardDescription>{t("auth.inviteCode.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="code">کد دعوت</Label>
+              <Label htmlFor="code">{t("auth.inviteCode.label")}</Label>
               <Input
                 id="code"
                 type="text"
-                placeholder="مثال: INVITE2024"
+                placeholder={t("auth.inviteCode.placeholder")}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="text-center text-lg tracking-wider"
@@ -79,11 +83,11 @@ export function InviteCodeScreen() {
             )}
 
             <Button type="submit" className="w-full" disabled={!code || isLoading}>
-              {isLoading ? "در حال بررسی..." : "ادامه"}
+              {isLoading ? t("auth.inviteCode.submitting") : t("auth.inviteCode.submit")}
             </Button>
 
             <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
-              بازگشت
+              {t("common.back")}
             </Button>
           </form>
         </CardContent>

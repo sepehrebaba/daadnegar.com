@@ -2,11 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const check = async () => {
@@ -18,61 +20,71 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-bold">داشبورد</h1>
-      <p className="text-muted-foreground mb-6">به پنل مدیریت دادنگار خوش آمدید.</p>
+      <h1 className="mb-6 text-2xl font-bold">{t("adminDashboard.title")}</h1>
+      <p className="text-muted-foreground mb-6">{t("adminDashboard.welcome")}</p>
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>دسته‌بندی‌ها</CardTitle>
+            <CardTitle>{t("adminDashboard.categories")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4 text-sm">مدیریت دسته‌بندی گزارش‌ها</p>
+            <p className="text-muted-foreground mb-4 text-sm">
+              {t("adminDashboard.categoriesDescription")}
+            </p>
             <a href="/admin/categories" className="text-primary hover:underline">
-              مشاهده →
+              {t("adminDashboard.viewArrow")}
             </a>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>کاربران</CardTitle>
+            <CardTitle>{t("adminDashboard.users")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4 text-sm">لیست کاربران سیستم</p>
+            <p className="text-muted-foreground mb-4 text-sm">
+              {t("adminDashboard.usersDescription")}
+            </p>
             <a href="/admin/users" className="text-primary hover:underline">
-              مشاهده →
+              {t("adminDashboard.viewArrow")}
             </a>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>اشخاص</CardTitle>
+            <CardTitle>{t("adminDashboard.people")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4 text-sm">مدیریت افراد معروف و دستی</p>
+            <p className="text-muted-foreground mb-4 text-sm">
+              {t("adminDashboard.peopleDescription")}
+            </p>
             <a href="/admin/people" className="text-primary hover:underline">
-              مشاهده →
+              {t("adminDashboard.viewArrow")}
             </a>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>گزارش‌ها</CardTitle>
+            <CardTitle>{t("adminDashboard.reports")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4 text-sm">گزارش‌های ثبت شده</p>
+            <p className="text-muted-foreground mb-4 text-sm">
+              {t("adminDashboard.reportsDescription")}
+            </p>
             <a href="/admin/reports" className="text-primary hover:underline">
-              مشاهده →
+              {t("adminDashboard.viewArrow")}
             </a>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>لاگ‌های حسابرسی</CardTitle>
+            <CardTitle>{t("adminDashboard.auditLogs")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4 text-sm">تاریخچه اقدامات</p>
+            <p className="text-muted-foreground mb-4 text-sm">
+              {t("adminDashboard.auditLogsDescription")}
+            </p>
             <a href="/admin/logs" className="text-primary hover:underline">
-              مشاهده →
+              {t("adminDashboard.viewArrow")}
             </a>
           </CardContent>
         </Card>

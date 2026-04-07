@@ -18,10 +18,12 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/edyen";
+import { useTranslation } from "react-i18next";
 
 export function LoginScreen() {
   const router = useRouter();
   const { setUser } = useUser();
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -45,7 +47,7 @@ export function LoginScreen() {
     });
 
     if (!res.ok) {
-      let msg = "خطا در ورود. لطفاً اطلاعات را بررسی کنید.";
+      let msg = t("auth.login.error");
       try {
         const j = (await res.json()) as {
           message?: string;
@@ -82,7 +84,7 @@ export function LoginScreen() {
       name: me.name,
       mustChangePassword: mustChange,
     });
-    toast(mustChange ? "وارد شدید؛ لطفاً رمز عبور خود را عوض کنید." : "با موفقیت وارد شدید!");
+    toast(mustChange ? t("auth.login.successChangePassword") : t("auth.login.success"));
     router.push(mustChange ? routes.changePasswordRequired : routes.mainMenu);
 
     setIsLoading(false);
@@ -95,20 +97,20 @@ export function LoginScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <LogIn className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-foreground text-xl font-bold">ورود به حساب کاربری</CardTitle>
-          <CardDescription className="text-xs">
-            نام کاربری یا ایمیل ثبت‌شده و رمز عبور را وارد کنید.
-          </CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("auth.login.title")}
+          </CardTitle>
+          <CardDescription className="text-xs">{t("auth.login.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">نام کاربری یا ایمیل</Label>
+              <Label htmlFor="username">{t("auth.login.username")}</Label>
               <Input
                 id="username"
                 type="text"
                 autoComplete="username"
-                placeholder="my_username یا user@…"
+                placeholder={t("auth.login.usernamePlaceholder")}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="text-center"
@@ -117,7 +119,7 @@ export function LoginScreen() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">رمز عبور</Label>
+              <Label htmlFor="password">{t("auth.login.password")}</Label>
               <InputGroup>
                 <InputGroupInput
                   id="password"
@@ -136,7 +138,7 @@ export function LoginScreen() {
                     size="icon-xs"
                     variant="ghost"
                     onClick={() => setShowPassword((p) => !p)}
-                    aria-label={showPassword ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                    aria-label={showPassword ? t("common.hidePassword") : t("common.showPassword")}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </InputGroupButton>
@@ -156,11 +158,11 @@ export function LoginScreen() {
               className="w-full"
               disabled={!username.trim() || !password || isLoading}
             >
-              {isLoading ? "در حال ورود..." : "ورود"}
+              {isLoading ? t("auth.login.submitting") : t("auth.login.submit")}
             </Button>
 
             <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
-              بازگشت
+              {t("common.back")}
             </Button>
           </form>
         </CardContent>

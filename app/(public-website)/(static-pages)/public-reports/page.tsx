@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toPersianNum } from "@/lib/utils";
 import { ChevronLeft, ChevronRight, Filter, FileSearch } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 type PublicReportRow = {
   id: string;
@@ -29,6 +30,7 @@ type FiltersPayload = {
 };
 
 export default function PublicReportsPage() {
+  const { t } = useTranslation();
   const perPage = 12;
   const [rows, setRows] = useState<PublicReportRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -145,13 +147,13 @@ export default function PublicReportsPage() {
     <div className="bg-background mx-auto w-full max-w-[1600px] px-4 py-6 md:px-6 lg:px-8 lg:py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-black md:text-3xl">گزارش‌های عمومی</h1>
+          <h1 className="text-2xl font-black md:text-3xl">{t("publicReports.title")}</h1>
           <p className="text-muted-foreground mt-2 text-sm md:text-base">
-            گزارش‌هایی که توسط تیم تایید و برای مشاهده عمومی منتشر شده‌اند.
+            {t("publicReports.description")}
           </p>
         </div>
         <Button asChild variant="outline">
-          <Link href={routes.home}>بازگشت به خانه</Link>
+          <Link href={routes.home}>{t("publicReports.backToHome")}</Link>
         </Button>
       </div>
 
@@ -160,7 +162,7 @@ export default function PublicReportsPage() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
               <Filter className="h-4 w-4" />
-              فیلترها
+              {t("publicReports.filters")}
               {activeFilters > 0 ? (
                 <Badge variant="secondary" className="mr-auto">
                   {toPersianNum(activeFilters)}
@@ -170,23 +172,23 @@ export default function PublicReportsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="public-q">جستجو در عنوان و متن</Label>
+              <Label htmlFor="public-q">{t("publicReports.searchLabel")}</Label>
               <Input
                 id="public-q"
                 value={q}
                 onChange={(event) => setQ(event.target.value)}
-                placeholder="کلیدواژه..."
+                placeholder={t("publicReports.searchPlaceholder")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="public-city">شهر</Label>
+              <Label htmlFor="public-city">{t("publicReports.cityLabel")}</Label>
               <select
                 id="public-city"
                 value={city}
                 onChange={(event) => setCity(event.target.value)}
                 className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
-                <option value="all">همه شهرها</option>
+                <option value="all">{t("publicReports.allCities")}</option>
                 {cities.map((item) => (
                   <option key={item} value={item}>
                     {item}
@@ -195,14 +197,14 @@ export default function PublicReportsPage() {
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="public-category">دسته‌بندی</Label>
+              <Label htmlFor="public-category">{t("publicReports.categoryLabel")}</Label>
               <select
                 id="public-category"
                 value={categoryId}
                 onChange={(event) => setCategoryId(event.target.value)}
                 className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
               >
-                <option value="all">همه دسته‌ها</option>
+                <option value="all">{t("publicReports.allCategories")}</option>
                 {categories.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
@@ -212,7 +214,7 @@ export default function PublicReportsPage() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
               <div className="space-y-2">
-                <Label htmlFor="public-occurrence-from">تاریخ وقوع از</Label>
+                <Label htmlFor="public-occurrence-from">{t("publicReports.occurrenceFrom")}</Label>
                 <Input
                   id="public-occurrence-from"
                   type="date"
@@ -221,7 +223,7 @@ export default function PublicReportsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="public-occurrence-to">تا</Label>
+                <Label htmlFor="public-occurrence-to">{t("publicReports.occurrenceTo")}</Label>
                 <Input
                   id="public-occurrence-to"
                   type="date"
@@ -232,10 +234,10 @@ export default function PublicReportsPage() {
             </div>
             <div className="flex gap-2">
               <Button type="button" className="flex-1" onClick={applyFilters}>
-                اعمال
+                {t("publicReports.apply")}
               </Button>
               <Button type="button" variant="outline" className="flex-1" onClick={clearFilters}>
-                پاک‌سازی
+                {t("publicReports.clear")}
               </Button>
             </div>
           </CardContent>
@@ -244,13 +246,13 @@ export default function PublicReportsPage() {
         <div className="space-y-3">
           {loading ? (
             <Card>
-              <CardContent className="py-12 text-center text-sm">در حال بارگذاری...</CardContent>
+              <CardContent className="py-12 text-center text-sm">{t("common.loading")}</CardContent>
             </Card>
           ) : rows.length === 0 ? (
             <Card>
               <CardContent className="text-muted-foreground flex flex-col items-center gap-2 py-12 text-sm">
                 <FileSearch className="h-8 w-8" />
-                <p>گزارش عمومی مطابق فیلترها پیدا نشد.</p>
+                <p>{t("publicReports.notFound")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -270,7 +272,7 @@ export default function PublicReportsPage() {
                         {report.city ? <Badge variant="outline">{report.city}</Badge> : null}
                       </div>
                       <h2 className="text-base font-bold md:text-lg">
-                        {report.title?.trim() || "گزارش عمومی تاییدشده"}
+                        {report.title?.trim() || t("publicReports.defaultTitle")}
                       </h2>
                       <p className="text-muted-foreground text-sm leading-7">
                         {report.description.length > 420
@@ -279,14 +281,16 @@ export default function PublicReportsPage() {
                       </p>
                       <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                         <span>
-                          فرد گزارش‌شده: {report.person.firstName} {report.person.lastName}
+                          {t("publicReports.reportedPerson")} {report.person.firstName}{" "}
+                          {report.person.lastName}
                         </span>
                         <span>
-                          تاریخ انتشار: {new Date(report.createdAt).toLocaleDateString("fa-IR")}
+                          {t("publicReports.publishDate")}{" "}
+                          {new Date(report.createdAt).toLocaleDateString("fa-IR")}
                         </span>
                         {report.occurrenceDate ? (
                           <span>
-                            تاریخ وقوع:{" "}
+                            {t("publicReports.occurrenceDate")}{" "}
                             {new Date(report.occurrenceDate).toLocaleDateString("fa-IR")}
                           </span>
                         ) : null}
@@ -305,10 +309,13 @@ export default function PublicReportsPage() {
                     onClick={() => setPage((prev) => prev - 1)}
                   >
                     <ChevronRight className="h-4 w-4" />
-                    قبلی
+                    {t("common.previous")}
                   </Button>
                   <span className="text-muted-foreground text-sm">
-                    صفحه {toPersianNum(page)} از {toPersianNum(totalPages)}
+                    {t("publicReports.page", {
+                      page: toPersianNum(page),
+                      total: toPersianNum(totalPages),
+                    })}
                   </span>
                   <Button
                     type="button"
@@ -316,7 +323,7 @@ export default function PublicReportsPage() {
                     disabled={page >= totalPages}
                     onClick={() => setPage((prev) => prev + 1)}
                   >
-                    بعدی
+                    {t("common.next")}
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                 </div>

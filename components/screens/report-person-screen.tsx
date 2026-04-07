@@ -40,10 +40,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import type { Person } from "@/types";
+import { useTranslation } from "react-i18next";
 
 export function ReportPersonScreen() {
   const router = useRouter();
   const { updateReport, currentReport, setReportPerson } = useReport();
+  const { t } = useTranslation();
   const [hasInvolvedPerson, setHasInvolvedPerson] = useState<"yes" | "no" | "">(
     currentReport?.hasInvolvedPerson === true
       ? "yes"
@@ -191,8 +193,8 @@ export function ReportPersonScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <User className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">شخص دخیل در پرونده</CardTitle>
-          <CardDescription>آیا شخص خاصی در این پرونده دخیل است؟</CardDescription>
+          <CardTitle className="text-2xl">{t("report.person.title")}</CardTitle>
+          <CardDescription>{t("report.person.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -217,7 +219,7 @@ export function ReportPersonScreen() {
               <span
                 className={`font-medium ${hasInvolvedPerson === "yes" ? "text-primary" : "text-foreground"}`}
               >
-                بله، شخص دخیل است
+                {t("report.person.hasPersonYes")}
               </span>
             </button>
 
@@ -246,7 +248,7 @@ export function ReportPersonScreen() {
               <span
                 className={`font-medium ${hasInvolvedPerson === "no" ? "text-primary" : "text-foreground"}`}
               >
-                خیر، شخص خاصی نیست
+                {t("report.person.hasPersonNo")}
               </span>
             </button>
           </div>
@@ -254,7 +256,7 @@ export function ReportPersonScreen() {
           {hasInvolvedPerson === "yes" && !showAddNew && (
             <>
               <Label className="mb-2" htmlFor="search">
-                جستجو در افراد شناخته‌شده
+                {t("report.person.searchPeople")}
               </Label>
               <div className="bg-muted-foreground/2 rounded-lg border p-3">
                 <div className="space-y-2">
@@ -264,14 +266,16 @@ export function ReportPersonScreen() {
                       id="search"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="نام شخص را جستجو کنید..."
+                      placeholder={t("report.person.searchPlaceholder")}
                       className="pr-10"
                     />
                   </div>
 
                   <div className="max-h-40 space-y-2 overflow-y-auto">
                     {loading ? (
-                      <p className="text-muted-foreground py-4 text-center">در حال بارگذاری...</p>
+                      <p className="text-muted-foreground py-4 text-center">
+                        {t("common.loading")}
+                      </p>
                     ) : (
                       filteredPeople.map((person) => (
                         <button
@@ -300,7 +304,7 @@ export function ReportPersonScreen() {
                     )}
                     {!loading && filteredPeople.length === 0 && searchQuery && (
                       <p className="text-muted-foreground py-4 text-center">
-                        شخصی با این نام یافت نشد
+                        {t("report.person.notFoundInSearch")}
                       </p>
                     )}
                   </div>
@@ -314,12 +318,14 @@ export function ReportPersonScreen() {
                 className="w-full"
               >
                 <UserPlus className="ml-2 h-4 w-4" />
-                شخص مورد نظر در لیست نیست؟ افزودن شخص جدید
+                {t("report.person.addNotInList")}
               </Button>
 
               {selectedPerson && (
                 <div className="border-primary bg-primary/5 rounded-lg border p-3">
-                  <p className="text-muted-foreground text-sm">شخص انتخاب شده:</p>
+                  <p className="text-muted-foreground text-sm">
+                    {t("report.person.selectedPerson")}
+                  </p>
                   <p className="font-medium">
                     {selectedPerson.firstName} {selectedPerson.lastName}
                   </p>
@@ -337,7 +343,7 @@ export function ReportPersonScreen() {
           >
             <DialogContent scrollable>
               <DialogHeader className="shrink-0">
-                <DialogTitle>افزودن شخص جدید</DialogTitle>
+                <DialogTitle>{t("report.person.addNewTitle")}</DialogTitle>
               </DialogHeader>
               <div className="min-h-0 flex-1 overflow-y-auto">
                 <Alert
@@ -347,7 +353,7 @@ export function ReportPersonScreen() {
                 >
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-600" />
                   <AlertDescription className="text-amber-800">
-                    شخص اضافه شده بعد از بررسی توسط مدیران سامانه تایید خواهد شد.
+                    {t("report.person.newPersonWarning")}
                   </AlertDescription>
                 </Alert>
                 <Alert
@@ -357,62 +363,62 @@ export function ReportPersonScreen() {
                 >
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-600" />
                   <AlertDescription className="text-amber-800">
-                    لطفا ابتدا از موجود نبودن شخص در لیست افراد معروف مطمئن شوید.
+                    {t("report.person.newPersonCheckWarning")}
                   </AlertDescription>
                 </Alert>
 
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="modal-firstName">
-                      نام <span className="text-destructive">*</span>
+                      {t("report.person.firstName")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="modal-firstName"
                       value={newPersonFirstName}
                       onChange={(e) => setNewPersonFirstName(e.target.value)}
-                      placeholder="نام شخص..."
+                      placeholder={t("report.person.firstNamePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="modal-lastName">
-                      نام خانوادگی <span className="text-destructive">*</span>
+                      {t("report.person.lastName")} <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="modal-lastName"
                       value={newPersonLastName}
                       onChange={(e) => setNewPersonLastName(e.target.value)}
-                      placeholder="نام خانوادگی شخص..."
+                      placeholder={t("report.person.lastNamePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-fatherName">نام پدر</Label>
+                    <Label htmlFor="modal-fatherName">{t("report.person.fatherName")}</Label>
                     <Input
                       id="modal-fatherName"
                       value={newPersonFatherName}
                       onChange={(e) => setNewPersonFatherName(e.target.value)}
-                      placeholder="نام پدر..."
+                      placeholder={t("report.person.fatherNamePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-organization">ارگان</Label>
+                    <Label htmlFor="modal-organization">{t("report.person.organization")}</Label>
                     <Input
                       id="modal-organization"
                       value={newPersonOrganization}
                       onChange={(e) => setNewPersonOrganization(e.target.value)}
-                      placeholder="ارگان..."
+                      placeholder={t("report.person.organizationPlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-title">سمت</Label>
+                    <Label htmlFor="modal-title">{t("report.person.personTitle")}</Label>
                     <Input
                       id="modal-title"
                       value={newPersonTitle}
                       onChange={(e) => setNewPersonTitle(e.target.value)}
-                      placeholder="سمت..."
+                      placeholder={t("report.person.personTitlePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-dateOfBirth">تاریخ تولد</Label>
+                    <Label htmlFor="modal-dateOfBirth">{t("report.person.dateOfBirth")}</Label>
                     <Input
                       id="modal-dateOfBirth"
                       type="date"
@@ -421,46 +427,46 @@ export function ReportPersonScreen() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-nationalCode">کد ملی</Label>
+                    <Label htmlFor="modal-nationalCode">{t("report.person.nationalCode")}</Label>
                     <Input
                       id="modal-nationalCode"
                       value={newPersonNationalCode}
                       onChange={(e) => setNewPersonNationalCode(e.target.value)}
-                      placeholder="کد ملی..."
+                      placeholder={t("report.person.nationalCodePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-address">آدرس</Label>
+                    <Label htmlFor="modal-address">{t("report.person.address")}</Label>
                     <Input
                       id="modal-address"
                       value={newPersonAddress}
                       onChange={(e) => setNewPersonAddress(e.target.value)}
-                      placeholder="آدرس..."
+                      placeholder={t("report.person.addressPlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-mobile">شماره موبایل</Label>
+                    <Label htmlFor="modal-mobile">{t("report.person.mobile")}</Label>
                     <Input
                       id="modal-mobile"
                       value={newPersonMobile}
                       onChange={(e) => setNewPersonMobile(e.target.value)}
-                      placeholder="شماره موبایل..."
+                      placeholder={t("report.person.mobilePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="modal-phone">شماره تلفن</Label>
+                    <Label htmlFor="modal-phone">{t("report.person.phone")}</Label>
                     <Input
                       id="modal-phone"
                       value={newPersonPhone}
                       onChange={(e) => setNewPersonPhone(e.target.value)}
-                      placeholder="شماره تلفن..."
+                      placeholder={t("report.person.phonePlaceholder")}
                     />
                   </div>
                 </div>
               </div>
               <DialogFooter className="shrink-0">
                 <Button type="button" variant="outline" onClick={() => setShowAddNew(false)}>
-                  انصراف
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   type="button"
@@ -468,7 +474,7 @@ export function ReportPersonScreen() {
                   disabled={!newPersonFirstName || !newPersonLastName}
                 >
                   <UserPlus className="ml-2 h-4 w-4" />
-                  افزودن شخص
+                  {t("report.person.addPersonSubmit")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -477,9 +483,9 @@ export function ReportPersonScreen() {
           <AlertDialog open={showSimilarWarning} onOpenChange={setShowSimilarWarning}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>شخص مشابه موجود است</AlertDialogTitle>
+                <AlertDialogTitle>{t("report.person.similarExists")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  شخصی با مشخصات مشابه موجود است، آیا مطمئن هستید که شخص جدیدی باید اضافه شود؟
+                  {t("report.person.similarExistsDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -488,10 +494,10 @@ export function ReportPersonScreen() {
                     setPendingAdd(false);
                   }}
                 >
-                  انصراف
+                  {t("common.cancel")}
                 </AlertDialogCancel>
                 <AlertDialogAction onClick={handleConfirmAddDespiteSimilar}>
-                  بله، اضافه کن
+                  {t("report.person.addAnyway")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -500,10 +506,10 @@ export function ReportPersonScreen() {
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} disabled={!isValid} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
           </div>

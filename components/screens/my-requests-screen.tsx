@@ -8,29 +8,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CheckCircle, XCircle, FileText } from "lucide-react";
 import type { RequestStatus, ReportCase } from "@/types";
-
-const statusConfig: Record<RequestStatus, { label: string; icon: typeof Clock; color: string }> = {
-  pending: {
-    label: "در انتظار",
-    icon: Clock,
-    color: "text-amber-600 bg-amber-100",
-  },
-  accepted: {
-    label: "تایید شده",
-    icon: CheckCircle,
-    color: "text-green-600 bg-green-100",
-  },
-  rejected: {
-    label: "رد شده",
-    icon: XCircle,
-    color: "text-red-600 bg-red-100",
-  },
-};
+import { useTranslation } from "react-i18next";
 
 export function MyRequestsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [requests, setRequests] = useState<ReportCase[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const statusConfig: Record<RequestStatus, { label: string; icon: typeof Clock; color: string }> =
+    {
+      pending: {
+        label: t("requests.status.pending"),
+        icon: Clock,
+        color: "text-amber-600 bg-amber-100",
+      },
+      accepted: {
+        label: t("requests.status.accepted"),
+        icon: CheckCircle,
+        color: "text-green-600 bg-green-100",
+      },
+      rejected: {
+        label: t("requests.status.rejected"),
+        icon: XCircle,
+        color: "text-red-600 bg-red-100",
+      },
+    };
 
   useEffect(() => {
     api.reports.my
@@ -52,19 +55,19 @@ export function MyRequestsScreen() {
       <Card className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <CardHeader>
           <CardTitle className="text-foreground text-center text-xl font-bold">
-            درخواست‌های من
+            {t("requests.title")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col gap-3 overflow-y-auto">
           {loading ? (
             <div className="text-muted-foreground flex min-h-[330px] items-center justify-center gap-3">
-              در حال بارگذاری...
+              {t("common.loading")}
             </div>
           ) : requests.length === 0 ? (
             <div className="text-muted-foreground flex min-h-[330px] items-center justify-center gap-3">
               <FileText className="text-muted-foreground/40 mb-3 h-10 w-10" />
               <p className="text-muted-foreground/50 text-center text-lg font-bold">
-                هیچ درخواستی ثبت نشده است
+                {t("requests.noRequests")}
               </p>
             </div>
           ) : (
@@ -104,7 +107,7 @@ export function MyRequestsScreen() {
           )}
 
           <Button onClick={() => router.back()} variant="ghost" className="mt-4">
-            بازگشت
+            {t("common.back")}
           </Button>
         </CardContent>
       </Card>

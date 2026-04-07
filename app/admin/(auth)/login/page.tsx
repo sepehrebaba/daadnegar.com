@@ -13,9 +13,11 @@ import {
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -40,7 +42,7 @@ export default function AdminLoginPage() {
     } catch {}
 
     if (!res.ok || !data || data.error) {
-      setError(data?.error || "خطا در ورود");
+      setError(data?.error || t("auth.adminLogin.error"));
       setIsLoading(false);
       return;
     }
@@ -56,15 +58,13 @@ export default function AdminLoginPage() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <Shield className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-xl font-bold">ورود به پنل ادمین</CardTitle>
-          <p className="text-muted-foreground text-sm">
-            برای دسترسی به پنل مدیریت، وارد شوید. دسترسی فقط از IPهای مجاز امکان‌پذیر است.
-          </p>
+          <CardTitle className="text-xl font-bold">{t("auth.adminLogin.title")}</CardTitle>
+          <p className="text-muted-foreground text-sm">{t("auth.adminLogin.description")}</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">نام کاربری</Label>
+              <Label htmlFor="username">{t("auth.adminLogin.username")}</Label>
               <Input
                 id="username"
                 value={username}
@@ -76,7 +76,7 @@ export default function AdminLoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">رمز عبور</Label>
+              <Label htmlFor="password">{t("auth.adminLogin.password")}</Label>
               <InputGroup>
                 <InputGroupInput
                   id="password"
@@ -94,7 +94,7 @@ export default function AdminLoginPage() {
                     size="icon-xs"
                     variant="ghost"
                     onClick={() => setShowPassword((p) => !p)}
-                    aria-label={showPassword ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                    aria-label={showPassword ? t("common.hidePassword") : t("common.showPassword")}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </InputGroupButton>
@@ -103,7 +103,7 @@ export default function AdminLoginPage() {
             </div>
             {error && <div className="text-destructive text-sm">{error}</div>}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "در حال ورود..." : "ورود"}
+              {isLoading ? t("auth.adminLogin.submitting") : t("auth.adminLogin.submit")}
             </Button>
           </form>
         </CardContent>

@@ -29,6 +29,7 @@ import { formatTimeAgo } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 type InviteCodeItem = {
   id: string;
@@ -40,6 +41,7 @@ type InviteCodeItem = {
 
 export function InviteUserScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -113,7 +115,7 @@ export function InviteUserScreen() {
         value?: { error?: { message?: string } };
         message?: string;
       };
-      const errMsg = errObj?.value?.error?.message ?? errObj?.message ?? "خطا در ارسال دعوت.";
+      const errMsg = errObj?.value?.error?.message ?? errObj?.message ?? t("inviteUser.error");
       toast.error(errMsg);
 
       setError(errMsg);
@@ -121,7 +123,7 @@ export function InviteUserScreen() {
       return;
     }
     if (data && !(data as { ok?: boolean }).ok) {
-      setError((data as { error?: string })?.error || "خطا در ارسال دعوت.");
+      setError((data as { error?: string })?.error || t("inviteUser.error"));
       setIsLoading(false);
       return;
     }
@@ -133,7 +135,7 @@ export function InviteUserScreen() {
     } | null;
     const code = res?.code ?? "";
     setInviteCode(code);
-    setSuccessMessage("کد دعوت با موفقیت ایجاد شد. این کد یک‌بار مصرف است.");
+    setSuccessMessage(t("inviteUser.success"));
     setIsLoading(false);
     void fetchMyCodes();
   };
@@ -142,8 +144,10 @@ export function InviteUserScreen() {
     <div className="bg-background container mx-auto flex flex-col items-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-foreground text-xl font-bold">دعوت کاربر</CardTitle>
-          <CardDescription>کد دعوت ایجاد کنید یا از کدهای قبلی خود استفاده کنید</CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("inviteUser.title")}
+          </CardTitle>
+          <CardDescription>{t("inviteUser.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
@@ -155,7 +159,7 @@ export function InviteUserScreen() {
             size="lg"
           >
             <UserPlus className="h-5 w-5" />
-            ایجاد کد دعوت
+            {t("inviteUser.createInvite")}
           </Button>
 
           <Dialog
@@ -168,16 +172,14 @@ export function InviteUserScreen() {
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="text-foreground text-xl font-black">
-                  ایجاد کد دعوت
+                  {t("inviteUser.dialogTitle")}
                 </DialogTitle>
               </DialogHeader>
               <div className="border-border my-0.5 border-t" />
               <form onSubmit={handleCreateInvite} className="space-y-4">
                 <Alert size="xs" variant="destructive">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    برای جلوگیری از سوءاستفاده، لطفاً فقط به افرادی که می‌شناسید کد دعوت را بدهید
-                  </AlertDescription>
+                  <AlertDescription>{t("inviteUser.warning")}</AlertDescription>
                 </Alert>
                 {successMessage && inviteCode && (
                   <div className="space-y-3 rounded-lg border border-green-200 bg-green-50/50 p-4 dark:border-green-900/50 dark:bg-green-950/20">
@@ -189,7 +191,7 @@ export function InviteUserScreen() {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-muted-foreground relative -bottom-1 text-xs">
-                        کد دعوت
+                        {t("inviteUser.inviteCodeLabel")}
                       </Label>
                       <InputGroup>
                         <InputGroupInput
@@ -213,12 +215,14 @@ export function InviteUserScreen() {
                             {copiedCode === inviteCode ? (
                               <>
                                 <Check className="h-4 w-4 shrink-0 text-green-600 dark:text-green-500" />
-                                <span className="text-green-600 dark:text-green-500">کپی شد!</span>
+                                <span className="text-green-600 dark:text-green-500">
+                                  {t("common.copied")}
+                                </span>
                               </>
                             ) : (
                               <>
                                 <Copy className="h-4 w-4" />
-                                کپی
+                                {t("common.copy")}
                               </>
                             )}
                           </Button>
@@ -227,9 +231,9 @@ export function InviteUserScreen() {
 
                       <Alert variant="default">
                         <InfoIcon className="h-4 w-4 shrink-0" />
-                        <AlertTitle className="text-xs">اطلاعات</AlertTitle>
+                        <AlertTitle className="text-xs">{t("inviteUser.infoTitle")}</AlertTitle>
                         <AlertDescription className="text-xs">
-                          این کد دعوت یک‌بار مصرف است. هر کاربر می‌تواند از آن یک بار استفاده کند
+                          {t("inviteUser.infoDescription")}
                         </AlertDescription>
                       </Alert>
                     </div>
@@ -247,11 +251,11 @@ export function InviteUserScreen() {
                       resetModalState();
                     }}
                   >
-                    بستن
+                    {t("common.close")}
                   </Button>
                 ) : (
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "در حال ایجاد..." : "ایجاد کد دعوت"}
+                    {isLoading ? t("inviteUser.submitting") : t("inviteUser.submit")}
                   </Button>
                 )}
               </form>
@@ -263,16 +267,16 @@ export function InviteUserScreen() {
             <div className="border-border border-b px-4 py-3">
               <h3 className="text-foreground flex items-center gap-2 font-semibold">
                 <Ticket className="h-4 w-4" />
-                کدهای دعوت من
+                {t("inviteUser.myCodes")}
               </h3>
             </div>
             {myCodesLoading ? (
               <div className="text-muted-foreground p-6 text-center text-sm">
-                در حال بارگذاری...
+                {t("common.loading")}
               </div>
             ) : myCodes.length === 0 ? (
               <div className="text-muted-foreground p-6 text-center text-sm">
-                هنوز کد دعوتی ایجاد نکرده‌اید
+                {t("inviteUser.noCodesYet")}
               </div>
             ) : (
               <ScrollArea viewportClassName="max-h-[280px]">
@@ -303,12 +307,14 @@ export function InviteUserScreen() {
                           {copiedCode === item.code ? (
                             <>
                               <Check className="h-3.5 w-3.5 shrink-0 text-green-600 dark:text-green-500" />
-                              <span className="text-green-600 dark:text-green-500">کپی شد!</span>
+                              <span className="text-green-600 dark:text-green-500">
+                                {t("common.copied")}
+                              </span>
                             </>
                           ) : (
                             <>
                               <Copy className="h-3.5 w-3.5" />
-                              کپی
+                              {t("common.copy")}
                             </>
                           )}
                         </Button>
@@ -317,7 +323,7 @@ export function InviteUserScreen() {
                           dir="ltr"
                           className="text-muted-foreground col-span-2 mr-auto ml-2 truncate text-xs"
                         >
-                          عمومی
+                          {t("inviteUser.public")}
                         </p>
                       </div>
                       <div className="flex items-center gap-3 self-center">
@@ -331,12 +337,12 @@ export function InviteUserScreen() {
                           {item.used ? (
                             <>
                               <UserCheck className="h-3 w-3 shrink-0" />
-                              استفاده شده
+                              {t("inviteUser.used")}
                             </>
                           ) : (
                             <>
                               <Ticket className="h-3 w-3 shrink-0" />
-                              آزاد
+                              {t("inviteUser.free")}
                             </>
                           )}
                         </span>
@@ -352,7 +358,7 @@ export function InviteUserScreen() {
           </div>
 
           <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
-            بازگشت
+            {t("common.back")}
           </Button>
         </CardContent>
       </Card>

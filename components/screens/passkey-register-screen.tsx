@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, Fingerprint } from "lucide-react";
 import type { User } from "@/types";
+import { useTranslation } from "react-i18next";
 
 function extractErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === "object" && "message" in error) {
@@ -22,6 +23,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 export function PasskeyRegisterScreen() {
   const router = useRouter();
   const { setUser } = useUser();
+  const { t } = useTranslation();
   const [passkey, setPasskey] = useState("");
   const [confirmPasskey, setConfirmPasskey] = useState("");
   const [error, setError] = useState("");
@@ -32,12 +34,12 @@ export function PasskeyRegisterScreen() {
     setError("");
 
     if (passkey.length < 6) {
-      setError("رمز عبور باید حداقل ۶ کاراکتر باشد");
+      setError(t("auth.passkey.minLength"));
       return;
     }
 
     if (passkey !== confirmPasskey) {
-      setError("رمزهای عبور مطابقت ندارند");
+      setError(t("auth.passkey.mismatch"));
       return;
     }
 
@@ -45,25 +47,25 @@ export function PasskeyRegisterScreen() {
 
     const token = getInviteToken();
     if (!token) {
-      setError("لطفاً ابتدا کد دعوت را وارد کنید");
+      setError(t("auth.passkey.noToken"));
       setIsLoading(false);
       return;
     }
 
     const { data, error: apiError } = await api.invite.register.post({ token, passkey });
     if (apiError || !data) {
-      setError(extractErrorMessage(apiError, "خطا در ثبت رمز عبور"));
+      setError(extractErrorMessage(apiError, t("auth.passkey.registerError")));
       setIsLoading(false);
       return;
     }
     const result = data as { ok?: boolean; error?: string; user?: User };
     if (!result.ok) {
-      setError(result.error ?? "خطا در ثبت رمز عبور");
+      setError(result.error ?? t("auth.passkey.registerError"));
       setIsLoading(false);
       return;
     }
     if (!result.user) {
-      setError("خطا در دریافت اطلاعات کاربر");
+      setError(t("auth.passkey.userError"));
       setIsLoading(false);
       return;
     }
@@ -80,17 +82,19 @@ export function PasskeyRegisterScreen() {
           <div className="bg-accent/20 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <Fingerprint className="text-accent-foreground h-8 w-8" />
           </div>
-          <CardTitle className="text-foreground text-xl font-bold">ایجاد کلید امنیتی</CardTitle>
-          <CardDescription>یک رمز عبور امن برای دسترسی به حساب خود ایجاد کنید</CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("auth.passkey.registerTitle")}
+          </CardTitle>
+          <CardDescription>{t("auth.passkey.registerDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="passkey">رمز عبور</Label>
+              <Label htmlFor="passkey">{t("auth.passkey.passkey")}</Label>
               <Input
                 id="passkey"
                 type="password"
-                placeholder="حداقل ۶ کاراکتر"
+                placeholder={t("auth.passkey.minPlaceholder")}
                 value={passkey}
                 onChange={(e) => setPasskey(e.target.value)}
                 dir="ltr"
@@ -98,11 +102,11 @@ export function PasskeyRegisterScreen() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm">تکرار رمز عبور</Label>
+              <Label htmlFor="confirm">{t("auth.passkey.confirmPasskey")}</Label>
               <Input
                 id="confirm"
                 type="password"
-                placeholder="رمز عبور را دوباره وارد کنید"
+                placeholder={t("auth.passkey.confirmPasskeyPlaceholder")}
                 value={confirmPasskey}
                 onChange={(e) => setConfirmPasskey(e.target.value)}
                 dir="ltr"
@@ -121,11 +125,11 @@ export function PasskeyRegisterScreen() {
               className="w-full"
               disabled={!passkey || !confirmPasskey || isLoading}
             >
-              {isLoading ? "در حال ثبت..." : "ثبت و ورود"}
+              {isLoading ? t("auth.passkey.submittingRegister") : t("auth.passkey.submitRegister")}
             </Button>
 
             <Button type="button" onClick={() => router.back()} variant="ghost" className="w-full">
-              بازگشت
+              {t("common.back")}
             </Button>
           </form>
         </CardContent>

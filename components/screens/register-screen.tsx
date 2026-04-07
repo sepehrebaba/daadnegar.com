@@ -19,36 +19,42 @@ import {
 import { AlertCircle, UserPlus, Eye, EyeOff, Check, Circle } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { isPasswordSecure, getPasswordStrength, PASSWORD_RULES } from "@/lib/password-utils";
-
-const PASSWORD_REQUIREMENTS = [
-  {
-    key: "minLength" as const,
-    label: "حداقل ۸ کاراکتر",
-    check: (p: string) => p.length >= PASSWORD_RULES.minLength,
-  },
-  {
-    key: "hasUppercase" as const,
-    label: "یک حرف بزرگ (A-Z)",
-    check: (p: string) => /[A-Z]/.test(p),
-  },
-  {
-    key: "hasLowercase" as const,
-    label: "یک حرف کوچک (a-z)",
-    check: (p: string) => /[a-z]/.test(p),
-  },
-  { key: "hasNumber" as const, label: "یک عدد (0-9)", check: (p: string) => /[0-9]/.test(p) },
-  {
-    key: "hasSpecial" as const,
-    label: "یک کاراکتر خاص (!@#$%)",
-    check: (p: string) => /[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(p),
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export function RegisterScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useUser();
+  const { t } = useTranslation();
   const codeParam = searchParams.get("code");
+
+  const PASSWORD_REQUIREMENTS = [
+    {
+      key: "minLength" as const,
+      label: t("password.minLength"),
+      check: (p: string) => p.length >= PASSWORD_RULES.minLength,
+    },
+    {
+      key: "hasUppercase" as const,
+      label: t("password.hasUppercase"),
+      check: (p: string) => /[A-Z]/.test(p),
+    },
+    {
+      key: "hasLowercase" as const,
+      label: t("password.hasLowercase"),
+      check: (p: string) => /[a-z]/.test(p),
+    },
+    {
+      key: "hasNumber" as const,
+      label: t("password.hasNumber"),
+      check: (p: string) => /[0-9]/.test(p),
+    },
+    {
+      key: "hasSpecial" as const,
+      label: t("password.hasSpecial"),
+      check: (p: string) => /[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(p),
+    },
+  ];
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -92,11 +98,11 @@ export function RegisterScreen() {
     e.preventDefault();
     setError("");
     if (!isPasswordSecure(password)) {
-      setError("لطفاً رمز عبوری امن انتخاب کنید و تمام قوانین را رعایت کنید.");
+      setError(t("auth.register.passwordWeak"));
       return;
     }
     if (password !== passwordConfirm) {
-      setError("رمز عبور با تکرار آن یکسان نیست.");
+      setError(t("auth.register.passwordMismatch"));
       return;
     }
     setIsLoading(true);
@@ -111,7 +117,7 @@ export function RegisterScreen() {
       setError(
         (regError as { message?: string })?.message ||
           (data as { error?: string })?.error ||
-          "خطا در ثبت‌نام. لطفاً دوباره تلاش کنید.",
+          t("auth.register.error"),
       );
       setIsLoading(false);
       return;
@@ -150,7 +156,7 @@ export function RegisterScreen() {
   if (isValidating) {
     return (
       <div className="bg-background flex items-center justify-center p-4">
-        <div className="text-center">در حال بررسی کد دعوت...</div>
+        <div className="text-center">{t("auth.register.checkingCode")}</div>
       </div>
     );
   }
@@ -162,20 +168,20 @@ export function RegisterScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <UserPlus className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-foreground text-xl font-bold">ثبت‌نام</CardTitle>
-          <CardDescription>
-            نام کاربری و رمز عبور خود را برای تکمیل ثبت‌نام وارد کنید
-          </CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("auth.register.title")}
+          </CardTitle>
+          <CardDescription>{t("auth.register.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">نام کاربری</Label>
+              <Label htmlFor="username">{t("auth.register.username")}</Label>
               <Input
                 id="username"
                 type="text"
                 autoComplete="username"
-                placeholder="فقط حروف کوچک انگلیسی، عدد و _ (۳ تا ۳۲ کاراکتر)"
+                placeholder={t("auth.register.usernamePlaceholder")}
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase())}
                 className="text-center"
@@ -186,7 +192,7 @@ export function RegisterScreen() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">رمز عبور</Label>
+              <Label htmlFor="password">{t("auth.register.password")}</Label>
               <InputGroup>
                 <InputGroupInput
                   id="password"
@@ -206,7 +212,7 @@ export function RegisterScreen() {
                     size="icon-xs"
                     variant="ghost"
                     onClick={() => setShowPassword((p) => !p)}
-                    aria-label={showPassword ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                    aria-label={showPassword ? t("common.hidePassword") : t("common.showPassword")}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </InputGroupButton>
@@ -232,7 +238,7 @@ export function RegisterScreen() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password-confirm">تکرار رمز عبور</Label>
+              <Label htmlFor="password-confirm">{t("auth.register.passwordConfirm")}</Label>
               <InputGroup>
                 <InputGroupInput
                   id="password-confirm"
@@ -251,14 +257,14 @@ export function RegisterScreen() {
                     size="icon-xs"
                     variant="ghost"
                     onClick={() => setShowPassword((p) => !p)}
-                    aria-label={showPassword ? "مخفی کردن رمز عبور" : "نمایش رمز عبور"}
+                    aria-label={showPassword ? t("common.hidePassword") : t("common.showPassword")}
                   >
                     {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </InputGroupButton>
                 </InputGroupAddon>
               </InputGroup>
               {passwordConfirm.length > 0 && password !== passwordConfirm && (
-                <p className="text-destructive text-xs">رمز عبور با تکرار آن یکسان نیست</p>
+                <p className="text-destructive text-xs">{t("auth.register.passwordMismatch")}</p>
               )}
             </div>
 
@@ -279,7 +285,7 @@ export function RegisterScreen() {
                 isLoading
               }
             >
-              {isLoading ? "در حال ثبت‌نام..." : "ثبت‌نام"}
+              {isLoading ? t("auth.register.submitting") : t("auth.register.submit")}
             </Button>
           </form>
         </CardContent>

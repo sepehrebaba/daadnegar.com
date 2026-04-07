@@ -3,6 +3,7 @@ import { Vazirmatn } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Providers } from "./providers";
 import { TorBanner } from "@/components/tor-banner";
+import faTranslation from "@/public/locales/fa.json";
 import "./globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -11,8 +12,8 @@ const vazirmatn = Vazirmatn({
 });
 
 export const metadata: Metadata = {
-  title: "پلتفرم گزارش امن دادنگار",
-  description: "سیستم گزارش‌دهی دادنگار",
+  title: faTranslation.appTitle,
+  description: faTranslation.appDescription,
   generator: "v0.app",
   icons: {
     icon: [

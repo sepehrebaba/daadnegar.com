@@ -10,10 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, ArrowLeft, Phone, Mail, Link, Check, X } from "lucide-react";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
+import { useTranslation } from "react-i18next";
 
 export function ReportContactScreen() {
   const router = useRouter();
   const { updateReport, currentReport } = useReport();
+  const { t } = useTranslation();
   const [wantsContact, setWantsContact] = useState<"yes" | "no">(
     currentReport?.wantsContact ? "yes" : "no",
   );
@@ -38,8 +40,8 @@ export function ReportContactScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <Phone className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">تمایل به تماس</CardTitle>
-          <CardDescription>آیا مایل هستید در صورت نیاز با شما تماس گرفته شود؟</CardDescription>
+          <CardTitle className="text-2xl">{t("report.contact.title")}</CardTitle>
+          <CardDescription>{t("report.contact.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
@@ -64,7 +66,7 @@ export function ReportContactScreen() {
               <span
                 className={`font-medium ${wantsContact === "yes" ? "text-primary" : "text-foreground"}`}
               >
-                بله
+                {t("common.yes")}
               </span>
             </button>
 
@@ -94,18 +96,16 @@ export function ReportContactScreen() {
               <span
                 className={`font-medium ${wantsContact === "no" ? "text-primary" : "text-foreground"}`}
               >
-                خیر
+                {t("common.no")}
               </span>
             </button>
           </div>
 
           {wantsContact === "yes" && (
             <div className="bg-muted/50 space-y-4 rounded-lg p-4">
-              <p className="text-muted-foreground text-sm">
-                تمام فیلدهای زیر اختیاری هستند. حداقل یک روش تماس وارد کنید.
-              </p>
+              <p className="text-muted-foreground text-sm">{t("report.contact.optionalNote")}</p>
               <div className="space-y-2">
-                <Label htmlFor="email">ایمیل</Label>
+                <Label htmlFor="email">{t("report.contact.email")}</Label>
                 <div className="relative">
                   <Mail className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
                   <Input
@@ -120,7 +120,7 @@ export function ReportContactScreen() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">شماره تلفن</Label>
+                <Label htmlFor="phone">{t("report.contact.phone")}</Label>
                 <div className="relative">
                   <Phone className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
                   <Input
@@ -135,7 +135,7 @@ export function ReportContactScreen() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="social">لینک شبکه اجتماعی</Label>
+                <Label htmlFor="social">{t("report.contact.social")}</Label>
                 <div className="relative">
                   <Link className="text-muted-foreground absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2" />
                   <Input
@@ -155,10 +155,10 @@ export function ReportContactScreen() {
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
           </div>

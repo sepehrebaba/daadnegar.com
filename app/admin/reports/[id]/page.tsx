@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,11 +122,6 @@ function formatDateTime(iso: string | Date) {
   });
 }
 
-function assignmentReasonLabel(reason: string): string {
-  if (reason === "stale_reassign") return "انتقال (اتمام مهلت)";
-  return "اختصاص اولیه";
-}
-
 function assignmentForReview(
   review: { reviewerId?: string | null; createdAt: Date | string },
   assignments?: ValidatorAssignment[],
@@ -162,7 +158,9 @@ function getValidatorReviewStatus(assignment: ValidatorAssignment, reviews: Repo
   return { status: "waiting" as const, date: null };
 }
 
-function ReportTimeline({ report }: { report: ReportDetail }) {
+type TFunction = (key: string, options?: Record<string, unknown>) => string;
+
+function ReportTimeline({ report, t }: { report: ReportDetail; t: TFunction }) {
   const isFinal = report.status === "accepted" || report.status === "rejected";
   const assignments = report.validatorAssignments ?? [];
   const reviews = report.reviews ?? [];
@@ -173,17 +171,17 @@ function ReportTimeline({ report }: { report: ReportDetail }) {
     status: StepStatus;
   }[] = [
     {
-      label: "ثبت",
+      label: t("adminReportDetail.timelineStep1"),
       date: report.createdAt,
       status: "completed",
     },
     {
-      label: "بررسی و اعتبارسنجی",
+      label: t("adminReportDetail.timelineStep2"),
       date: assignments.length > 0 ? (report.assignedAt ?? assignments[0]?.assignedAt) : null,
       status: isFinal ? "completed" : "current",
     },
     {
-      label: "تایید و نتایج",
+      label: t("adminReportDetail.timelineStep3"),
       date: report.reviewedAt,
       status: isFinal ? "completed" : "pending",
     },
@@ -192,7 +190,7 @@ function ReportTimeline({ report }: { report: ReportDetail }) {
   return (
     <Card className="md:col-span-2">
       <CardHeader>
-        <CardTitle>تایم‌لاین گزارش</CardTitle>
+        <CardTitle>{t("adminReportDetail.timelineTitle")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* 3-step horizontal timeline */}
@@ -242,15 +240,15 @@ function ReportTimeline({ report }: { report: ReportDetail }) {
         {/* Validators table */}
         {assignments.length > 0 && (
           <div>
-            <h3 className="mb-3 text-sm font-semibold">اعتبارسنج‌ها</h3>
+            <h3 className="mb-3 text-sm font-semibold">{t("adminReportDetail.validatorsTitle")}</h3>
             <div className="overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>اعتبارسنج</TableHead>
-                    <TableHead>تاریخ اساین</TableHead>
-                    <TableHead>وضعیت</TableHead>
-                    <TableHead>تاریخ قبول/رد</TableHead>
+                    <TableHead>{t("adminReportDetail.colValidator")}</TableHead>
+                    <TableHead>{t("adminReportDetail.colAssignedAt")}</TableHead>
+                    <TableHead>{t("adminReportDetail.colStatus")}</TableHead>
+                    <TableHead>{t("adminReportDetail.colReviewDate")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -266,15 +264,25 @@ function ReportTimeline({ report }: { report: ReportDetail }) {
                         </TableCell>
                         <TableCell className="text-sm">{formatDateTime(a.assignedAt)}</TableCell>
                         <TableCell>
-                          {vs.status === "accepted" && <Badge variant="default">تایید شده</Badge>}
-                          {vs.status === "rejected" && <Badge variant="destructive">رد شده</Badge>}
-                          {vs.status === "reviewing" && (
-                            <Badge variant="secondary">در حال بررسی</Badge>
+                          {vs.status === "accepted" && (
+                            <Badge variant="default">{t("adminReportDetail.statusApproved")}</Badge>
                           )}
-                          {vs.status === "waiting" && <Badge variant="outline">در انتظار</Badge>}
+                          {vs.status === "rejected" && (
+                            <Badge variant="destructive">
+                              {t("adminReportDetail.statusRejected")}
+                            </Badge>
+                          )}
+                          {vs.status === "reviewing" && (
+                            <Badge variant="secondary">
+                              {t("adminReportDetail.statusReviewing")}
+                            </Badge>
+                          )}
+                          {vs.status === "waiting" && (
+                            <Badge variant="outline">{t("adminReportDetail.statusWaiting")}</Badge>
+                          )}
                           {vs.status === "replaced" && (
                             <Badge variant="outline" className="text-muted-foreground">
-                              جایگزین شده
+                              {t("adminReportDetail.statusReplaced")}
                             </Badge>
                           )}
                         </TableCell>
@@ -294,12 +302,18 @@ function ReportTimeline({ report }: { report: ReportDetail }) {
   );
 }
 
-function ReportAssignmentHistoryCard({ assignments }: { assignments: ValidatorAssignment[] }) {
+function ReportAssignmentHistoryCard({
+  assignments,
+  t,
+}: {
+  assignments: ValidatorAssignment[];
+  t: TFunction;
+}) {
   if (assignments.length === 0) return null;
   return (
     <Card className="md:col-span-2">
       <CardHeader>
-        <CardTitle className="text-base">تاریخچه اختصاص به اعتبارسنج‌ها</CardTitle>
+        <CardTitle className="text-base">{t("adminReportDetail.assignmentHistoryTitle")}</CardTitle>
       </CardHeader>
       <CardContent>
         <ul className="space-y-3 text-sm">
@@ -311,13 +325,21 @@ function ReportAssignmentHistoryCard({ assignments }: { assignments: ValidatorAs
               <span className="text-foreground font-medium">
                 {a.validator.name} <span className="font-normal">({a.validator.username})</span>
               </span>
-              <span>اختصاص: {formatDateTime(a.assignedAt)}</span>
+              <span>
+                {t("adminReportDetail.assignedAt")} {formatDateTime(a.assignedAt)}
+              </span>
               {a.acceptedAt != null && a.acceptedAt !== "" && (
-                <span>پذیرش: {formatDateTime(a.acceptedAt)}</span>
+                <span>
+                  {t("adminReportDetail.acceptedAt")} {formatDateTime(a.acceptedAt)}
+                </span>
               )}
               <span className="text-xs">
-                {assignmentReasonLabel(a.reason)}
-                {a.replacedAt == null ? " · فعال" : ` · پایان ${formatDateTime(a.replacedAt)}`}
+                {a.reason === "stale_reassign"
+                  ? t("adminReportDetail.reasonStale")
+                  : t("adminReportDetail.reasonInitial")}
+                {a.replacedAt == null
+                  ? ` · ${t("adminReportDetail.active")}`
+                  : ` · ${t("adminReportDetail.endedAt")} ${formatDateTime(a.replacedAt)}`}
               </span>
             </li>
           ))}
@@ -330,27 +352,39 @@ function ReportAssignmentHistoryCard({ assignments }: { assignments: ValidatorAs
 function ReportReviewsTableCard({
   reviews,
   assignments,
+  t,
 }: {
   reviews: ReportReview[];
   assignments?: ValidatorAssignment[];
+  t: TFunction;
 }) {
   if (reviews.length === 0) return null;
   return (
     <Card className="md:col-span-2">
       <CardHeader>
-        <CardTitle className="text-base">بررسی‌های انجام شده</CardTitle>
+        <CardTitle className="text-base">{t("adminReportDetail.reviewsTitle")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto rounded-md border">
           <Table dir="rtl" className="min-w-[640px] text-xs">
             <TableHeader>
               <TableRow>
-                <TableHead className="whitespace-nowrap">بررسی‌کننده</TableHead>
-                <TableHead className="whitespace-nowrap">اختصاص</TableHead>
-                <TableHead className="whitespace-nowrap">پذیرش</TableHead>
-                <TableHead className="whitespace-nowrap">ثبت رأی</TableHead>
-                <TableHead className="whitespace-nowrap">نتیجه</TableHead>
-                <TableHead className="min-w-[140px]">یادداشت / کد</TableHead>
+                <TableHead className="whitespace-nowrap">
+                  {t("adminReportDetail.colReviewer")}
+                </TableHead>
+                <TableHead className="whitespace-nowrap">
+                  {t("adminReportDetail.colAssignment")}
+                </TableHead>
+                <TableHead className="whitespace-nowrap">
+                  {t("adminReportDetail.colAcceptance")}
+                </TableHead>
+                <TableHead className="whitespace-nowrap">
+                  {t("adminReportDetail.colVoteDate")}
+                </TableHead>
+                <TableHead className="whitespace-nowrap">
+                  {t("adminReportDetail.colResult")}
+                </TableHead>
+                <TableHead className="min-w-[140px]">{t("adminReportDetail.colNote")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -361,12 +395,17 @@ function ReportReviewsTableCard({
                   const who = rev.reviewer
                     ? `${rev.reviewer.name} (${rev.reviewer.username})`
                     : rev.reviewerId
-                      ? `شناسه: ${rev.reviewerId}`
-                      : "پنل ادمین / خارج از اپ";
+                      ? `${t("adminReportDetail.colReviewer")}: ${rev.reviewerId}`
+                      : t("adminReportDetail.reviewerAdmin");
                   const noteParts: string[] = [];
-                  if (rev.rejectionCode) noteParts.push(`کد: ${rev.rejectionCode}`);
+                  if (rev.rejectionCode)
+                    noteParts.push(`${t("adminReportDetail.colNote")}: ${rev.rejectionCode}`);
                   if (rev.rejectionTier)
-                    noteParts.push(rev.rejectionTier === "bad_faith" ? "سوءنیت" : "حسن‌نیت");
+                    noteParts.push(
+                      rev.rejectionTier === "bad_faith"
+                        ? t("adminReportDetail.tierBadFaith")
+                        : t("adminReportDetail.tierGoodFaith"),
+                    );
                   if (rev.rejectionReason) noteParts.push(rev.rejectionReason);
                   if (rev.reviewerComment) noteParts.push(rev.reviewerComment);
                   const note = noteParts.length > 0 ? noteParts.join(" · ") : "—";
@@ -389,7 +428,9 @@ function ReportReviewsTableCard({
                           variant={rev.action === "accepted" ? "default" : "destructive"}
                           className="text-[10px] font-normal"
                         >
-                          {rev.action === "accepted" ? "تأیید" : "رد"}
+                          {rev.action === "accepted"
+                            ? t("adminReportDetail.resultApproved")
+                            : t("adminReportDetail.resultRejected")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground max-w-[220px] align-top text-[11px] leading-snug whitespace-normal">
@@ -409,6 +450,7 @@ function ReportReviewsTableCard({
 export default function AdminReportDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const id = params?.id as string | undefined;
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -422,14 +464,14 @@ export default function AdminReportDetailPage() {
       .get()
       .then(({ data, error: err }) => {
         if (err) {
-          setError(err instanceof Error ? err.message : "خطا در بارگذاری گزارش");
+          setError(err instanceof Error ? err.message : t("adminReportDetail.loadError"));
           setLoading(false);
           return;
         }
         if (data) {
           setReport(data as ReportDetail);
         } else {
-          setError("گزارش یافت نشد");
+          setError(t("adminReportDetail.reportNotFound"));
         }
         setLoading(false);
       });
@@ -437,13 +479,20 @@ export default function AdminReportDetailPage() {
 
   const statusBadge = (s: string) => {
     const v = s === "accepted" ? "default" : s === "rejected" ? "destructive" : "secondary";
-    const label = s === "accepted" ? "تأیید شده" : s === "rejected" ? "رد شده" : "در انتظار بررسی";
+    const label =
+      s === "accepted"
+        ? t("adminReportDetail.statusApproved")
+        : s === "rejected"
+          ? t("adminReportDetail.statusRejected")
+          : t("adminReportDetail.statusWaiting");
     return <Badge variant={v}>{label}</Badge>;
   };
 
   const rejectionLabel = (r?: string | null) => {
     if (!r) return null;
-    return r === "false" ? "گزارش اشتباه یا قصد تخریب" : "نقص یا افشای اطلاعات";
+    return r === "false"
+      ? t("adminReportDetail.rejectionFalse")
+      : t("adminReportDetail.rejectionMissing");
   };
 
   if (!id) {
@@ -454,7 +503,7 @@ export default function AdminReportDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-muted-foreground">در حال بارگذاری...</p>
+        <p className="text-muted-foreground">{t("common.loading")}</p>
       </div>
     );
   }
@@ -462,9 +511,9 @@ export default function AdminReportDetailPage() {
   if (error || !report) {
     return (
       <div className="space-y-4">
-        <p className="text-destructive">{error || "گزارش یافت نشد"}</p>
+        <p className="text-destructive">{error || t("adminReportDetail.reportNotFound")}</p>
         <Button variant="outline" asChild>
-          <Link href="/admin/reports">بازگشت به لیست گزارش‌ها</Link>
+          <Link href="/admin/reports">{t("adminReportDetail.backToReports")}</Link>
         </Button>
       </div>
     );
@@ -481,7 +530,7 @@ export default function AdminReportDetailPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">
-              جزئیات گزارش {report.person.firstName} {report.person.lastName}
+              {t("adminReportDetail.pageTitle")} {report.person.firstName} {report.person.lastName}
             </h1>
             <div className="mt-1 flex items-center gap-2">
               {statusBadge(report.status)}
@@ -497,13 +546,14 @@ export default function AdminReportDetailPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Report timeline + validators table */}
-        <ReportTimeline report={report} />
+        <ReportTimeline report={report} t={t} />
 
-        <ReportAssignmentHistoryCard assignments={report.validatorAssignments ?? []} />
+        <ReportAssignmentHistoryCard assignments={report.validatorAssignments ?? []} t={t} />
 
         <ReportReviewsTableCard
           reviews={report.reviews ?? []}
           assignments={report.validatorAssignments}
+          t={t}
         />
 
         {/* Reported person */}
@@ -511,25 +561,33 @@ export default function AdminReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              شخص گزارش‌شده
+              {t("adminReportDetail.reportedPersonTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <InfoRow
-              label="نام"
+              label={t("adminReportDetail.fieldName")}
               value={`${report.person.firstName} ${report.person.lastName}`}
               icon={User}
             />
-            <InfoRow label="کد ملی" value={report.person.nationalCode} />
-            <InfoRow label="عنوان/سمت" value={report.person.title} />
+            <InfoRow
+              label={t("adminReportDetail.fieldNationalCode")}
+              value={report.person.nationalCode}
+            />
+            <InfoRow
+              label={t("adminReportDetail.fieldTitlePosition")}
+              value={report.person.title}
+            />
             {report.person.isFamous != null && (
               <div className="text-sm">
-                <span className="text-muted-foreground">فرد معروف: </span>
-                <span>{report.person.isFamous ? "بله" : "خیر"}</span>
+                <span className="text-muted-foreground">
+                  {t("adminReportDetail.fieldFamousPerson")}:{" "}
+                </span>
+                <span>{report.person.isFamous ? t("common.yes") : t("common.no")}</span>
               </div>
             )}
             <Button variant="outline" size="sm" asChild>
-              <Link href="/admin/people">لیست افراد</Link>
+              <Link href="/admin/people">{t("adminReportDetail.listPeople")}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -539,15 +597,23 @@ export default function AdminReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              کاربر ثبت‌کننده
+              {t("adminReportDetail.submittingUserTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <InfoRow label="نام" value={report.user.name} icon={User} />
-            <InfoRow label="نام کاربری" value={report.user.username} icon={User} />
+            <InfoRow
+              label={t("adminReportDetail.fieldName")}
+              value={report.user.name}
+              icon={User}
+            />
+            <InfoRow
+              label={t("adminReportDetail.fieldUsername")}
+              value={report.user.username}
+              icon={User}
+            />
             <Button variant="outline" size="sm" asChild>
               <Link href={`/admin/users?q=${encodeURIComponent(report.user.username)}`}>
-                مشاهده کاربر
+                {t("adminReportDetail.viewUser")}
               </Link>
             </Button>
           </CardContent>
@@ -558,7 +624,7 @@ export default function AdminReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="h-5 w-5" />
-              شرح گزارش
+              {t("adminReportDetail.descriptionTitle")}
             </CardTitle>
             {(report.category || report.subcategory || report.title) && (
               <div className="flex flex-wrap gap-2 text-sm">
@@ -580,15 +646,27 @@ export default function AdminReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
-              سازمان و مکان
+              {t("adminReportDetail.organizationTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <InfoRow label="نوع سازمان" value={report.organizationType} icon={Building2} />
-            <InfoRow label="نام سازمان" value={report.organizationName} />
-            <InfoRow label="استان" value={report.province} icon={MapPin} />
-            <InfoRow label="شهر" value={report.city} icon={MapPin} />
-            <InfoRow label="آدرس دقیق" value={report.exactLocation} icon={MapPin} />
+            <InfoRow
+              label={t("adminReportDetail.fieldOrgType")}
+              value={report.organizationType}
+              icon={Building2}
+            />
+            <InfoRow label={t("adminReportDetail.fieldOrgName")} value={report.organizationName} />
+            <InfoRow
+              label={t("adminReportDetail.fieldProvince")}
+              value={report.province}
+              icon={MapPin}
+            />
+            <InfoRow label={t("adminReportDetail.fieldCity")} value={report.city} icon={MapPin} />
+            <InfoRow
+              label={t("adminReportDetail.fieldExactLocation")}
+              value={report.exactLocation}
+              icon={MapPin}
+            />
           </CardContent>
         </Card>
 
@@ -597,12 +675,12 @@ export default function AdminReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              زمان و شواهد
+              {t("adminReportDetail.timeEvidenceTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <InfoRow
-              label="تاریخ وقوع"
+              label={t("adminReportDetail.fieldOccurrenceDate")}
               value={
                 report.occurrenceDate
                   ? new Date(report.occurrenceDate).toLocaleDateString("fa-IR")
@@ -610,15 +688,26 @@ export default function AdminReportDetailPage() {
               }
               icon={Calendar}
             />
-            <InfoRow label="تکرار وقوع" value={report.occurrenceFrequency} />
+            <InfoRow
+              label={t("adminReportDetail.fieldOccurrenceFreq")}
+              value={report.occurrenceFrequency}
+            />
             {report.hasEvidence != null && (
               <div className="text-sm">
-                <span className="text-muted-foreground">دارای شواهد: </span>
-                <span>{report.hasEvidence ? "بله" : "خیر"}</span>
+                <span className="text-muted-foreground">
+                  {t("adminReportDetail.fieldHasEvidence")}:{" "}
+                </span>
+                <span>{report.hasEvidence ? t("common.yes") : t("common.no")}</span>
               </div>
             )}
-            <InfoRow label="نوع شواهد" value={report.evidenceTypes} />
-            <InfoRow label="توضیح شواهد" value={report.evidenceDescription} />
+            <InfoRow
+              label={t("adminReportDetail.fieldEvidenceTypes")}
+              value={report.evidenceTypes}
+            />
+            <InfoRow
+              label={t("adminReportDetail.fieldEvidenceDesc")}
+              value={report.evidenceDescription}
+            />
           </CardContent>
         </Card>
 
@@ -631,19 +720,31 @@ export default function AdminReportDetailPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
-                تماس
+                {t("adminReportDetail.contactTitle")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {report.wantsContact != null && (
                 <div className="text-sm">
-                  <span className="text-muted-foreground">تمایل به تماس: </span>
-                  <span>{report.wantsContact ? "بله" : "خیر"}</span>
+                  <span className="text-muted-foreground">
+                    {t("adminReportDetail.fieldWantsContact")}:{" "}
+                  </span>
+                  <span>{report.wantsContact ? t("common.yes") : t("common.no")}</span>
                 </div>
               )}
-              <InfoRow label="ایمیل تماس" value={report.contactEmail} icon={Mail} />
-              <InfoRow label="تلفن تماس" value={report.contactPhone} />
-              <InfoRow label="شبکه اجتماعی" value={report.contactSocial} />
+              <InfoRow
+                label={t("adminReportDetail.fieldContactEmail")}
+                value={report.contactEmail}
+                icon={Mail}
+              />
+              <InfoRow
+                label={t("adminReportDetail.fieldContactPhone")}
+                value={report.contactPhone}
+              />
+              <InfoRow
+                label={t("adminReportDetail.fieldContactSocial")}
+                value={report.contactSocial}
+              />
             </CardContent>
           </Card>
         )}
@@ -653,12 +754,12 @@ export default function AdminReportDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              اسناد ({report.documents.length})
+              {t("adminReportDetail.documentsTitle")} ({report.documents.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {report.documents.length === 0 ? (
-              <p className="text-muted-foreground text-sm">سندی ثبت نشده</p>
+              <p className="text-muted-foreground text-sm">{t("adminReportDetail.noDocuments")}</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {report.documents.map((doc) => (

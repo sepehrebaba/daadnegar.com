@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -80,15 +81,6 @@ type CategoryOption = {
 };
 type CityOption = { id: string; name: string };
 
-function reportStatusLabel(status: string): {
-  label: string;
-  variant: "default" | "secondary" | "destructive";
-} {
-  if (status === "accepted") return { label: "تأیید شده", variant: "default" };
-  if (status === "rejected") return { label: "رد شده", variant: "destructive" };
-  return { label: "در انتظار بررسی", variant: "secondary" };
-}
-
 function formatDateTime(iso: Date | string) {
   return new Date(iso).toLocaleDateString("fa-IR", {
     year: "numeric",
@@ -128,6 +120,7 @@ function ReviewProgressBar({
 }
 
 export default function AdminReportsPage() {
+  const { t } = useTranslation();
   const [reports, setReports] = useState<QueueReport[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [cities, setCities] = useState<CityOption[]>([]);
@@ -150,6 +143,19 @@ export default function AdminReportsPage() {
   const [redistributeTarget, setRedistributeTarget] = useState<QueueReport | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QueueReport | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  const reportStatusLabel = (
+    status: string,
+  ): {
+    label: string;
+    variant: "default" | "secondary" | "destructive";
+  } => {
+    if (status === "accepted")
+      return { label: t("adminReports.statusAccepted"), variant: "default" };
+    if (status === "rejected")
+      return { label: t("adminReports.statusRejected"), variant: "destructive" };
+    return { label: t("adminReports.statusPending"), variant: "secondary" };
+  };
 
   const fetchQueue = async () => {
     setLoading(true);
@@ -294,12 +300,12 @@ export default function AdminReportsPage() {
         body: JSON.stringify({ isPublic: nextPublic }),
       });
       if (!res.ok) {
-        throw new Error(await parseErrorMessage(res, "تغییر عمومیت گزارش ناموفق بود"));
+        throw new Error(await parseErrorMessage(res, t("adminReports.errorPublicity")));
       }
       await fetchQueue();
       setPublicityTarget(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "تغییر عمومیت گزارش ناموفق بود");
+      alert(err instanceof Error ? err.message : t("adminReports.errorPublicity"));
     } finally {
       setActionLoading(false);
     }
@@ -318,12 +324,12 @@ export default function AdminReportsPage() {
         },
       );
       if (!res.ok) {
-        throw new Error(await parseErrorMessage(res, "توزیع مجدد اعتبارسنجی ناموفق بود"));
+        throw new Error(await parseErrorMessage(res, t("adminReports.errorRedistribute")));
       }
       await fetchQueue();
       setRedistributeTarget(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "توزیع مجدد اعتبارسنجی ناموفق بود");
+      alert(err instanceof Error ? err.message : t("adminReports.errorRedistribute"));
     } finally {
       setActionLoading(false);
     }
@@ -339,12 +345,12 @@ export default function AdminReportsPage() {
         credentials: "include",
       });
       if (!res.ok) {
-        throw new Error(await parseErrorMessage(res, "حذف گزارش ناموفق بود"));
+        throw new Error(await parseErrorMessage(res, t("adminReports.errorDelete")));
       }
       await fetchQueue();
       setDeleteTarget(null);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "حذف گزارش ناموفق بود");
+      alert(err instanceof Error ? err.message : t("adminReports.errorDelete"));
     } finally {
       setActionLoading(false);
     }
@@ -353,10 +359,15 @@ export default function AdminReportsPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">گزارش‌ها</h1>
+        <h1 className="text-2xl font-bold">{t("adminReports.title")}</h1>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" aria-label="فیلتر گزارشات" className="relative">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("adminReports.filterAriaLabel")}
+              className="relative"
+            >
               <Filter className="h-4 w-4" />
               {activeFilterCount > 0 && (
                 <span className="bg-primary text-primary-foreground absolute -top-1.5 -left-1.5 min-w-4 rounded-full px-1 text-center text-[10px] leading-4">
@@ -366,31 +377,31 @@ export default function AdminReportsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>فیلتر گزارشات</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("adminReports.filterTitle")}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <div className="space-y-3 px-2 py-1.5" dir="rtl">
               <div className="space-y-1.5">
-                <p className="text-muted-foreground text-xs">وضعیت</p>
+                <p className="text-muted-foreground text-xs">{t("adminReports.filterStatus")}</p>
                 <select
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
                   className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                 >
-                  <option value="all">همه وضعیت‌ها</option>
-                  <option value="pending">در انتظار بررسی</option>
-                  <option value="accepted">تأیید شده</option>
-                  <option value="rejected">رد شده</option>
+                  <option value="all">{t("adminReports.statusAll")}</option>
+                  <option value="pending">{t("adminReports.statusPending")}</option>
+                  <option value="accepted">{t("adminReports.statusAccepted")}</option>
+                  <option value="rejected">{t("adminReports.statusRejected")}</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-muted-foreground text-xs">شهر</p>
+                <p className="text-muted-foreground text-xs">{t("adminReports.filterCity")}</p>
                 <select
                   value={cityFilter}
                   onChange={(event) => setCityFilter(event.target.value)}
                   className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                 >
-                  <option value="all">همه شهرها</option>
+                  <option value="all">{t("adminReports.allCities")}</option>
                   {cities.map((city) => (
                     <option key={city.id} value={city.name}>
                       {city.name}
@@ -400,13 +411,13 @@ export default function AdminReportsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-muted-foreground text-xs">دسته‌بندی</p>
+                <p className="text-muted-foreground text-xs">{t("adminReports.filterCategory")}</p>
                 <select
                   value={categoryFilter}
                   onChange={(event) => setCategoryFilter(event.target.value)}
                   className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                 >
-                  <option value="all">همه دسته‌ها</option>
+                  <option value="all">{t("adminReports.allCategories")}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -416,30 +427,30 @@ export default function AdminReportsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-muted-foreground text-xs">شخص</p>
+                <p className="text-muted-foreground text-xs">{t("adminReports.filterPerson")}</p>
                 <Input
                   value={personFilter}
                   onChange={(event) => setPersonFilter(event.target.value)}
-                  placeholder="نام یا نام خانوادگی شخص"
+                  placeholder={t("adminReports.personPlaceholder")}
                   className="h-9 text-sm"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-muted-foreground text-xs">عمومیت گزارش</p>
+                <p className="text-muted-foreground text-xs">{t("adminReports.filterPublicity")}</p>
                 <select
                   value={publicityFilter}
                   onChange={(event) => setPublicityFilter(event.target.value as PublicityFilter)}
                   className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                 >
-                  <option value="all">همه</option>
-                  <option value="public">فقط عمومی</option>
-                  <option value="private">فقط خصوصی</option>
+                  <option value="all">{t("adminReports.allPublicity")}</option>
+                  <option value="public">{t("adminReports.publicOnly")}</option>
+                  <option value="private">{t("adminReports.privateOnly")}</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-muted-foreground text-xs">دارای فایل</p>
+                <p className="text-muted-foreground text-xs">{t("adminReports.filterDocuments")}</p>
                 <select
                   value={hasDocumentsFilter}
                   onChange={(event) =>
@@ -447,14 +458,16 @@ export default function AdminReportsPage() {
                   }
                   className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                 >
-                  <option value="all">همه</option>
-                  <option value="with">فقط دارای فایل</option>
-                  <option value="without">فقط بدون فایل</option>
+                  <option value="all">{t("adminReports.allDocuments")}</option>
+                  <option value="with">{t("adminReports.withDocuments")}</option>
+                  <option value="without">{t("adminReports.withoutDocuments")}</option>
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <p className="text-muted-foreground text-xs">قابل تماس</p>
+                <p className="text-muted-foreground text-xs">
+                  {t("adminReports.filterContactable")}
+                </p>
                 <select
                   value={contactableFilter}
                   onChange={(event) =>
@@ -462,15 +475,17 @@ export default function AdminReportsPage() {
                   }
                   className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
                 >
-                  <option value="all">همه</option>
-                  <option value="yes">فقط قابل تماس</option>
-                  <option value="no">فقط غیرقابل تماس</option>
+                  <option value="all">{t("adminReports.allContactable")}</option>
+                  <option value="yes">{t("adminReports.contactableOnly")}</option>
+                  <option value="no">{t("adminReports.nonContactableOnly")}</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <p className="text-muted-foreground text-xs">تاریخ وقوع از</p>
+                  <p className="text-muted-foreground text-xs">
+                    {t("adminReports.occurrenceDateFrom")}
+                  </p>
                   <Input
                     type="date"
                     dir="ltr"
@@ -480,7 +495,9 @@ export default function AdminReportsPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <p className="text-muted-foreground text-xs">تا</p>
+                  <p className="text-muted-foreground text-xs">
+                    {t("adminReports.occurrenceDateTo")}
+                  </p>
                   <Input
                     type="date"
                     dir="ltr"
@@ -498,14 +515,14 @@ export default function AdminReportsPage() {
               onCheckedChange={(checked) => setOnlyWithActiveValidators(checked === true)}
               onSelect={(event) => event.preventDefault()}
             >
-              فقط با اعتبارسنج فعال
+              {t("adminReports.onlyWithActiveValidators")}
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               checked={onlyNeedsVotes}
               onCheckedChange={(checked) => setOnlyNeedsVotes(checked === true)}
               onSelect={(event) => event.preventDefault()}
             >
-              فقط نیازمند رأی
+              {t("adminReports.onlyNeedsVotes")}
             </DropdownMenuCheckboxItem>
 
             <DropdownMenuSeparator />
@@ -515,7 +532,7 @@ export default function AdminReportsPage() {
               className="text-muted-foreground"
             >
               <X className="h-4 w-4" />
-              پاک کردن فیلترها
+              {t("adminReports.clearFilters")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -523,9 +540,9 @@ export default function AdminReportsPage() {
 
       <Card>
         <CardHeader className="space-y-1">
-          <CardTitle>گزارش‌ها</CardTitle>
+          <CardTitle>{t("adminReports.cardTitle")}</CardTitle>
           <p className="text-muted-foreground text-sm font-normal">
-            در انتظار بررسی و تأییدشده (اکثریت رأی یا نهایی)
+            {t("adminReports.cardDescription")}
           </p>
         </CardHeader>
         <CardContent>
@@ -533,34 +550,34 @@ export default function AdminReportsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>شخص</TableHead>
-                  <TableHead>کاربر</TableHead>
-                  <TableHead>تاریخ ثبت</TableHead>
-                  <TableHead>وضعیت</TableHead>
-                  <TableHead>اعتبارسنج‌های فعال</TableHead>
-                  <TableHead>شروع اسلات فعلی</TableHead>
-                  <TableHead>نتایج رأی‌ها (تأیید / رد / در انتظار)</TableHead>
+                  <TableHead>{t("adminReports.colPerson")}</TableHead>
+                  <TableHead>{t("adminReports.colUser")}</TableHead>
+                  <TableHead>{t("adminReports.colCreatedAt")}</TableHead>
+                  <TableHead>{t("adminReports.colStatus")}</TableHead>
+                  <TableHead>{t("adminReports.colActiveValidators")}</TableHead>
+                  <TableHead>{t("adminReports.colCurrentSlotStart")}</TableHead>
+                  <TableHead>{t("adminReports.colVoteResults")}</TableHead>
                   <TableHead></TableHead>
-                  <TableHead>گزینه‌ها</TableHead>
+                  <TableHead>{t("adminReports.colOptions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-muted-foreground py-8 text-center">
-                      در حال بارگذاری...
+                      {t("common.loading")}
                     </TableCell>
                   </TableRow>
                 ) : reports.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-muted-foreground py-8 text-center">
-                      گزارشی برای نمایش وجود ندارد.
+                      {t("adminReports.noReports")}
                     </TableCell>
                   </TableRow>
                 ) : filteredReports.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} className="text-muted-foreground py-8 text-center">
-                      گزارشی با فیلترهای انتخاب‌شده پیدا نشد.
+                      {t("adminReports.noFilteredReports")}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -594,17 +611,21 @@ export default function AdminReportsPage() {
                             if (act.length === 0) {
                               if (r.status === "accepted") {
                                 return (
-                                  <span className="text-muted-foreground text-sm">تکمیل شده</span>
+                                  <span className="text-muted-foreground text-sm">
+                                    {t("adminReports.completed")}
+                                  </span>
                                 );
                               }
                               if (r.status === "rejected") {
                                 return (
-                                  <span className="text-muted-foreground text-sm">رد شده</span>
+                                  <span className="text-muted-foreground text-sm">
+                                    {t("adminReports.statusRejected")}
+                                  </span>
                                 );
                               }
                               return (
                                 <span className="text-muted-foreground text-sm">
-                                  در انتظار ورکر
+                                  {t("adminReports.waitingWorker")}
                                 </span>
                               );
                             }
@@ -645,7 +666,7 @@ export default function AdminReportsPage() {
                             <TooltipTrigger asChild>
                               <div
                                 className="hover:bg-muted/40 flex min-h-9 w-full min-w-[120px] cursor-help items-center rounded-md px-1 py-2"
-                                aria-label="جزئیات رأی‌ها"
+                                aria-label={t("adminReports.voteDetailsAriaLabel")}
                               >
                                 <ReviewProgressBar
                                   accepted={r.acceptedCount ?? 0}
@@ -660,9 +681,11 @@ export default function AdminReportsPage() {
                               dir="rtl"
                               className="max-w-[260px] px-3 py-2 text-xs leading-relaxed"
                             >
-                              تایید شده: {toPersianNum(r.acceptedCount ?? 0)} | رد:{" "}
-                              {toPersianNum(r.rejectedCount ?? 0)} | در انتظار:{" "}
-                              {toPersianNum(waitingVotes)}
+                              {t("adminReports.voteTooltip", {
+                                accepted: toPersianNum(r.acceptedCount ?? 0),
+                                rejected: toPersianNum(r.rejectedCount ?? 0),
+                                waiting: toPersianNum(waitingVotes),
+                              })}
                             </TooltipContent>
                           </Tooltip>
                         </TableCell>
@@ -670,7 +693,7 @@ export default function AdminReportsPage() {
                           <Button variant="outline" size="sm" asChild>
                             <Link href={`/admin/reports/${r.id}`}>
                               <Eye className="ml-1 h-4 w-4" />
-                              جزئیات
+                              {t("common.details")}
                             </Link>
                           </Button>
                         </TableCell>
@@ -678,22 +701,22 @@ export default function AdminReportsPage() {
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" size="sm">
-                                گزینه‌ها
+                                {t("adminReports.optionsButton")}
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
                               <DropdownMenuItem onSelect={() => setPublicityTarget(r)}>
-                                تغییر عمومیت گزارش
+                                {t("adminReports.changePublicity")}
                               </DropdownMenuItem>
                               <DropdownMenuItem onSelect={() => setRedistributeTarget(r)}>
-                                توزیع مجدد اعتبارسنجی
+                                {t("adminReports.redistributeValidators")}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 onSelect={() => setDeleteTarget(r)}
                                 className="text-destructive focus:text-destructive"
                               >
-                                حذف
+                                {t("adminReports.deleteReport")}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -706,15 +729,13 @@ export default function AdminReportsPage() {
             </Table>
           </div>
           <div className="mt-4 flex justify-between">
-            <span>
-              صفحه {page} از {Math.ceil(total / 25) || 1}
-            </span>
+            <span>{t("adminReports.page", { page, total: Math.ceil(total / 25) || 1 })}</span>
             <div className="flex gap-2">
               <Button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                قبلی
+                {t("adminReports.previousPage")}
               </Button>
               <Button disabled={page * 25 >= total} onClick={() => setPage((p) => p + 1)}>
-                بعدی
+                {t("adminReports.nextPage")}
               </Button>
             </div>
           </div>
@@ -727,24 +748,18 @@ export default function AdminReportsPage() {
       >
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>تغییر عمومیت گزارش</DialogTitle>
+            <DialogTitle>{t("adminReports.changePublicityTitle")}</DialogTitle>
             <DialogDescription className="rounded-md border p-3 leading-relaxed">
               {publicityTarget?.isPublic ? (
-                <>
-                  این گزارش در حال حاضر <strong>عمومی</strong> است. با تایید شما{" "}
-                  <strong>خصوصی</strong> می‌شود و دیگر برای کاربران پلتفرم قابل مشاهده نخواهد بود.
-                </>
+                <>{t("adminReports.currentlyPublicHtml")}</>
               ) : (
-                <>
-                  این گزارش در حال حاضر <strong>خصوصی</strong> است. با تایید شما{" "}
-                  <strong>عمومی</strong> می‌شود و همه کاربران پلتفرم می‌توانند آن را ببینند.
-                </>
+                <>{t("adminReports.currentlyPrivateHtml")}</>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-row-reverse gap-2">
             <Button type="button" onClick={changePublicity} disabled={actionLoading}>
-              {actionLoading ? "در حال انجام..." : "تایید"}
+              {actionLoading ? t("adminReports.processing") : t("adminReports.confirmAction")}
             </Button>
             <Button
               type="button"
@@ -752,7 +767,7 @@ export default function AdminReportsPage() {
               onClick={() => setPublicityTarget(null)}
               disabled={actionLoading}
             >
-              انصراف
+              {t("common.cancel")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -764,19 +779,17 @@ export default function AdminReportsPage() {
       >
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>توزیع مجدد اعتبارسنجی</DialogTitle>
-            <DialogDescription>
-              اعتبارسنج‌هایی که هنوز بررسی را قبول نکرده‌اند، با اعتبارسنج جدید جایگزین می‌شوند.
-            </DialogDescription>
+            <DialogTitle>{t("adminReports.redistributeTitle")}</DialogTitle>
+            <DialogDescription>{t("adminReports.redistributeDescription")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-2 text-sm">
-            <p className="font-medium">اعتبارسنج‌های فعال فعلی:</p>
+            <p className="font-medium">{t("adminReports.activeValidatorsLabel")}</p>
             <div className="max-h-48 overflow-auto rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>اعتبارسنج</TableHead>
-                    <TableHead className="w-32">وضعیت</TableHead>
+                    <TableHead>{t("adminReports.colValidator")}</TableHead>
+                    <TableHead className="w-32">{t("adminReports.colValidatorStatus")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -790,7 +803,9 @@ export default function AdminReportsPage() {
                           variant={slot.acceptedAt ? "default" : "secondary"}
                           className="text-xs"
                         >
-                          {slot.acceptedAt ? "قبول کرده" : "در انتظار قبول"}
+                          {slot.acceptedAt
+                            ? t("adminReports.validatorAccepted")
+                            : t("adminReports.validatorPending")}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -798,7 +813,7 @@ export default function AdminReportsPage() {
                   {activeSlots(redistributeTarget?.validatorAssignments).length === 0 && (
                     <TableRow>
                       <TableCell colSpan={2} className="text-muted-foreground">
-                        اعتبارسنج فعال ندارد.
+                        {t("adminReports.noActiveValidators")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -812,7 +827,7 @@ export default function AdminReportsPage() {
               onClick={redistributeUnacceptedValidators}
               disabled={actionLoading}
             >
-              {actionLoading ? "در حال انجام..." : "تایید و توزیع مجدد"}
+              {actionLoading ? t("adminReports.processing") : t("adminReports.confirmRedistribute")}
             </Button>
             <Button
               type="button"
@@ -820,7 +835,7 @@ export default function AdminReportsPage() {
               onClick={() => setRedistributeTarget(null)}
               disabled={actionLoading}
             >
-              انصراف
+              {t("common.cancel")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -829,10 +844,8 @@ export default function AdminReportsPage() {
       <Dialog open={deleteTarget != null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent dir="rtl">
           <DialogHeader>
-            <DialogTitle>حذف گزارش</DialogTitle>
-            <DialogDescription>
-              این عملیات به‌صورت حذف نرم انجام می‌شود و گزارش از صف فعلی پنهان خواهد شد.
-            </DialogDescription>
+            <DialogTitle>{t("adminReports.deleteReportTitle")}</DialogTitle>
+            <DialogDescription>{t("adminReports.deleteReportDescription")}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-row-reverse gap-2">
             <Button
@@ -841,7 +854,7 @@ export default function AdminReportsPage() {
               onClick={softDeleteReport}
               disabled={actionLoading}
             >
-              {actionLoading ? "در حال حذف..." : "تایید حذف"}
+              {actionLoading ? t("adminReports.deleting") : t("adminReports.confirmDelete")}
             </Button>
             <Button
               type="button"
@@ -849,7 +862,7 @@ export default function AdminReportsPage() {
               onClick={() => setDeleteTarget(null)}
               disabled={actionLoading}
             >
-              انصراف
+              {t("common.cancel")}
             </Button>
           </DialogFooter>
         </DialogContent>

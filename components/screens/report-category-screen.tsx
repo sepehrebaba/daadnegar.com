@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowRight, ArrowLeft, FolderTree } from "lucide-react";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
+import { useTranslation } from "react-i18next";
 
 type CategoryFromApi = {
   id: string;
@@ -28,6 +29,7 @@ type CategoryFromApi = {
 export function ReportCategoryScreen() {
   const router = useRouter();
   const { updateReport, currentReport } = useReport();
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<CategoryFromApi[]>([]);
   const [categoryId, setCategoryId] = useState(currentReport?.categoryId || "");
   const [subcategoryId, setSubcategoryId] = useState(currentReport?.subcategoryId || "");
@@ -51,7 +53,7 @@ export function ReportCategoryScreen() {
 
   const isValid = categoryId && subcategoryId;
 
-  if (loading) return <div className="flex items-center justify-center">در حال بارگذاری...</div>;
+  if (loading) return <div className="flex items-center justify-center">{t("common.loading")}</div>;
 
   return (
     <div className="bg-background flex items-center justify-center p-4">
@@ -60,13 +62,13 @@ export function ReportCategoryScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <FolderTree className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">دسته‌بندی گزارش</CardTitle>
-          <CardDescription>لطفاً نوع فساد یا تخلف را انتخاب کنید</CardDescription>
+          <CardTitle className="text-2xl">{t("report.category.title")}</CardTitle>
+          <CardDescription>{t("report.category.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="category">
-              دسته‌بندی اصلی <span className="text-destructive">*</span>
+              {t("report.category.mainCategory")} <span className="text-destructive">*</span>
             </Label>
             <Select
               value={categoryId}
@@ -76,7 +78,7 @@ export function ReportCategoryScreen() {
               }}
             >
               <SelectTrigger id="category" className="w-full">
-                <SelectValue placeholder="انتخاب دسته‌بندی..." />
+                <SelectValue placeholder={t("report.category.selectCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -90,7 +92,7 @@ export function ReportCategoryScreen() {
 
           <div className="space-y-2">
             <Label htmlFor="subcategory">
-              زیردسته <span className="text-destructive">*</span>
+              {t("report.category.subcategory")} <span className="text-destructive">*</span>
             </Label>
             <Select
               value={subcategoryId}
@@ -98,7 +100,7 @@ export function ReportCategoryScreen() {
               disabled={!selectedCategory || selectedCategory.children.length === 0}
             >
               <SelectTrigger id="subcategory" className="w-full">
-                <SelectValue placeholder="انتخاب زیردسته..." />
+                <SelectValue placeholder={t("report.category.selectSubcategory")} />
               </SelectTrigger>
               <SelectContent>
                 {selectedCategory?.children?.map((sub) => (
@@ -113,10 +115,10 @@ export function ReportCategoryScreen() {
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} disabled={!isValid} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
           </div>

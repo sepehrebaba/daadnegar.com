@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, UserPlus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface AcceptInvitationFormProps {
   invitationId: string;
@@ -16,6 +17,7 @@ interface AcceptInvitationFormProps {
 
 export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +29,7 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
     setError("");
     const u = normalizeUsername(username);
     if (u && !isValidPublicUsername(u)) {
-      setError("نام کاربری معتبر وارد کنید (۳–۳۲ کاراکتر، انگلیسی کوچک، عدد و _).");
+      setError(t("auth.acceptInvitation.usernameError"));
       return;
     }
     setIsLoading(true);
@@ -39,13 +41,13 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
     });
 
     if (acceptError) {
-      setError("خطا در پذیرش دعوت. لطفاً دوباره تلاش کنید.");
+      setError(t("auth.acceptInvitation.error"));
       setIsLoading(false);
       return;
     }
 
     if (!data?.ok) {
-      setError((data as { error?: string })?.error || "پذیرش دعوت با خطا مواجه شد.");
+      setError((data as { error?: string })?.error || t("auth.acceptInvitation.errorFailed"));
       setIsLoading(false);
       return;
     }
@@ -57,7 +59,7 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
     if (data.user) {
       router.push("/");
     } else {
-      setError("پذیرش دعوت با خطا مواجه شد.");
+      setError(t("auth.acceptInvitation.errorFailed"));
     }
 
     setIsLoading(false);
@@ -70,24 +72,26 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <UserPlus className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-foreground text-xl font-bold">تکمیل ثبت‌نام</CardTitle>
-          <CardDescription>اطلاعات خود را برای تکمیل حساب کاربری وارد کنید</CardDescription>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("auth.acceptInvitation.title")}
+          </CardTitle>
+          <CardDescription>{t("auth.acceptInvitation.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">نام (اختیاری)</Label>
+              <Label htmlFor="name">{t("auth.acceptInvitation.name")}</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="نام شما"
+                placeholder={t("auth.acceptInvitation.namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="text-center"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="username">نام کاربری (در صورت نیاز دعوت)</Label>
+              <Label htmlFor="username">{t("auth.acceptInvitation.username")}</Label>
               <Input
                 id="username"
                 type="text"
@@ -100,7 +104,7 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">رمز عبور</Label>
+              <Label htmlFor="password">{t("auth.acceptInvitation.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -121,7 +125,9 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
             )}
 
             <Button type="submit" className="w-full" disabled={!password || isLoading}>
-              {isLoading ? "در حال پردازش..." : "تکمیل ثبت‌نام"}
+              {isLoading
+                ? t("auth.acceptInvitation.submitting")
+                : t("auth.acceptInvitation.submit")}
             </Button>
           </form>
         </CardContent>

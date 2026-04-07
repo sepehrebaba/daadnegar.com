@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import { UserPlus } from "lucide-react";
 type PanelUser = { id: string; username: string; createdAt: Date | string };
 
 export default function AdminPanelUsersPage() {
+  const { t } = useTranslation();
   const [panelUsers, setPanelUsers] = useState<PanelUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -54,29 +56,26 @@ export default function AdminPanelUsersPage() {
 
   return (
     <div dir="rtl" className="text-right">
-      <h1 className="mb-6 text-2xl font-bold">کاربران پنل</h1>
+      <h1 className="mb-6 text-2xl font-bold">{t("adminPanelUsers.title")}</h1>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 space-x-4">
-          <CardTitle>لیست کاربران پنل</CardTitle>
+          <CardTitle>{t("adminPanelUsers.listTitle")}</CardTitle>
           <Button onClick={() => setDialogOpen(true)}>
             <UserPlus className="me-2 h-4 w-4" />
-            افزودن کاربر
+            {t("adminPanelUsers.addUser")}
           </Button>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4 text-sm">
-            کاربران می‌توانند با نام کاربری و رمز عبور جداگانه به پنل ادمین وارد شوند (نیازی به حساب
-            کاربری معمولی نیست).
-          </p>
+          <p className="text-muted-foreground mb-4 text-sm">{t("adminPanelUsers.description")}</p>
           {loading ? (
-            <p>در حال بارگذاری...</p>
+            <p>{t("common.loading")}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">نام کاربری</TableHead>
-                  <TableHead className="text-right">تاریخ ایجاد</TableHead>
+                  <TableHead className="text-right">{t("adminPanelUsers.username")}</TableHead>
+                  <TableHead className="text-right">{t("adminPanelUsers.createdAt")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -99,11 +98,11 @@ export default function AdminPanelUsersPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent dir="rtl" className="text-right">
           <DialogHeader>
-            <DialogTitle>افزودن کاربر پنل</DialogTitle>
+            <DialogTitle>{t("adminPanelUsers.addPanelUser")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={addPanelUser} className="space-y-4">
             <div>
-              <Label>نام کاربری</Label>
+              <Label>{t("adminPanelUsers.username")}</Label>
               <Input
                 value={newUser.username}
                 onChange={(e) => setNewUser((u) => ({ ...u, username: e.target.value }))}
@@ -113,7 +112,7 @@ export default function AdminPanelUsersPage() {
               />
             </div>
             <div>
-              <Label>رمز عبور (حداقل ۸ کاراکتر)</Label>
+              <Label>{t("adminPanelUsers.passwordLabel")}</Label>
               <Input
                 type="password"
                 value={newUser.password}
@@ -125,9 +124,9 @@ export default function AdminPanelUsersPage() {
               />
             </div>
             <DialogFooter className="flex-row-reverse gap-2">
-              <Button type="submit">افزودن</Button>
+              <Button type="submit">{t("adminPanelUsers.add")}</Button>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                انصراف
+                {t("common.cancel")}
               </Button>
             </DialogFooter>
           </form>

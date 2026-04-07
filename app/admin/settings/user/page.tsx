@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
+import { useTranslation } from "react-i18next";
 import { Languages, Moon, Monitor, Sun, KeyRound } from "lucide-react";
 import { useLanguage } from "@/context/language-context";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import { isPasswordSecure, getPasswordStrength, checkPassword } from "@/lib/pass
 import { Progress } from "@/components/ui/progress";
 
 export default function AdminUserSettingsPage() {
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const { language, setLanguage } = useLanguage();
   const [panelUsername, setPanelUsername] = useState<string | null>(null);
@@ -37,12 +39,12 @@ export default function AdminUserSettingsPage() {
     if (!isPasswordSecure(newPassword)) {
       setPwMessage({
         type: "err",
-        text: "رمز جدید باید حداقل ۸ کاراکتر و شامل حرف بزرگ، حرف کوچک، عدد و کاراکتر خاص باشد",
+        text: t("adminSettings.user.passwordInvalid"),
       });
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPwMessage({ type: "err", text: "تکرار رمز عبور با رمز جدید یکسان نیست" });
+      setPwMessage({ type: "err", text: t("adminSettings.user.passwordMismatch") });
       return;
     }
     setPwSaving(true);
@@ -57,16 +59,19 @@ export default function AdminUserSettingsPage() {
       if (!res.ok) {
         setPwMessage({
           type: "err",
-          text: typeof data?.error === "string" ? data.error : "ذخیره رمز عبور ناموفق بود",
+          text:
+            typeof data?.error === "string"
+              ? data.error
+              : t("adminSettings.user.passwordSaveFailed"),
         });
         return;
       }
-      setPwMessage({ type: "ok", text: "رمز عبور با موفقیت به‌روزرسانی شد" });
+      setPwMessage({ type: "ok", text: t("adminSettings.user.passwordUpdated") });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch {
-      setPwMessage({ type: "err", text: "خطای شبکه؛ دوباره تلاش کنید" });
+      setPwMessage({ type: "err", text: t("adminSettings.user.networkError") });
     } finally {
       setPwSaving(false);
     }
@@ -77,17 +82,17 @@ export default function AdminUserSettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">تنظیمات کاربر</h1>
-        <p className="text-muted-foreground mt-1 text-sm">زبان، تم و رمز عبور ورود به پنل ادمین</p>
+        <h1 className="text-2xl font-bold">{t("adminSettings.user.title")}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{t("adminSettings.user.description")}</p>
         {panelMeReady && panelUsername && (
           <p className="text-muted-foreground mt-2 text-sm">
-            نام کاربری پنل: <span className="text-foreground font-medium">{panelUsername}</span>
+            {t("adminSettings.user.panelUsername")}{" "}
+            <span className="text-foreground font-medium">{panelUsername}</span>
           </p>
         )}
         {panelMeReady && !panelUsername && (
           <p className="text-muted-foreground mt-2 text-sm">
-            با حساب کاربری سایت به ادمین دسترسی دارید؛ تغییر رمز زیر فقط برای ورود با نام کاربری/رمز
-            پنل ادمین است.
+            {t("adminSettings.user.siteUserAccess")}
           </p>
         )}
       </div>
@@ -96,9 +101,9 @@ export default function AdminUserSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Languages className="h-5 w-5" />
-            زبان
+            {t("settings.language")}
           </CardTitle>
-          <CardDescription>جهت نمایش رابط (راست‌چین / چپ‌چین)</CardDescription>
+          <CardDescription>{t("settings.languageDirection")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button
@@ -107,7 +112,7 @@ export default function AdminUserSettingsPage() {
             className="min-w-32 flex-1 gap-2"
             onClick={() => setLanguage("fa")}
           >
-            فارسی
+            {t("nav.persian")}
           </Button>
           <Button
             type="button"
@@ -124,9 +129,9 @@ export default function AdminUserSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Sun className="h-5 w-5" />
-            تم
+            {t("settings.theme")}
           </CardTitle>
-          <CardDescription>حالت روشن، تیره یا هماهنگ با سیستم</CardDescription>
+          <CardDescription>{t("settings.themeDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           <Button
@@ -136,7 +141,7 @@ export default function AdminUserSettingsPage() {
             onClick={() => setTheme("light")}
           >
             <Sun className="h-4 w-4" />
-            روشن
+            {t("settings.light")}
           </Button>
           <Button
             type="button"
@@ -145,7 +150,7 @@ export default function AdminUserSettingsPage() {
             onClick={() => setTheme("dark")}
           >
             <Moon className="h-4 w-4" />
-            تیره
+            {t("settings.dark")}
           </Button>
           <Button
             type="button"
@@ -154,7 +159,7 @@ export default function AdminUserSettingsPage() {
             onClick={() => setTheme("system")}
           >
             <Monitor className="h-4 w-4" />
-            سیستم
+            {t("settings.system")}
           </Button>
         </CardContent>
       </Card>
@@ -163,16 +168,16 @@ export default function AdminUserSettingsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <KeyRound className="h-5 w-5" />
-            تغییر رمز عبور پنل
+            {t("adminSettings.user.changePanelPassword")}
           </CardTitle>
           <CardDescription>
-            رمز فعلی و رمز جدید حساب ورود با نام کاربری پنل (صفحهٔ ورود ادمین)
+            {t("adminSettings.user.changePanelPasswordDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="admin-cur-pw">رمز عبور فعلی</Label>
+              <Label htmlFor="admin-cur-pw">{t("adminSettings.user.currentPassword")}</Label>
               <Input
                 id="admin-cur-pw"
                 type="password"
@@ -182,7 +187,7 @@ export default function AdminUserSettingsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-new-pw">رمز عبور جدید</Label>
+              <Label htmlFor="admin-new-pw">{t("adminSettings.user.newPassword")}</Label>
               <Input
                 id="admin-new-pw"
                 type="password"
@@ -196,26 +201,26 @@ export default function AdminUserSettingsPage() {
                   <Progress value={getPasswordStrength(newPassword)} className="h-1.5" />
                   <ul className="text-muted-foreground space-y-0.5 text-xs">
                     <li className={cn(check.minLength && "text-green-600 dark:text-green-500")}>
-                      حداقل ۸ کاراکتر
+                      {t("adminSettings.user.minLength")}
                     </li>
                     <li className={cn(check.hasUppercase && "text-green-600 dark:text-green-500")}>
-                      حرف بزرگ انگلیسی
+                      {t("adminSettings.user.hasUppercase")}
                     </li>
                     <li className={cn(check.hasLowercase && "text-green-600 dark:text-green-500")}>
-                      حرف کوچک انگلیسی
+                      {t("adminSettings.user.hasLowercase")}
                     </li>
                     <li className={cn(check.hasNumber && "text-green-600 dark:text-green-500")}>
-                      عدد
+                      {t("adminSettings.user.hasNumber")}
                     </li>
                     <li className={cn(check.hasSpecial && "text-green-600 dark:text-green-500")}>
-                      کاراکتر خاص
+                      {t("adminSettings.user.hasSpecial")}
                     </li>
                   </ul>
                 </div>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-confirm-pw">تکرار رمز جدید</Label>
+              <Label htmlFor="admin-confirm-pw">{t("adminSettings.user.confirmPassword")}</Label>
               <Input
                 id="admin-confirm-pw"
                 type="password"
@@ -248,7 +253,7 @@ export default function AdminUserSettingsPage() {
                 newPassword !== confirmPassword
               }
             >
-              {pwSaving ? "در حال ذخیره..." : "ذخیره رمز عبور"}
+              {pwSaving ? t("common.saving") : t("adminSettings.user.savePassword")}
             </Button>
           </form>
         </CardContent>

@@ -19,6 +19,7 @@ import { CircleHelp, FileText, ChevronRight, ChevronLeft, User } from "lucide-re
 import { routes } from "@/lib/routes";
 import type { ReportCase, ReviewerListStatus } from "@/types";
 import { toPersianNum } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const BADGE_ROW_CLASS = "h-5 px-1.5 py-0 text-[10px] leading-none font-semibold shrink-0";
 
@@ -31,103 +32,110 @@ const BADGE_VARIANTS = {
   voted_reject: "border-destructive/50 bg-destructive/15 text-destructive",
 } as const;
 
-function reviewerRowBadge(status: ReviewerListStatus | null | undefined): {
-  label: string;
-  badgeClassName: string;
-} | null {
-  if (!status) return null;
-  switch (status.kind) {
-    case "await_accept":
-      return {
-        label: "در انتظار پذیرش",
-        badgeClassName: BADGE_VARIANTS.await_accept,
-      };
-    case "await_vote":
-      return {
-        label: "در انتظار رأی",
-        badgeClassName: BADGE_VARIANTS.await_vote,
-      };
-    case "voted":
-      return status.voteAction === "accepted"
-        ? { label: "تأیید شده", badgeClassName: BADGE_VARIANTS.voted_accept }
-        : { label: "رد شده", badgeClassName: BADGE_VARIANTS.voted_reject };
-    default:
-      return null;
-  }
-}
-
-function getStatusLegendItems(): {
-  label: string;
-  badgeClass: string;
-  text: string;
-}[] {
-  return [
-    {
-      label: "در انتظار پذیرش",
-      badgeClass: BADGE_VARIANTS.await_accept,
-      text: `در انتظار پذیرش توسط شما؛ حداکثر ${toPersianNum(24)} ساعت از زمان اختصاص برای قبول کردن بررسی مهلت دارید.`,
-    },
-    {
-      label: "در انتظار رأی",
-      badgeClass: BADGE_VARIANTS.await_vote,
-      text: `منتظر اعتبارسنجی شما. برای اعتبارسنج‌ها تا ${toPersianNum(3)} روز پس از پذیرش مهلت ثبت رأی است؛ در غیر این صورت پس از مطالعهٔ گزارش رأی ثبت کنید.`,
-    },
-    {
-      label: "تأیید شده",
-      badgeClass: BADGE_VARIANTS.voted_accept,
-      text: "رأی تأیید شما ثبت شده است؛ تا تکمیل حد نصاب آرا فقط امکان مشاهده وجود دارد.",
-    },
-    {
-      label: "رد شده",
-      badgeClass: BADGE_VARIANTS.voted_reject,
-      text: "رأی رد شما ثبت شده است؛ تا تکمیل حد نصاب آرا فقط امکان مشاهده وجود دارد.",
-    },
-  ];
-}
-
-function StatusLegendTable() {
-  const items = getStatusLegendItems();
-  return (
-    <div
-      className="border-border bg-card overflow-hidden rounded-lg border"
-      aria-label="راهنمای وضعیت‌ها"
-    >
-      <Table dir="rtl" className="text-xs">
-        <TableHeader className="bg-muted/10 [&_th]:border-border dark:bg-muted/15 [&_th]:rounded-none [&_th]:border-b [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-semibold [&_tr]:border-0">
-          <TableRow className="border-0 bg-transparent hover:bg-transparent">
-            <TableHead className="text-foreground w-[30%] max-w-22">نشان در لیست</TableHead>
-            <TableHead className="text-foreground">توضیح</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map((item) => (
-            <TableRow
-              key={item.label}
-              className="border-border hover:bg-muted/10 bg-background dark:bg-background/80 dark:hover:bg-muted/15 border-b last:border-b-0"
-            >
-              <TableCell className="py-2.5 align-middle">
-                <Badge variant="outline" className={`${BADGE_ROW_CLASS} ${item.badgeClass}`}>
-                  {item.label}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-muted-foreground py-2.5 align-middle text-[11px] leading-relaxed whitespace-normal">
-                {item.text}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
 export function ApprovalListScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingRequests, setPendingRequests] = useState<ReportCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [legendOpen, setLegendOpen] = useState(false);
   const itemsPerPage = 5;
+
+  function reviewerRowBadge(status: ReviewerListStatus | null | undefined): {
+    label: string;
+    badgeClassName: string;
+  } | null {
+    if (!status) return null;
+    switch (status.kind) {
+      case "await_accept":
+        return {
+          label: t("approval.list.statusItems.awaitAccept"),
+          badgeClassName: BADGE_VARIANTS.await_accept,
+        };
+      case "await_vote":
+        return {
+          label: t("approval.list.statusItems.awaitVote"),
+          badgeClassName: BADGE_VARIANTS.await_vote,
+        };
+      case "voted":
+        return status.voteAction === "accepted"
+          ? {
+              label: t("approval.list.statusItems.votedAccept"),
+              badgeClassName: BADGE_VARIANTS.voted_accept,
+            }
+          : {
+              label: t("approval.list.statusItems.votedReject"),
+              badgeClassName: BADGE_VARIANTS.voted_reject,
+            };
+      default:
+        return null;
+    }
+  }
+
+  const getStatusLegendItems = () => {
+    return [
+      {
+        label: t("approval.list.statusItems.awaitAccept"),
+        badgeClass: BADGE_VARIANTS.await_accept,
+        text: t("approval.list.statusItems.awaitAcceptDescription", { hours: toPersianNum(24) }),
+      },
+      {
+        label: t("approval.list.statusItems.awaitVote"),
+        badgeClass: BADGE_VARIANTS.await_vote,
+        text: t("approval.list.statusItems.awaitVoteDescription", { days: toPersianNum(3) }),
+      },
+      {
+        label: t("approval.list.statusItems.votedAccept"),
+        badgeClass: BADGE_VARIANTS.voted_accept,
+        text: t("approval.list.statusItems.votedAcceptDescription"),
+      },
+      {
+        label: t("approval.list.statusItems.votedReject"),
+        badgeClass: BADGE_VARIANTS.voted_reject,
+        text: t("approval.list.statusItems.votedRejectDescription"),
+      },
+    ];
+  };
+
+  function StatusLegendTable() {
+    const items = getStatusLegendItems();
+    return (
+      <div
+        className="border-border bg-card overflow-hidden rounded-lg border"
+        aria-label={t("approval.list.statusLegend")}
+      >
+        <Table dir="rtl" className="text-xs">
+          <TableHeader className="bg-muted/10 [&_th]:border-border dark:bg-muted/15 [&_th]:rounded-none [&_th]:border-b [&_th]:px-3 [&_th]:py-2 [&_th]:text-xs [&_th]:font-semibold [&_tr]:border-0">
+            <TableRow className="border-0 bg-transparent hover:bg-transparent">
+              <TableHead className="text-foreground w-[30%] max-w-22">
+                {t("approval.list.statusBadgeColumn")}
+              </TableHead>
+              <TableHead className="text-foreground">
+                {t("approval.list.statusDescriptionColumn")}
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow
+                key={item.label}
+                className="border-border hover:bg-muted/10 bg-background dark:bg-background/80 dark:hover:bg-muted/15 border-b last:border-b-0"
+              >
+                <TableCell className="py-2.5 align-middle">
+                  <Badge variant="outline" className={`${BADGE_ROW_CLASS} ${item.badgeClass}`}>
+                    {item.label}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground py-2.5 align-middle text-[11px] leading-relaxed whitespace-normal">
+                  {item.text}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
 
   useEffect(() => {
     api.reports.pending
@@ -148,22 +156,22 @@ export function ApprovalListScreen() {
       <Card className="mx-auto flex w-full max-w-md flex-1 flex-col">
         <CardHeader>
           <CardTitle className="text-foreground text-center text-xl font-bold">
-            لیست انتظار بررسی
+            {t("approval.list.title")}
           </CardTitle>
           <p className="text-muted-foreground mt-1 text-center text-sm">
-            درخواست‌های در انتظار بررسی
+            {t("approval.list.description")}
           </p>
         </CardHeader>
         <CardContent className="flex flex-1 flex-col gap-3">
           {loading ? (
             <div className="text-muted-foreground flex min-h-[330px] items-center justify-center gap-3">
-              در حال بارگذاری...
+              {t("common.loading")}
             </div>
           ) : currentRequests.length === 0 ? (
             <div className="text-muted-foreground flex min-h-[330px] items-center justify-center gap-3">
               <FileText className="text-muted-foreground/40 mb-3 h-10 w-10" />
               <p className="text-muted-foreground/50 text-center text-lg font-bold">
-                هیچ درخواستی در انتظار تایید نیست
+                {t("approval.list.noPending")}
               </p>
             </div>
           ) : (
@@ -194,8 +202,8 @@ export function ApprovalListScreen() {
                             type="button"
                             onClick={() => setLegendOpen(true)}
                             className="text-muted-foreground hover:text-foreground focus-visible:ring-ring inline-flex size-6 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                            aria-label="راهنمای وضعیت‌ها"
-                            title="راهنمای وضعیت‌ها"
+                            aria-label={t("approval.list.statusLegend")}
+                            title={t("approval.list.statusLegend")}
                           >
                             <CircleHelp className="size-3.5" strokeWidth={2} />
                           </button>
@@ -208,7 +216,7 @@ export function ApprovalListScreen() {
                       className="shrink-0 self-start"
                       onClick={() => router.push(`/panel/approval/${request.id}`)}
                     >
-                      جزئیات
+                      {t("common.details")}
                     </Button>
                   </div>
                 </div>
@@ -228,7 +236,7 @@ export function ApprovalListScreen() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
               <span className="text-muted-foreground text-sm">
-                صفحه {currentPage} از {totalPages}
+                {t("common.page")} {currentPage} {t("common.of")} {totalPages}
               </span>
               <Button
                 variant="outline"
@@ -248,7 +256,7 @@ export function ApprovalListScreen() {
               showCloseButton
             >
               <DialogHeader className="gap-1 space-y-0 text-center sm:text-center">
-                <DialogTitle className="text-base">راهنمای وضعیت‌ها</DialogTitle>
+                <DialogTitle className="text-base">{t("approval.list.statusLegend")}</DialogTitle>
               </DialogHeader>
               <div className="min-h-0 flex-1 overflow-y-auto pe-1">
                 <StatusLegendTable />
@@ -261,7 +269,7 @@ export function ApprovalListScreen() {
             variant="ghost"
             className="mt-auto"
           >
-            بازگشت
+            {t("common.back")}
           </Button>
         </CardContent>
       </Card>

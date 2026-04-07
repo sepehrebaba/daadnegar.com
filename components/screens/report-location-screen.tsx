@@ -19,10 +19,12 @@ import {
 import { ArrowRight, ArrowLeft, MapPin, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
+import { useTranslation } from "react-i18next";
 
 export function ReportLocationScreen() {
   const router = useRouter();
   const { updateReport, currentReport } = useReport();
+  const { t } = useTranslation();
   const [provinces, setProvinces] = useState<
     { id: string; name: string; cities: { id: string; name: string }[] }[]
   >([]);
@@ -60,13 +62,13 @@ export function ReportLocationScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <MapPin className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">محل وقوع</CardTitle>
-          <CardDescription>محل وقوع این اتفاق را مشخص کنید</CardDescription>
+          <CardTitle className="text-2xl">{t("report.location.title")}</CardTitle>
+          <CardDescription>{t("report.location.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="province">
-              استان <span className="text-destructive">*</span>
+              {t("report.location.province")} <span className="text-destructive">*</span>
             </Label>
             <Select
               value={provinceId}
@@ -76,7 +78,7 @@ export function ReportLocationScreen() {
               }}
             >
               <SelectTrigger id="province" className="w-full">
-                <SelectValue placeholder="انتخاب استان..." />
+                <SelectValue placeholder={t("report.location.selectProvince")} />
               </SelectTrigger>
               <SelectContent className="max-h-60">
                 {provinces.map((p) => (
@@ -89,14 +91,14 @@ export function ReportLocationScreen() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="city">شهر (اختیاری)</Label>
+            <Label htmlFor="city">{t("report.location.city")}</Label>
             <Select
               value={cityId}
               onValueChange={setCityId}
               disabled={!isValid || cities.length === 0}
             >
               <SelectTrigger id="city" className="w-full">
-                <SelectValue placeholder="انتخاب شهر..." />
+                <SelectValue placeholder={t("report.location.selectCity")} />
               </SelectTrigger>
               <SelectContent>
                 {cities.map((c) => (
@@ -109,29 +111,29 @@ export function ReportLocationScreen() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="exact-location">محل دقیق (اختیاری)</Label>
+            <Label htmlFor="exact-location">{t("report.location.exactLocation")}</Label>
             <Input
               id="exact-location"
               value={exactLocation}
               onChange={(e) => setExactLocation(e.target.value)}
-              placeholder="مثال: ساختمان مرکزی، طبقه سوم"
+              placeholder={t("report.location.exactLocationPlaceholder")}
             />
           </div>
 
           <Alert variant="default" className="border-amber-200 bg-amber-50">
             <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-600" />
             <AlertDescription className="text-amber-800">
-              از وارد کردن آدرس منزل یا اطلاعات شخصی خودداری کنید.
+              {t("report.location.warning")}
             </AlertDescription>
           </Alert>
 
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} disabled={!isValid} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
           </div>

@@ -19,34 +19,12 @@ import {
 import { isPasswordSecure, getPasswordStrength, PASSWORD_RULES } from "@/lib/password-utils";
 import { AlertCircle, Eye, EyeOff, KeyRound, Check, Circle } from "lucide-react";
 import { toast } from "sonner";
-
-const PASSWORD_REQUIREMENTS = [
-  {
-    key: "minLength" as const,
-    label: "حداقل ۸ کاراکتر",
-    check: (p: string) => p.length >= PASSWORD_RULES.minLength,
-  },
-  {
-    key: "hasUppercase" as const,
-    label: "یک حرف بزرگ (A-Z)",
-    check: (p: string) => /[A-Z]/.test(p),
-  },
-  {
-    key: "hasLowercase" as const,
-    label: "یک حرف کوچک (a-z)",
-    check: (p: string) => /[a-z]/.test(p),
-  },
-  { key: "hasNumber" as const, label: "یک عدد (0-9)", check: (p: string) => /[0-9]/.test(p) },
-  {
-    key: "hasSpecial" as const,
-    label: "یک کاراکتر خاص (!@#$%)",
-    check: (p: string) => /[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(p),
-  },
-];
+import { useTranslation } from "react-i18next";
 
 export function ChangePasswordScreen() {
   const router = useRouter();
   const { setUser } = useUser();
+  const { t } = useTranslation();
   const [checking, setChecking] = useState(true);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -54,6 +32,34 @@ export function ChangePasswordScreen() {
   const [show, setShow] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const PASSWORD_REQUIREMENTS = [
+    {
+      key: "minLength" as const,
+      label: t("password.minLength"),
+      check: (p: string) => p.length >= PASSWORD_RULES.minLength,
+    },
+    {
+      key: "hasUppercase" as const,
+      label: t("password.hasUppercase"),
+      check: (p: string) => /[A-Z]/.test(p),
+    },
+    {
+      key: "hasLowercase" as const,
+      label: t("password.hasLowercase"),
+      check: (p: string) => /[a-z]/.test(p),
+    },
+    {
+      key: "hasNumber" as const,
+      label: t("password.hasNumber"),
+      check: (p: string) => /[0-9]/.test(p),
+    },
+    {
+      key: "hasSpecial" as const,
+      label: t("password.hasSpecial"),
+      check: (p: string) => /[$@#!%*?&#^()[\]{}_\-+=.,:;]/.test(p),
+    },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -101,11 +107,11 @@ export function ChangePasswordScreen() {
     ev.preventDefault();
     setError("");
     if (!isPasswordSecure(newPassword)) {
-      setError("رمز جدید باید تمام قوانین امنیتی را رعایت کند.");
+      setError(t("auth.changePassword.weak"));
       return;
     }
     if (newPassword !== confirm) {
-      setError("تکرار رمز با رمز جدید یکسان نیست.");
+      setError(t("auth.changePassword.mismatch"));
       return;
     }
     setLoading(true);
@@ -115,10 +121,10 @@ export function ChangePasswordScreen() {
     });
     setLoading(false);
     if (apiErr) {
-      setError((apiErr as { message?: string })?.message ?? "خطا در تغییر رمز عبور");
+      setError((apiErr as { message?: string })?.message ?? t("auth.changePassword.error"));
       return;
     }
-    toast("رمز عبور با موفقیت به‌روز شد.");
+    toast(t("auth.changePassword.success"));
     const { data: me2 } = await api.me.get();
     if (me2) {
       const m = me2 as {
@@ -150,7 +156,7 @@ export function ChangePasswordScreen() {
   if (checking) {
     return (
       <div className="bg-background flex items-center justify-center p-8">
-        <p className="text-muted-foreground text-sm">در حال بارگذاری...</p>
+        <p className="text-muted-foreground text-sm">{t("common.loading")}</p>
       </div>
     );
   }
@@ -162,16 +168,15 @@ export function ChangePasswordScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <KeyRound className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-xl font-bold">تغییر رمز عبور اجباری</CardTitle>
+          <CardTitle className="text-xl font-bold">{t("auth.changePassword.title")}</CardTitle>
           <CardDescription className="text-xs leading-relaxed">
-            حساب شما با رمز اولیه ساخته شده است. برای ادامهٔ استفاده از سامانه باید یک رمز عبور جدید
-            و امن انتخاب کنید.
+            {t("auth.changePassword.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="cur-pw">رمز عبور فعلی</Label>
+              <Label htmlFor="cur-pw">{t("auth.changePassword.currentPassword")}</Label>
               <InputGroup>
                 <InputGroupInput
                   id="cur-pw"
@@ -189,7 +194,7 @@ export function ChangePasswordScreen() {
                     size="icon-xs"
                     variant="ghost"
                     onClick={() => setShow((s) => !s)}
-                    aria-label={show ? "مخفی کردن" : "نمایش"}
+                    aria-label={show ? t("common.hide") : t("common.show")}
                   >
                     {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </InputGroupButton>
@@ -197,7 +202,7 @@ export function ChangePasswordScreen() {
               </InputGroup>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new-pw">رمز عبور جدید</Label>
+              <Label htmlFor="new-pw">{t("auth.changePassword.newPassword")}</Label>
               <InputGroup>
                 <InputGroupInput
                   id="new-pw"
@@ -216,7 +221,7 @@ export function ChangePasswordScreen() {
                     size="icon-xs"
                     variant="ghost"
                     onClick={() => setShow((s) => !s)}
-                    aria-label={show ? "مخفی کردن" : "نمایش"}
+                    aria-label={show ? t("common.hide") : t("common.show")}
                   >
                     {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                   </InputGroupButton>
@@ -241,7 +246,7 @@ export function ChangePasswordScreen() {
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cf-pw">تکرار رمز جدید</Label>
+              <Label htmlFor="cf-pw">{t("auth.changePassword.confirmPassword")}</Label>
               <Input
                 id="cf-pw"
                 type={show ? "text" : "password"}
@@ -264,7 +269,7 @@ export function ChangePasswordScreen() {
               className="w-full"
               disabled={loading || !isPasswordSecure(newPassword) || newPassword !== confirm}
             >
-              {loading ? "در حال ذخیره..." : "ثبت رمز جدید و ادامه"}
+              {loading ? t("auth.changePassword.submitting") : t("auth.changePassword.submit")}
             </Button>
           </form>
         </CardContent>

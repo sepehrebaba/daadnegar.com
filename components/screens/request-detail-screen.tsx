@@ -7,29 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CheckCircle, XCircle, User, FileText, Calendar } from "lucide-react";
 import type { RequestStatus } from "@/types";
-
-const statusConfig: Record<
-  RequestStatus,
-  { label: string; icon: typeof Clock; color: string; bgColor: string }
-> = {
-  pending: {
-    label: "در انتظار بررسی",
-    icon: Clock,
-    color: "text-amber-600",
-    bgColor: "bg-amber-100",
-  },
-  accepted: {
-    label: "تایید شده",
-    icon: CheckCircle,
-    color: "text-green-600",
-    bgColor: "bg-green-100",
-  },
-  rejected: { label: "رد شده", icon: XCircle, color: "text-red-600", bgColor: "bg-red-100" },
-};
+import { useTranslation } from "react-i18next";
 
 export function RequestDetailScreen() {
   const router = useRouter();
   const params = useParams();
+  const { t } = useTranslation();
   const id = params?.id as string | undefined;
   const [request, setRequest] = useState<{
     id: string;
@@ -42,6 +25,30 @@ export function RequestDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const statusConfig: Record<
+    RequestStatus,
+    { label: string; icon: typeof Clock; color: string; bgColor: string }
+  > = {
+    pending: {
+      label: t("requestDetail.status.pending"),
+      icon: Clock,
+      color: "text-amber-600",
+      bgColor: "bg-amber-100",
+    },
+    accepted: {
+      label: t("requestDetail.status.accepted"),
+      icon: CheckCircle,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+    },
+    rejected: {
+      label: t("requestDetail.status.rejected"),
+      icon: XCircle,
+      color: "text-red-600",
+      bgColor: "bg-red-100",
+    },
+  };
+
   useEffect(() => {
     if (!id) {
       router.back();
@@ -53,18 +60,18 @@ export function RequestDetailScreen() {
       .get()
       .then(({ data, error: err }) => {
         if (err) {
-          setError(err instanceof Error ? err.message : "خطا در بارگذاری");
+          setError(err instanceof Error ? err.message : t("requestDetail.loadError"));
           setLoading(false);
           return;
         }
         if (data) {
           setRequest(data as typeof request);
         } else {
-          setError("درخواست یافت نشد");
+          setError(t("requestDetail.notFound"));
         }
         setLoading(false);
       });
-  }, [id, router]);
+  }, [id, router, t]);
 
   if (!id) {
     return null;
@@ -75,7 +82,7 @@ export function RequestDetailScreen() {
       <div className="bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">در حال بارگذاری...</p>
+            <p className="text-muted-foreground">{t("common.loading")}</p>
           </CardContent>
         </Card>
       </div>
@@ -87,9 +94,9 @@ export function RequestDetailScreen() {
       <div className="bg-background flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="space-y-4 py-8">
-            <p className="text-destructive text-center">{error || "درخواست یافت نشد"}</p>
+            <p className="text-destructive text-center">{error || t("requestDetail.notFound")}</p>
             <Button onClick={() => router.back()} variant="outline" className="w-full">
-              بازگشت
+              {t("common.back")}
             </Button>
           </CardContent>
         </Card>
@@ -104,7 +111,9 @@ export function RequestDetailScreen() {
     <div className="bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-foreground text-xl font-bold">جزئیات درخواست</CardTitle>
+          <CardTitle className="text-foreground text-xl font-bold">
+            {t("requestDetail.title")}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Status */}
@@ -126,7 +135,7 @@ export function RequestDetailScreen() {
                   {request.person.firstName} {request.person.lastName}
                 </div>
                 <div className="text-muted-foreground text-sm">
-                  {request.person.isFamous ? "فرد معروف" : "ثبت دستی"}
+                  {request.person.isFamous ? t("requestDetail.famous") : t("requestDetail.manual")}
                 </div>
               </div>
             </div>
@@ -136,7 +145,7 @@ export function RequestDetailScreen() {
           <div className="bg-muted flex items-center gap-3 rounded-lg p-3">
             <Calendar className="text-muted-foreground h-5 w-5" />
             <div className="text-sm">
-              <span className="text-muted-foreground">تاریخ ثبت: </span>
+              <span className="text-muted-foreground">{t("requestDetail.registrationDate")} </span>
               <span className="text-foreground">
                 {new Date(request.createdAt).toLocaleDateString("fa-IR")}
               </span>
@@ -147,19 +156,23 @@ export function RequestDetailScreen() {
           <div className="bg-muted flex items-center gap-3 rounded-lg p-3">
             <FileText className="text-muted-foreground h-5 w-5" />
             <div className="text-sm">
-              <span className="text-muted-foreground">تعداد اسناد: </span>
-              <span className="text-foreground">{request.documents?.length ?? 0} فایل</span>
+              <span className="text-muted-foreground">{t("requestDetail.documentsCount")} </span>
+              <span className="text-foreground">
+                {request.documents?.length ?? 0} {t("requestDetail.filesUnit")}
+              </span>
             </div>
           </div>
 
           {/* Description */}
           <div className="border-border rounded-lg border p-4">
-            <h3 className="text-foreground mb-2 text-sm font-medium">شرح گزارش:</h3>
+            <h3 className="text-foreground mb-2 text-sm font-medium">
+              {t("requestDetail.reportDescription")}
+            </h3>
             <p className="text-muted-foreground text-sm leading-relaxed">{request.description}</p>
           </div>
 
           <Button onClick={() => router.back()} variant="outline" className="w-full">
-            بازگشت
+            {t("common.back")}
           </Button>
         </CardContent>
       </Card>

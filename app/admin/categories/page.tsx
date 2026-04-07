@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ function buildTree(items: Category[]): CategoryNode[] {
 }
 
 export default function AdminCategoriesPage() {
+  const { t } = useTranslation();
   const [data, setData] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -149,7 +151,7 @@ export default function AdminCategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("حذف این دسته‌بندی؟")) return;
+    if (!confirm(t("adminCategories.deleteConfirm"))) return;
     const { error } = await api.admin.categories({ id }).delete();
     if (!error) load();
   };
@@ -200,7 +202,7 @@ export default function AdminCategoriesPage() {
                 }
               : undefined
           }
-          aria-label={hasChildren ? (isExpanded ? "بستن" : "باز کردن") : undefined}
+          aria-label={hasChildren ? (isExpanded ? t("common.close") : t("common.show")) : undefined}
         >
           {hasChildren ? (
             <span className="shrink-0">
@@ -251,21 +253,21 @@ export default function AdminCategoriesPage() {
     );
   };
 
-  if (loading) return <div className="p-6">در حال بارگذاری...</div>;
+  if (loading) return <div className="p-6">{t("common.loading")}</div>;
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">دسته‌بندی‌ها</h1>
+        <h1 className="text-2xl font-bold">{t("adminCategories.title")}</h1>
         <Button onClick={openCreate}>
           <Plus className="ml-2 h-4 w-4" />
-          افزودن
+          {t("common.add")}
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>لیست دسته‌بندی‌ها</CardTitle>
+          <CardTitle>{t("adminCategories.listTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table className="w-full min-w-full table-fixed">
@@ -279,12 +281,12 @@ export default function AdminCategoriesPage() {
             </colgroup>
             <TableHeader>
               <TableRow>
-                <TableHead>نام</TableHead>
-                <TableHead>اسلاگ</TableHead>
-                <TableHead>نوع</TableHead>
-                <TableHead>ترتیب</TableHead>
-                <TableHead>فعال</TableHead>
-                <TableHead>عملیات</TableHead>
+                <TableHead>{t("adminCategories.colName")}</TableHead>
+                <TableHead>{t("adminCategories.colSlug")}</TableHead>
+                <TableHead>{t("adminCategories.colType")}</TableHead>
+                <TableHead>{t("adminCategories.colOrder")}</TableHead>
+                <TableHead>{t("adminCategories.colActive")}</TableHead>
+                <TableHead>{t("adminCategories.colActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>{tree.map((node) => renderRow(node, 0))}</TableBody>
@@ -295,11 +297,13 @@ export default function AdminCategoriesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? "ویرایش دسته‌بندی" : "افزودن دسته‌بندی"}</DialogTitle>
+            <DialogTitle>
+              {editing ? t("adminCategories.editCategory") : t("adminCategories.addCategory")}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label>نام</Label>
+              <Label>{t("adminCategories.labelName")}</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -307,7 +311,7 @@ export default function AdminCategoriesPage() {
               />
             </div>
             <div>
-              <Label>اسلاگ</Label>
+              <Label>{t("adminCategories.labelSlug")}</Label>
               <Input
                 value={form.slug}
                 onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
@@ -317,21 +321,21 @@ export default function AdminCategoriesPage() {
               />
             </div>
             <div>
-              <Label>توضیحات</Label>
+              <Label>{t("adminCategories.labelDescription")}</Label>
               <Input
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               />
             </div>
             <div>
-              <Label>نوع</Label>
+              <Label>{t("adminCategories.labelType")}</Label>
               <Input
                 value={form.type}
                 onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
               />
             </div>
             <div>
-              <Label>ترتیب</Label>
+              <Label>{t("adminCategories.labelOrder")}</Label>
               <Input
                 type="number"
                 value={form.sortOrder}
@@ -343,16 +347,16 @@ export default function AdminCategoriesPage() {
                 checked={form.isActive}
                 onCheckedChange={(v) => setForm((f) => ({ ...f, isActive: !!v }))}
               />
-              <Label>فعال</Label>
+              <Label>{t("adminCategories.labelActive")}</Label>
             </div>
             <div>
-              <Label>والد (اختیاری)</Label>
+              <Label>{t("adminCategories.labelParent")}</Label>
               <select
                 className="border-input h-9 w-full rounded-md border px-3"
                 value={form.parentId ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, parentId: e.target.value || null }))}
               >
-                <option value="">بدون والد</option>
+                <option value="">{t("adminCategories.noParent")}</option>
                 {parents.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
@@ -362,9 +366,9 @@ export default function AdminCategoriesPage() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                انصراف
+                {t("common.cancel")}
               </Button>
-              <Button type="submit">{editing ? "ذخیره" : "افزودن"}</Button>
+              <Button type="submit">{editing ? t("common.save") : t("common.add")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

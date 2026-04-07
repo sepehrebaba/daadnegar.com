@@ -21,10 +21,12 @@ import { routes } from "@/lib/routes";
 import { toPersianNum } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/lib/edyen";
+import { useTranslation } from "react-i18next";
 
 export function MainMenuScreen() {
   const router = useRouter();
   const { user, setUser, logout } = useUser();
+  const { t } = useTranslation();
   const [minApprovedForApproval, setMinApprovedForApproval] = useState(5);
   const [pendingReviewCount, setPendingReviewCount] = useState<number | null>(null);
   const [reportsEnabled, setReportsEnabled] = useState(true);
@@ -99,15 +101,15 @@ export function MainMenuScreen() {
       {!isValidator && (
         <Alert className="max-w-md" variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            برای ثبت گزارش جدید، لطفاً مطمئن شوید که اتصال شما امن است.
-          </AlertDescription>
+          <AlertDescription>{t("mainMenu.securityAlert")}</AlertDescription>
         </Alert>
       )}
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-foreground text-2xl font-black">پنل کاربری</CardTitle>
-          <p className="text-muted-foreground mt-2">به پلتفرم دادنگار خوش آمدید</p>
+          <CardTitle className="text-foreground text-2xl font-black">
+            {t("mainMenu.title")}
+          </CardTitle>
+          <p className="text-muted-foreground mt-2">{t("mainMenu.welcome")}</p>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <Button
@@ -116,7 +118,7 @@ export function MainMenuScreen() {
             variant="outline"
           >
             <Coins className="h-5 w-5" />
-            توکن‌های من
+            {t("mainMenu.myTokens")}
             <span className="bg-primary/10 text-primary mr-auto rounded-full px-2 py-1 text-sm">
               {toPersianNum(user?.tokensCount ?? 0)}
             </span>
@@ -129,7 +131,7 @@ export function MainMenuScreen() {
               variant="default"
             >
               <Search className="h-5 w-5" />
-              جستجوی گزارشات
+              {t("mainMenu.searchReports")}
             </Button>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -143,7 +145,7 @@ export function MainMenuScreen() {
                 disabled={!reportsEnabled}
               >
                 <FileText className="h-5 w-5" />
-                ثبت گزارش جدید
+                {t("mainMenu.newReport")}
               </Button>
               <Button
                 onClick={() => router.push(routes.myRequests)}
@@ -151,7 +153,7 @@ export function MainMenuScreen() {
                 variant="outline"
               >
                 <ListChecks className="h-5 w-5" />
-                گزارش‌های من
+                {t("mainMenu.myReports")}
               </Button>
             </div>
           )}
@@ -163,7 +165,7 @@ export function MainMenuScreen() {
               variant="outline"
             >
               <ClipboardCheck className="h-5 w-5" />
-              لیست انتظار بررسی
+              {t("mainMenu.pendingList")}
               <Badge
                 variant="secondary"
                 className="mr-auto h-5 min-w-5 rounded-full border-amber-400/60 bg-amber-200/90 px-1.5 text-[11px] font-bold text-amber-950 tabular-nums dark:border-amber-600 dark:bg-amber-800/90 dark:text-amber-50"
@@ -179,7 +181,7 @@ export function MainMenuScreen() {
               variant="outline"
             >
               <ListChecks className="h-5 w-5" />
-              گزارش‌های بررسی‌شده
+              {t("mainMenu.reviewedReports")}
             </Button>
           )}
 
@@ -189,7 +191,7 @@ export function MainMenuScreen() {
             variant="outline"
           >
             <UserPlus className="h-5 w-5" />
-            دعوت کاربر
+            {t("mainMenu.inviteUser")}
           </Button>
 
           <Button
@@ -198,14 +200,14 @@ export function MainMenuScreen() {
             variant="outline"
           >
             <Settings className="h-5 w-5" />
-            تنظیمات
+            {t("mainMenu.settings")}
           </Button>
 
           <div className="border-border my-2 border-t" />
 
           <Button onClick={logout} variant="ghost" className="text-muted-foreground w-full gap-2">
             <LogOut className="h-4 w-4" />
-            خروج
+            {t("mainMenu.logout")}
           </Button>
         </CardContent>
       </Card>

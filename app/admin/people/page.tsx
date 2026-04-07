@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ type Person = {
 };
 
 export default function AdminPeoplePage() {
+  const { t } = useTranslation();
   const [people, setPeople] = useState<Person[]>([]);
   const [search, setSearch] = useState("");
   const [famousOnly, setFamousOnly] = useState<boolean | null>(null);
@@ -171,13 +173,13 @@ export default function AdminPeoplePage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">افراد</h1>
+        <h1 className="text-2xl font-bold">{t("adminPeople.title")}</h1>
         <div className="flex gap-1">
           {pendingCount > 0 && (
             <Button variant="outline" asChild className="relative">
               <Link href="/admin/people/pending" className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
-                در انتظار تایید
+                {t("adminPeople.pendingApproval")}
                 <Badge variant="destructive" className="mr-1 min-w-5 px-1.5 py-0 text-[10px]">
                   {pendingCount}
                 </Badge>
@@ -186,7 +188,7 @@ export default function AdminPeoplePage() {
           )}
           <Button onClick={openCreate}>
             <Plus className="h-4 w-4" />
-            افزودن
+            {t("common.add")}
           </Button>
         </div>
       </div>
@@ -194,10 +196,10 @@ export default function AdminPeoplePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <h3 className="text-lg font-bold">لیست افراد</h3>
+            <h3 className="text-lg font-bold">{t("adminPeople.listTitle")}</h3>
             <div className="flex gap-4">
               <Input
-                placeholder="جستجو..."
+                placeholder={t("adminPeople.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="max-w-xs"
@@ -207,7 +209,7 @@ export default function AdminPeoplePage() {
                   checked={famousOnly === true}
                   onCheckedChange={(c) => setFamousOnly(c ? true : null)}
                 />
-                معروف
+                {t("adminPeople.famous")}
               </label>
             </div>
           </CardTitle>
@@ -215,15 +217,15 @@ export default function AdminPeoplePage() {
 
         <CardContent dir="rtl">
           {loading ? (
-            <p>در حال بارگذاری...</p>
+            <p>{t("common.loading")}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>آواتار</TableHead>
-                  <TableHead>نام</TableHead>
-                  <TableHead>عنوان</TableHead>
-                  <TableHead>معروف</TableHead>
+                  <TableHead>{t("adminPeople.avatar")}</TableHead>
+                  <TableHead>{t("adminPeople.name")}</TableHead>
+                  <TableHead>{t("adminPeople.title")}</TableHead>
+                  <TableHead>{t("adminPeople.famous")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -258,11 +260,19 @@ export default function AdminPeoplePage() {
                         size="sm"
                         className="w-fit"
                       >
-                        <ToggleGroupItem className="px-3 text-xs" value="regular" aria-label="عادی">
-                          عادی
+                        <ToggleGroupItem
+                          className="px-3 text-xs"
+                          value="regular"
+                          aria-label={t("adminPeople.regular")}
+                        >
+                          {t("adminPeople.regular")}
                         </ToggleGroupItem>
-                        <ToggleGroupItem className="px-3 text-xs" value="famous" aria-label="معروف">
-                          معروف
+                        <ToggleGroupItem
+                          className="px-3 text-xs"
+                          value="famous"
+                          aria-label={t("adminPeople.famous")}
+                        >
+                          {t("adminPeople.famous")}
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </TableCell>
@@ -275,19 +285,19 @@ export default function AdminPeoplePage() {
                             setDetailsPerson(p);
                             setDetailsOpen(true);
                           }}
-                          title="مشاهده جزئیات"
+                          title={t("adminPeople.viewDetailsTitle")}
                         >
                           <Eye className="h-3 w-3" />
-                          مشاهده
+                          {t("adminPeople.viewDetails")}
                         </Button>
                         <Button
                           variant="outline"
                           size="xs"
                           onClick={() => openEdit(p)}
-                          title="ویرایش"
+                          title={t("adminPeople.edit")}
                         >
                           <Pencil className="h-3 w-3" />
-                          ویرایش
+                          {t("adminPeople.edit")}
                         </Button>
                       </div>
                     </TableCell>
@@ -302,7 +312,7 @@ export default function AdminPeoplePage() {
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>جزئیات شخص</DialogTitle>
+            <DialogTitle>{t("adminPeople.personDetails")}</DialogTitle>
           </DialogHeader>
           {detailsPerson && (
             <div className="space-y-4">
@@ -319,39 +329,39 @@ export default function AdminPeoplePage() {
                     {detailsPerson.firstName} {detailsPerson.lastName}
                   </p>
                   <Badge variant={detailsPerson.isFamous ? "default" : "secondary"}>
-                    {detailsPerson.isFamous ? "معروف" : "عادی"}
+                    {detailsPerson.isFamous ? t("adminPeople.famous") : t("adminPeople.regular")}
                   </Badge>
                   <Badge variant="outline" className="mr-2">
                     {detailsPerson.status === "approved"
-                      ? "تأیید شده"
+                      ? t("adminPeople.statusApproved")
                       : detailsPerson.status === "pending"
-                        ? "در انتظار"
-                        : (detailsPerson.status ?? "نامشخص")}
+                        ? t("adminPeople.statusPending")
+                        : (detailsPerson.status ?? t("adminPeople.statusUnknown"))}
                   </Badge>
                 </div>
               </div>
               <Table className="[&_td]:border-border w-full border-collapse overflow-hidden rounded-lg font-sans text-sm [&_td]:border [&_td]:px-4 [&_td]:py-2">
                 <TableBody>
                   {[
-                    ["شناسه", detailValue(detailsPerson.id)],
-                    ["نام پدر", detailValue(detailsPerson.fatherName)],
-                    ["عنوان (سمت)", detailValue(detailsPerson.title)],
-                    ["کد ملی", detailValue(detailsPerson.nationalCode)],
-                    ["ارگان", detailValue(detailsPerson.organization)],
+                    [t("adminPeople.fieldId"), detailValue(detailsPerson.id)],
+                    [t("adminPeople.fieldFatherName"), detailValue(detailsPerson.fatherName)],
+                    [t("adminPeople.fieldTitle"), detailValue(detailsPerson.title)],
+                    [t("adminPeople.fieldNationalCode"), detailValue(detailsPerson.nationalCode)],
+                    [t("adminPeople.fieldOrganization"), detailValue(detailsPerson.organization)],
                     [
-                      "تاریخ تولد",
+                      t("adminPeople.fieldDateOfBirth"),
                       detailValue(
                         detailsPerson.dateOfBirth
                           ? new Date(detailsPerson.dateOfBirth).toLocaleDateString("fa-IR")
                           : undefined,
                       ),
                     ],
-                    ["موبایل", detailValue(detailsPerson.mobile)],
-                    ["تلفن", detailValue(detailsPerson.phone)],
-                    ["آدرس", detailValue(detailsPerson.address)],
-                    ["لینک تصویر", detailValue(detailsPerson.imageUrl)],
+                    [t("adminPeople.fieldMobile"), detailValue(detailsPerson.mobile)],
+                    [t("adminPeople.fieldPhone"), detailValue(detailsPerson.phone)],
+                    [t("adminPeople.fieldAddress"), detailValue(detailsPerson.address)],
+                    [t("adminPeople.fieldImageUrl"), detailValue(detailsPerson.imageUrl)],
                     [
-                      "تاریخ ایجاد",
+                      t("adminPeople.fieldCreatedAt"),
                       detailValue(
                         detailsPerson.createdAt
                           ? new Date(detailsPerson.createdAt).toLocaleDateString("fa-IR")
@@ -359,7 +369,7 @@ export default function AdminPeoplePage() {
                       ),
                     ],
                     [
-                      "تاریخ بروزرسانی",
+                      t("adminPeople.fieldUpdatedAt"),
                       detailValue(
                         detailsPerson.updatedAt
                           ? new Date(detailsPerson.updatedAt).toLocaleDateString("fa-IR")
@@ -378,7 +388,7 @@ export default function AdminPeoplePage() {
               </Table>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setDetailsOpen(false)}>
-                  بستن
+                  {t("common.close")}
                 </Button>
                 <Button
                   onClick={() => {
@@ -387,7 +397,7 @@ export default function AdminPeoplePage() {
                   }}
                 >
                   <Pencil className="ml-2 h-4 w-4" />
-                  ویرایش
+                  {t("adminPeople.edit")}
                 </Button>
               </DialogFooter>
             </div>
@@ -398,12 +408,14 @@ export default function AdminPeoplePage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? "ویرایش شخص" : "افزودن شخص"}</DialogTitle>
+            <DialogTitle>
+              {editing ? t("adminPeople.editPerson") : t("adminPeople.addPerson")}
+            </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>نام</Label>
+                <Label>{t("adminPeople.firstName")}</Label>
                 <Input
                   value={form.firstName}
                   onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
@@ -411,7 +423,7 @@ export default function AdminPeoplePage() {
                 />
               </div>
               <div>
-                <Label>نام خانوادگی</Label>
+                <Label>{t("adminPeople.lastName")}</Label>
                 <Input
                   value={form.lastName}
                   onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
@@ -419,14 +431,14 @@ export default function AdminPeoplePage() {
                 />
               </div>
               <div>
-                <Label>نام پدر</Label>
+                <Label>{t("adminPeople.fatherName")}</Label>
                 <Input
                   value={form.fatherName}
                   onChange={(e) => setForm((f) => ({ ...f, fatherName: e.target.value }))}
                 />
               </div>
               <div>
-                <Label>عنوان (سمت)</Label>
+                <Label>{t("adminPeople.titlePosition")}</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
@@ -435,21 +447,21 @@ export default function AdminPeoplePage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>کد ملی</Label>
+                <Label>{t("adminPeople.nationalCode")}</Label>
                 <Input
                   value={form.nationalCode}
                   onChange={(e) => setForm((f) => ({ ...f, nationalCode: e.target.value }))}
                 />
               </div>
               <div>
-                <Label>ارگان</Label>
+                <Label>{t("adminPeople.organization")}</Label>
                 <Input
                   value={form.organization}
                   onChange={(e) => setForm((f) => ({ ...f, organization: e.target.value }))}
                 />
               </div>
               <div>
-                <Label>تاریخ تولد</Label>
+                <Label>{t("adminPeople.dateOfBirth")}</Label>
                 <Input
                   type="date"
                   value={form.dateOfBirth}
@@ -457,14 +469,14 @@ export default function AdminPeoplePage() {
                 />
               </div>
               <div>
-                <Label>موبایل</Label>
+                <Label>{t("adminPeople.mobile")}</Label>
                 <Input
                   value={form.mobile}
                   onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value }))}
                 />
               </div>
               <div>
-                <Label>تلفن</Label>
+                <Label>{t("adminPeople.phone")}</Label>
                 <Input
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -472,14 +484,14 @@ export default function AdminPeoplePage() {
               </div>
             </div>
             <div>
-              <Label>آدرس</Label>
+              <Label>{t("adminPeople.address")}</Label>
               <Input
                 value={form.address}
                 onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
               />
             </div>
             <div>
-              <Label>لینک آواتار (URL)</Label>
+              <Label>{t("adminPeople.avatarUrl")}</Label>
               <Input
                 value={form.imageUrl}
                 onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
@@ -491,13 +503,13 @@ export default function AdminPeoplePage() {
                 checked={form.isFamous}
                 onCheckedChange={(c) => setForm((f) => ({ ...f, isFamous: c }))}
               />
-              <Label>شخص معروف (عمومی)</Label>
+              <Label>{t("adminPeople.famousPerson")}</Label>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                انصراف
+                {t("common.cancel")}
               </Button>
-              <Button type="submit">{editing ? "ذخیره" : "افزودن"}</Button>
+              <Button type="submit">{editing ? t("common.save") : t("common.add")}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

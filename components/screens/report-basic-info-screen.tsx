@@ -12,10 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowRight, ArrowLeft, FileText, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
+import { useTranslation } from "react-i18next";
 
 export function ReportBasicInfoScreen() {
   const router = useRouter();
   const { updateReport, currentReport } = useReport();
+  const { t } = useTranslation();
   const [title, setTitle] = useState(currentReport?.title || "");
   const [description, setDescription] = useState(currentReport?.description || "");
 
@@ -39,66 +41,59 @@ export function ReportBasicInfoScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <FileText className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">اطلاعات پایه گزارش</CardTitle>
-          <CardDescription>عنوان و شرح کامل گزارش را وارد کنید</CardDescription>
+          <CardTitle className="text-2xl">{t("report.basicInfo.title")}</CardTitle>
+          <CardDescription>{t("report.basicInfo.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="title">
-              عنوان گزارش <span className="text-destructive">*</span>
+              {t("report.basicInfo.reportTitle")} <span className="text-destructive">*</span>
             </Label>
 
             <Alert size="xs" variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                در عنوان نباید نام اشخاص یا اطلاعات حساس مانند کد ملی ذکر شود.
-              </AlertDescription>
+              <AlertDescription>{t("report.basicInfo.titleWarning")}</AlertDescription>
             </Alert>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="مثال: درخواست رشوه برای صدور مجوز کسب‌وکار در تهران"
+              placeholder={t("report.basicInfo.titlePlaceholder")}
               maxLength={120}
             />
 
             <div className="text-muted-foreground flex justify-between text-xs">
-              <span>{titleLength}/120 کاراکتر</span>
-              {titleLength > 120 && <span className="text-destructive">حداکثر ۱۲۰ کاراکتر</span>}
+              <span>{t("report.basicInfo.titleCounter", { count: titleLength })}</span>
+              {titleLength > 120 && (
+                <span className="text-destructive">{t("report.basicInfo.titleMax")}</span>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="description">
-              شرح کامل گزارش <span className="text-destructive">*</span>
+              {t("report.basicInfo.descriptionLabel")} <span className="text-destructive">*</span>
             </Label>
 
             <Alert size="xs" variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                متن گزارش نباید حاوی اسامی اشخاص باشد، اگر می‌خواهید به اسم شخص اشاره کنید، لطفاً از
-                متغیر XX استفاده کنید. مثال (در آن روز آقای XX ...).
-              </AlertDescription>
+              <AlertDescription>{t("report.basicInfo.descriptionWarning")}</AlertDescription>
             </Alert>
 
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="لطفاً توضیح دهید:
-- چه اتفاقی افتاده است
-- چه شخص یا نهادی درگیر بوده است
-- فساد چگونه رخ داده است
-- پیامد یا نتیجه این اتفاق چه بوده است"
+              placeholder={t("report.basicInfo.descriptionPlaceholder")}
               rows={8}
               maxLength={10000}
               className="min-h-32 resize-none"
             />
             <div className="text-muted-foreground flex justify-between text-xs">
-              <span>{descriptionLength}/10000 کاراکتر</span>
+              <span>{t("report.basicInfo.descriptionCounter", { count: descriptionLength })}</span>
               {descriptionLength < 120 && (
                 <span className="text-amber-600">
-                  حداقل ۱۲۰ کاراکتر ({120 - descriptionLength} کاراکتر دیگر)
+                  {t("report.basicInfo.descriptionMin", { remaining: 120 - descriptionLength })}
                 </span>
               )}
             </div>
@@ -107,10 +102,10 @@ export function ReportBasicInfoScreen() {
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} disabled={!isValid} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="mr-2 h-4 w-4" />
             </Button>
           </div>

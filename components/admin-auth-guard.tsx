@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { getAppBaseUrl } from "@/lib/app-base-url";
 import { getInviteToken } from "@/lib/edyen";
 
 /** Uses fetch instead of Eden `api.admin` so this file type-checks when `App` is the web-only bundle (Docker `build-web`). */
 export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const [ready, setReady] = useState(false);
@@ -37,7 +39,7 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
   if (pathname === "/admin/login") return <>{children}</>;
   if (!ready)
     return (
-      <div className="flex min-h-screen items-center justify-center p-6">در حال بارگذاری...</div>
+      <div className="flex min-h-screen items-center justify-center p-6">{t("common.loading")}</div>
     );
   return <>{children}</>;
 }

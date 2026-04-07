@@ -13,10 +13,12 @@ import { DatePicker } from "zaman";
 import { OCCURRENCE_FREQUENCIES, type OccurrenceFrequency } from "@/types";
 import { ReportWizardProgress } from "@/components/report-wizard-progress";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 export function ReportOccurrenceScreen() {
   const router = useRouter();
   const { updateReport, currentReport } = useReport();
+  const { t } = useTranslation();
   const [frequency, setFrequency] = useState<OccurrenceFrequency | "">(
     (currentReport?.occurrenceFrequency as OccurrenceFrequency) ?? "",
   );
@@ -52,6 +54,13 @@ export function ReportOccurrenceScreen() {
     }
   };
 
+  const frequencyLabels: Record<string, string> = {
+    once: t("report.occurrence.frequencies.once"),
+    few: t("report.occurrence.frequencies.few"),
+    repeated: t("report.occurrence.frequencies.repeated"),
+    ongoing: t("report.occurrence.frequencies.ongoing"),
+  };
+
   return (
     <div className="bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-lg">
@@ -59,13 +68,13 @@ export function ReportOccurrenceScreen() {
           <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <Clock className="text-primary h-8 w-8" />
           </div>
-          <CardTitle className="text-2xl">زمان و تکرار وقوع</CardTitle>
-          <CardDescription>زمان وقوع و تعداد دفعات را مشخص کنید</CardDescription>
+          <CardTitle className="text-2xl">{t("report.occurrence.title")}</CardTitle>
+          <CardDescription>{t("report.occurrence.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-3">
             <Label>
-              این اتفاق چند بار رخ داده است؟ <span className="text-destructive">*</span>
+              {t("report.occurrence.frequencyLabel")} <span className="text-destructive">*</span>
             </Label>
             <RadioGroup
               value={frequency}
@@ -85,7 +94,9 @@ export function ReportOccurrenceScreen() {
                   )}
                 >
                   <RadioGroupItem value={f.value} id={`freq-${f.value}`} className="shrink-0" />
-                  <div className="flex-1 cursor-pointer text-sm font-medium">{f.label}</div>
+                  <div className="flex-1 cursor-pointer text-sm font-medium">
+                    {frequencyLabels[f.value] ?? f.label}
+                  </div>
                 </Label>
               ))}
             </RadioGroup>
@@ -93,7 +104,7 @@ export function ReportOccurrenceScreen() {
 
           <div className="space-y-2">
             <Label>
-              تاریخ وقوع <span className="text-destructive">*</span>
+              {t("report.occurrence.dateLabel")} <span className="text-destructive">*</span>
             </Label>
             <DatePicker
               defaultValue={date}
@@ -103,18 +114,16 @@ export function ReportOccurrenceScreen() {
               position="right"
               inputClass="border-input flex h-9 w-full items-center rounded-md border bg-transparent px-3 py-2 text-right text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
-            <p className="text-muted-foreground text-xs">
-              اگر تاریخ دقیق را نمی‌دانید، تاریخ تقریبی را وارد کنید (فقط تاریخ‌های گذشته و امروز)
-            </p>
+            <p className="text-muted-foreground text-xs">{t("report.occurrence.dateHint")}</p>
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button variant="outline" onClick={() => router.back()} className="flex-1">
               <ArrowRight className="ml-2 h-4 w-4" />
-              بازگشت
+              {t("common.back")}
             </Button>
             <Button onClick={handleNext} disabled={!isValid} className="flex-1">
-              مرحله بعد
+              {t("common.next")}
               <ArrowLeft className="ml-2 h-4 w-4" />
             </Button>
           </div>

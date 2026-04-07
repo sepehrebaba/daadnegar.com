@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/edyen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,20 +42,6 @@ type PendingPerson = {
   createdAt: Date | string;
 };
 
-const FIELD_LABELS: Record<string, string> = {
-  firstName: "نام",
-  lastName: "نام خانوادگی",
-  fatherName: "نام پدر",
-  nationalCode: "کد ملی",
-  title: "سمت",
-  organization: "ارگان",
-  dateOfBirth: "تاریخ تولد",
-  address: "آدرس",
-  mobile: "شماره موبایل",
-  phone: "شماره تلفن",
-  imageUrl: "لینک تصویر",
-};
-
 function formatDate(d: Date | string | null | undefined) {
   if (!d) return "—";
   const date = new Date(d);
@@ -62,6 +49,22 @@ function formatDate(d: Date | string | null | undefined) {
 }
 
 export default function AdminPendingPeoplePage() {
+  const { t } = useTranslation();
+
+  const FIELD_LABELS: Record<string, string> = {
+    firstName: t("adminPendingPeople.fieldLabels.firstName"),
+    lastName: t("adminPendingPeople.fieldLabels.lastName"),
+    fatherName: t("adminPendingPeople.fieldLabels.fatherName"),
+    nationalCode: t("adminPendingPeople.fieldLabels.nationalCode"),
+    title: t("adminPendingPeople.fieldLabels.title"),
+    organization: t("adminPendingPeople.fieldLabels.organization"),
+    dateOfBirth: t("adminPendingPeople.fieldLabels.dateOfBirth"),
+    address: t("adminPendingPeople.fieldLabels.address"),
+    mobile: t("adminPendingPeople.fieldLabels.mobile"),
+    phone: t("adminPendingPeople.fieldLabels.phone"),
+    imageUrl: t("adminPendingPeople.fieldLabels.imageUrl"),
+  };
+
   const [pending, setPending] = useState<PendingPerson[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -111,7 +114,7 @@ export default function AdminPendingPeoplePage() {
 
   const handleReject = async () => {
     if (!selectedPerson) return;
-    if (!confirm("آیا از حذف این شخص اطمینان دارید؟")) return;
+    if (!confirm(t("adminPendingPeople.rejectConfirm"))) return;
     setActionLoading(true);
     try {
       await api.admin.people({ id: selectedPerson.id }).reject.put();
@@ -214,7 +217,7 @@ export default function AdminPendingPeoplePage() {
           <Button variant="ghost" size="sm" asChild>
             <Link href="/admin/people">
               <ChevronRight className="ml-1 h-4 w-4" />
-              بازگشت
+              {t("adminPendingPeople.back")}
             </Link>
           </Button>
         </div>
@@ -223,11 +226,11 @@ export default function AdminPendingPeoplePage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">اشخاص در انتظار تایید</h1>
+            <h1 className="text-2xl font-bold">{t("adminPendingPeople.title")}</h1>
 
             <div className="mb-4">
               <Input
-                placeholder="جستجو (نام، نام خانوادگی، کد ملی)..."
+                placeholder={t("adminPendingPeople.searchPlaceholder")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="max-w-lg"
@@ -237,17 +240,17 @@ export default function AdminPendingPeoplePage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p>در حال بارگذاری...</p>
+            <p>{t("common.loading")}</p>
           ) : pending.length === 0 ? (
-            <p className="text-muted-foreground">شخصی در انتظار تایید نیست.</p>
+            <p className="text-muted-foreground">{t("adminPendingPeople.noPending")}</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>آواتار</TableHead>
-                  <TableHead>نام</TableHead>
-                  <TableHead>نام خانوادگی</TableHead>
-                  <TableHead>تاریخ افزودن</TableHead>
+                  <TableHead>{t("adminPendingPeople.avatar")}</TableHead>
+                  <TableHead>{t("adminPendingPeople.firstName")}</TableHead>
+                  <TableHead>{t("adminPendingPeople.lastName")}</TableHead>
+                  <TableHead>{t("adminPendingPeople.addedDate")}</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -268,7 +271,7 @@ export default function AdminPendingPeoplePage() {
                     <TableCell>{formatDate(p.createdAt)}</TableCell>
                     <TableCell>
                       <Button variant="outline" size="sm" onClick={() => openDetails(p)}>
-                        جزئیات
+                        {t("common.details")}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -283,47 +286,70 @@ export default function AdminPendingPeoplePage() {
       <Dialog open={detailsOpen} onOpenChange={(open) => !open && closeDetails()}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>جزئیات شخص در انتظار تایید</DialogTitle>
+            <DialogTitle>{t("adminPendingPeople.detailsTitle")}</DialogTitle>
           </DialogHeader>
           {selectedPerson && (
             <div className="space-y-2 py-4">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-muted-foreground">نام:</span> {selectedPerson.firstName}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelFirstName")}
+                  </span>{" "}
+                  {selectedPerson.firstName}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">نام خانوادگی:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelLastName")}
+                  </span>{" "}
                   {selectedPerson.lastName}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">نام پدر:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelFatherName")}
+                  </span>{" "}
                   {selectedPerson.fatherName ?? "—"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">کد ملی:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelNationalCode")}
+                  </span>{" "}
                   {selectedPerson.nationalCode ?? "—"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">سمت:</span> {selectedPerson.title ?? "—"}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelTitle")}
+                  </span>{" "}
+                  {selectedPerson.title ?? "—"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">ارگان:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelOrganization")}
+                  </span>{" "}
                   {selectedPerson.organization ?? "—"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">تاریخ تولد:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelDateOfBirth")}
+                  </span>{" "}
                   {formatDate(selectedPerson.dateOfBirth)}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">آدرس:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelAddress")}
+                  </span>{" "}
                   {selectedPerson.address ?? "—"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">موبایل:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelMobile")}
+                  </span>{" "}
                   {selectedPerson.mobile ?? "—"}
                 </div>
                 <div>
-                  <span className="text-muted-foreground">تلفن:</span> {selectedPerson.phone ?? "—"}
+                  <span className="text-muted-foreground">
+                    {t("adminPendingPeople.labelPhone")}
+                  </span>{" "}
+                  {selectedPerson.phone ?? "—"}
                 </div>
               </div>
               <DialogFooter className="gap-2 pt-8">
@@ -333,15 +359,15 @@ export default function AdminPendingPeoplePage() {
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Check className="ml-0.5 h-4 w-4" />
-                  تایید به عنوان شخص جدید
+                  {t("adminPendingPeople.approveAsNew")}
                 </Button>
                 <Button variant="outline" onClick={openMerge} disabled={actionLoading}>
                   <Merge className="ml-0.5 h-4 w-4" />
-                  ادغام با شخص موجود
+                  {t("adminPendingPeople.mergeWithExisting")}
                 </Button>
                 <Button variant="destructive" onClick={handleReject} disabled={actionLoading}>
                   <X className="ml-0.5 h-4 w-4" />
-                  رد
+                  {t("adminPendingPeople.reject")}
                 </Button>
               </DialogFooter>
             </div>
@@ -353,25 +379,25 @@ export default function AdminPendingPeoplePage() {
       <Dialog open={mergeOpen} onOpenChange={setMergeOpen}>
         <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>مرج با شخص موجود</DialogTitle>
+            <DialogTitle>{t("adminPendingPeople.mergeTitle")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="flex gap-2">
               <Input
-                placeholder="جستجوی شخص موجود (نام یا نام خانوادگی)..."
+                placeholder={t("adminPendingPeople.mergeSearchPlaceholder")}
                 value={mergeSearch}
                 onChange={(e) => setMergeSearch(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && searchExistingPerson()}
               />
               <Button onClick={searchExistingPerson}>
                 <Search className="ml-2 h-4 w-4" />
-                جستجو
+                {t("adminPendingPeople.mergeSearch")}
               </Button>
             </div>
 
             {mergeResults.length > 0 && !mergeTarget && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">انتخاب شخص:</p>
+                <p className="text-sm font-medium">{t("adminPendingPeople.selectPerson")}</p>
                 <div className="max-h-40 space-y-1 overflow-y-auto rounded border p-2">
                   {mergeResults.map((p) => (
                     <button
@@ -395,13 +421,15 @@ export default function AdminPendingPeoplePage() {
 
             {mergeTarget && selectedPerson && (
               <div className="space-y-4">
-                <p className="text-sm font-medium">
-                  انتخاب مقدار نهایی هر فیلد (فلش از جدید به قبلی):
-                </p>
+                <p className="text-sm font-medium">{t("adminPendingPeople.mergeFieldsHint")}</p>
                 <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-sm">
-                  <div className="text-muted-foreground font-medium">کاربر جدید</div>
+                  <div className="text-muted-foreground font-medium">
+                    {t("adminPendingPeople.newUser")}
+                  </div>
                   <div />
-                  <div className="text-muted-foreground font-medium">کاربر موجود (نتیجه)</div>
+                  <div className="text-muted-foreground font-medium">
+                    {t("adminPendingPeople.existingUser")}
+                  </div>
                   {Object.entries(FIELD_LABELS).map(([key, label]) => {
                     const newVal = (selectedPerson as Record<string, unknown>)?.[key];
                     const oldVal = (mergeTarget as Record<string, unknown>)?.[key];
@@ -420,7 +448,7 @@ export default function AdminPendingPeoplePage() {
                           <Input
                             value={current}
                             onChange={(e) => setMergedField(key, e.target.value)}
-                            placeholder={oldStr || "خالی"}
+                            placeholder={oldStr || t("adminPendingPeople.emptyPlaceholder")}
                             className="h-8 text-sm"
                           />
                         </div>
@@ -430,10 +458,10 @@ export default function AdminPendingPeoplePage() {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setMergeTarget(null)}>
-                    بازگشت به انتخاب
+                    {t("adminPendingPeople.backToSelection")}
                   </Button>
                   <Button onClick={handleMergeSave} disabled={actionLoading}>
-                    ذخیره مرج
+                    {t("adminPendingPeople.saveMerge")}
                   </Button>
                 </DialogFooter>
               </div>

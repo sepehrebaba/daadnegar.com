@@ -6,11 +6,13 @@ import { Languages, Settings, Sun, Moon, Monitor, User } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useUser } from "@/context/user-context";
 import { useLanguage } from "@/context/language-context";
+import { useTranslation } from "react-i18next";
 
 export function SettingsForm() {
   const { theme, setTheme } = useTheme();
   const { user } = useUser();
   const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
 
   return (
     <>
@@ -18,12 +20,12 @@ export function SettingsForm() {
         <div className="bg-primary/10 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
           <Settings className="text-primary h-8 w-8" />
         </div>
-        <CardTitle className="text-foreground text-2xl font-bold">تنظیمات</CardTitle>
-        <CardDescription>مدیریت تنظیمات حساب کاربری</CardDescription>
+        <CardTitle className="text-foreground text-2xl font-bold">{t("settings.title")}</CardTitle>
+        <CardDescription>{t("settings.description")}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="space-y-3">
-          <h3 className="text-foreground text-sm font-medium">زبان</h3>
+          <h3 className="text-foreground text-sm font-medium">{t("settings.language")}</h3>
           <div className="flex gap-2">
             <Button
               variant={language === "fa" ? "default" : "outline"}
@@ -31,7 +33,7 @@ export function SettingsForm() {
               onClick={() => setLanguage("fa")}
             >
               <Languages className="h-4 w-4" />
-              فارسی
+              {t("nav.persian")}
             </Button>
             <Button
               variant={language === "en" ? "default" : "outline"}
@@ -44,7 +46,7 @@ export function SettingsForm() {
           </div>
         </div>
         <div className="space-y-3">
-          <h3 className="text-foreground text-sm font-medium">تم</h3>
+          <h3 className="text-foreground text-sm font-medium">{t("settings.theme")}</h3>
           <div className="flex gap-2">
             <Button
               variant={theme === "light" ? "default" : "outline"}
@@ -52,7 +54,7 @@ export function SettingsForm() {
               onClick={() => setTheme("light")}
             >
               <Sun className="h-4 w-4" />
-              روشن
+              {t("settings.light")}
             </Button>
             <Button
               variant={theme === "dark" ? "default" : "outline"}
@@ -60,7 +62,7 @@ export function SettingsForm() {
               onClick={() => setTheme("dark")}
             >
               <Moon className="h-4 w-4" />
-              تیره
+              {t("settings.dark")}
             </Button>
             <Button
               variant={theme === "system" || !theme ? "default" : "outline"}
@@ -68,7 +70,7 @@ export function SettingsForm() {
               onClick={() => setTheme("system")}
             >
               <Monitor className="h-4 w-4" />
-              سیستم
+              {t("settings.system")}
             </Button>
           </div>
         </div>

@@ -39,69 +39,9 @@ import {
   Mail,
   CheckCheckIcon,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const MIN_COMMENT_LEN = 10;
-
-const GOOD_FAITH_OPTIONS: { value: string; label: string; hint: string }[] = [
-  {
-    value: "R1",
-    label: "R1 — مدارک ناکافی",
-    hint: "اطلاعات در خلاصه هست ولی ناکافی یا ناقص است.",
-  },
-  {
-    value: "R2",
-    label: "R2 — خارج از محدوده",
-    hint: "موضوع جزو فساد عمومی / محدوده سامانه نیست.",
-  },
-  {
-    value: "R3",
-    label: "R3 — تکراری",
-    hint: "همان پرونده یا گزارش تکراری ارسال شده است.",
-  },
-  {
-    value: "R4",
-    label: "R4 — مبهم / فیلدهای ناقص",
-    hint: "شرح یا فیلدها بیش از حد کلی یا ناقص است.",
-  },
-  {
-    value: "R5",
-    label: "R5 — ریسک امنیتی",
-    hint: "محتوا ریسک امنیتی برای اشخاص یا سامانه دارد.",
-  },
-];
-
-const BAD_FAITH_OPTIONS: { value: string; label: string; hint: string }[] = [
-  {
-    value: "B1",
-    label: "B1 — مدارک جعلی یا دستکاری‌شده",
-    hint: "سند ساختگی یا دست‌کاری‌شده است.",
-  },
-  {
-    value: "B2",
-    label: "B2 — اسپم هماهنگ‌شده",
-    hint: "الگوی اسپم یا هماهنگ‌شده مشاهده می‌شود.",
-  },
-  {
-    value: "B3",
-    label: "B3 — Doxxing / افشای عمدی",
-    hint: "تلاش برای افشای غیرمجاز اطلاعات شخصی.",
-  },
-  {
-    value: "B4",
-    label: "B4 — آزار، نفرت‌پراکنی یا تهدید",
-    hint: "محتوای آزاردهنده یا تهدیدآمیز.",
-  },
-  {
-    value: "B5",
-    label: "B5 — جعل هویت",
-    hint: "جعل هویت گزارش‌دهنده یا شخص گزارش‌شده.",
-  },
-  {
-    value: "B6",
-    label: "B6 — باج‌گیری یا اخاذی",
-    hint: "انگیزه باج‌گیری یا اخاذی مشهود است.",
-  },
-];
 
 type ReportDetail = {
   id: string;
@@ -172,6 +112,7 @@ function InfoRow({
 export function ApprovalDetailScreen() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useTranslation();
   const id = params?.id as string | undefined;
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -187,6 +128,67 @@ export function ApprovalDetailScreen() {
   const [actionLoading, setActionLoading] = useState(false);
   const [acceptingReview, setAcceptingReview] = useState(false);
 
+  const GOOD_FAITH_OPTIONS = [
+    {
+      value: "R1",
+      label: t("approval.detail.rejectDialog.goodFaithOptions.R1"),
+      hint: t("approval.detail.rejectDialog.goodFaithOptions.R1_hint"),
+    },
+    {
+      value: "R2",
+      label: t("approval.detail.rejectDialog.goodFaithOptions.R2"),
+      hint: t("approval.detail.rejectDialog.goodFaithOptions.R2_hint"),
+    },
+    {
+      value: "R3",
+      label: t("approval.detail.rejectDialog.goodFaithOptions.R3"),
+      hint: t("approval.detail.rejectDialog.goodFaithOptions.R3_hint"),
+    },
+    {
+      value: "R4",
+      label: t("approval.detail.rejectDialog.goodFaithOptions.R4"),
+      hint: t("approval.detail.rejectDialog.goodFaithOptions.R4_hint"),
+    },
+    {
+      value: "R5",
+      label: t("approval.detail.rejectDialog.goodFaithOptions.R5"),
+      hint: t("approval.detail.rejectDialog.goodFaithOptions.R5_hint"),
+    },
+  ];
+
+  const BAD_FAITH_OPTIONS = [
+    {
+      value: "B1",
+      label: t("approval.detail.rejectDialog.badFaithOptions.B1"),
+      hint: t("approval.detail.rejectDialog.badFaithOptions.B1_hint"),
+    },
+    {
+      value: "B2",
+      label: t("approval.detail.rejectDialog.badFaithOptions.B2"),
+      hint: t("approval.detail.rejectDialog.badFaithOptions.B2_hint"),
+    },
+    {
+      value: "B3",
+      label: t("approval.detail.rejectDialog.badFaithOptions.B3"),
+      hint: t("approval.detail.rejectDialog.badFaithOptions.B3_hint"),
+    },
+    {
+      value: "B4",
+      label: t("approval.detail.rejectDialog.badFaithOptions.B4"),
+      hint: t("approval.detail.rejectDialog.badFaithOptions.B4_hint"),
+    },
+    {
+      value: "B5",
+      label: t("approval.detail.rejectDialog.badFaithOptions.B5"),
+      hint: t("approval.detail.rejectDialog.badFaithOptions.B5_hint"),
+    },
+    {
+      value: "B6",
+      label: t("approval.detail.rejectDialog.badFaithOptions.B6"),
+      hint: t("approval.detail.rejectDialog.badFaithOptions.B6_hint"),
+    },
+  ];
+
   useEffect(() => {
     if (!id) return;
     getPendingReportDetail(id)
@@ -194,10 +196,10 @@ export function ApprovalDetailScreen() {
         setReport(data as ReportDetail);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : "خطا در بارگذاری گزارش");
+        setError(err instanceof Error ? err.message : t("approval.detail.loadError"));
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, t]);
 
   useEffect(() => {
     const opts = rejectTier === "good_faith" ? GOOD_FAITH_OPTIONS : BAD_FAITH_OPTIONS;
@@ -225,7 +227,7 @@ export function ApprovalDetailScreen() {
       await api.reports({ id })["accept-review"].put();
       await reloadDetail();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "خطا در پذیرش اعتبارسنجی");
+      setError(e instanceof Error ? e.message : t("approval.detail.acceptReviewError"));
     }
     setAcceptingReview(false);
   };
@@ -234,7 +236,7 @@ export function ApprovalDetailScreen() {
     if (!id) return;
     const c = approveComment.trim();
     if (c.length < MIN_COMMENT_LEN) {
-      setApproveError(`برای تأیید، شرح نظر شما باید حداقل ${MIN_COMMENT_LEN} نویسه باشد.`);
+      setApproveError(t("approval.detail.approveDialog.minLength", { min: MIN_COMMENT_LEN }));
       return;
     }
     setApproveError(null);
@@ -245,7 +247,7 @@ export function ApprovalDetailScreen() {
       setApproveComment("");
       await reloadDetail();
     } catch (e) {
-      setApproveError(e instanceof Error ? e.message : "خطا در تایید");
+      setApproveError(e instanceof Error ? e.message : t("approval.detail.approveDialog.error"));
     }
     setActionLoading(false);
   };
@@ -254,7 +256,7 @@ export function ApprovalDetailScreen() {
     if (!id) return;
     const c = rejectComment.trim();
     if (c.length < MIN_COMMENT_LEN) {
-      setRejectError(`برای رد، شرح نظر شما باید حداقل ${MIN_COMMENT_LEN} نویسه باشد.`);
+      setRejectError(t("approval.detail.rejectDialog.minLength", { min: MIN_COMMENT_LEN }));
       return;
     }
     setRejectError(null);
@@ -269,7 +271,7 @@ export function ApprovalDetailScreen() {
       setRejectComment("");
       await reloadDetail();
     } catch (e) {
-      setRejectError(e instanceof Error ? e.message : "خطا در رد");
+      setRejectError(e instanceof Error ? e.message : t("approval.detail.rejectDialog.error"));
     }
     setActionLoading(false);
   };
@@ -282,7 +284,7 @@ export function ApprovalDetailScreen() {
   if (loading) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center p-4">
-        <p className="text-muted-foreground">در حال بارگذاری...</p>
+        <p className="text-muted-foreground">{t("common.loading")}</p>
       </div>
     );
   }
@@ -290,9 +292,9 @@ export function ApprovalDetailScreen() {
   if (error || !report) {
     return (
       <div className="bg-background flex min-h-screen flex-col items-center justify-center gap-4 p-4">
-        <p className="text-destructive text-center">{error || "گزارش یافت نشد"}</p>
+        <p className="text-destructive text-center">{error || t("approval.detail.notFound")}</p>
         <Button variant="outline" onClick={() => router.push("/panel/approval-list")}>
-          بازگشت به لیست
+          {t("approval.detail.backToList")}
         </Button>
       </div>
     );
@@ -305,12 +307,18 @@ export function ApprovalDetailScreen() {
 
   const statusBadgeLabel =
     report.status === "accepted"
-      ? "تأیید نهایی (اکثریت رأی)"
+      ? t("approval.detail.finalAccepted")
       : report.status === "rejected"
-        ? "رد نهایی (اکثریت رأی)"
+        ? t("approval.detail.finalRejected")
         : c != null
-          ? `جمع‌آوری رأی: ${toPersianNum(c.validatorVotesTotal)} از ${toPersianNum(c.minReviews)} — تأیید ${toPersianNum(c.acceptedVotes)}، رد حسن‌نیت ${toPersianNum(c.goodFaithRejectVotes ?? 0)}، رد سوءنیت ${toPersianNum(c.badFaithRejectVotes ?? 0)}`
-          : "در انتظار جمع‌آوری رأی اعتبارسنج‌ها";
+          ? t("approval.detail.voteSummary", {
+              total: toPersianNum(c.validatorVotesTotal),
+              min: toPersianNum(c.minReviews),
+              accepted: toPersianNum(c.acceptedVotes),
+              goodFaith: toPersianNum(c.goodFaithRejectVotes ?? 0),
+              badFaith: toPersianNum(c.badFaithRejectVotes ?? 0),
+            })
+          : t("approval.detail.waitingVotes");
 
   const codeOptions = rejectTier === "good_faith" ? GOOD_FAITH_OPTIONS : BAD_FAITH_OPTIONS;
   const selectedCodeHint = codeOptions.find((o) => o.value === rejectCode)?.hint ?? "";
@@ -329,7 +337,7 @@ export function ApprovalDetailScreen() {
           </Button>
           <div className="min-w-0 flex-1">
             <h1 className="text-foreground mb-2 text-center text-lg font-bold sm:text-right">
-              جزئیات گزارش {report.person.firstName} {report.person.lastName}
+              {report.person.firstName} {report.person.lastName}
             </h1>
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
               <Badge
@@ -346,7 +354,7 @@ export function ApprovalDetailScreen() {
               </Badge>
               {userHasReviewed && report.status === "pending" && (
                 <Badge variant="outline" className="border-primary text-primary">
-                  بررسی شده
+                  {t("approval.detail.reported")}
                 </Badge>
               )}
             </div>
@@ -355,7 +363,7 @@ export function ApprovalDetailScreen() {
         {!readOnly && !hasAcceptedReview && (
           <div className="border-border bg-muted/30 flex items-center gap-6 rounded-lg border p-1.5 sm:max-w-md">
             <span className="text-muted-foreground text-xs">
-              اگر قصد تایید اعتبارسنجی را دارید، لطفاً پذیرش کنید.
+              {t("approval.detail.acceptanceHint")}
             </span>
             <Button
               onClick={handleAcceptReview}
@@ -364,15 +372,13 @@ export function ApprovalDetailScreen() {
               className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700"
             >
               <ClipboardCheck className="h-4 w-4" />
-              {acceptingReview ? "در حال پذیرش…" : "پذیرش اعتبارسنجی"}
+              {acceptingReview ? t("approval.detail.accepting") : t("approval.detail.acceptReview")}
             </Button>
           </div>
         )}
         {!readOnly && hasAcceptedReview && (
           <div className="border-border bg-muted/30 flex items-center gap-6 rounded-lg border p-1.5 sm:max-w-md">
-            <span className="text-muted-foreground text-xs">
-              لطفا پس از بررسی کامل گزارش، رأی خود را ثبت کنید.
-            </span>
+            <span className="text-muted-foreground text-xs">{t("approval.detail.voteHint")}</span>
             <div className="flex gap-2">
               <Button
                 onClick={() => {
@@ -384,7 +390,7 @@ export function ApprovalDetailScreen() {
                 className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
               >
                 <Check className="h-4 w-4" />
-                تایید
+                {t("approval.detail.approve")}
               </Button>
               <Button
                 variant="destructive"
@@ -397,7 +403,7 @@ export function ApprovalDetailScreen() {
                 className="gap-1.5"
               >
                 <X className="h-4 w-4" />
-                رد
+                {t("approval.detail.reject")}
               </Button>
             </div>
           </div>
@@ -406,19 +412,23 @@ export function ApprovalDetailScreen() {
           <div className="border-border bg-muted/20 flex flex-col items-center gap-2 rounded-lg border p-1.5 sm:max-w-md">
             <p className="text-muted-foreground flex items-center gap-2 text-center text-xs sm:text-right">
               <CheckCheckIcon className="h-4 w-4" />
-              رأی شما ثبت شده است؛ تا تکمیل حد نصاب‌ آرا فقط امکان مشاهده وجود دارد.
+              {t("approval.detail.voteRegistered")}
             </p>
 
             <div className="bg-card flex gap-2 rounded-md border px-2 *:p-1">
-              <span className="text-muted-foreground text-xs">رای شما: </span>
+              <span className="text-muted-foreground text-xs">{t("approval.detail.yourVote")}</span>
               <strong
                 className={`text-xs ${c?.myReviewAction === "accepted" ? "text-green-600" : "text-red-600"}`}
               >
-                {c?.myReviewAction === "accepted" ? "تایید" : "رد"}
+                {c?.myReviewAction === "accepted"
+                  ? t("approval.detail.voteAccepted")
+                  : t("approval.detail.voteRejected")}
               </strong>
               {c?.myReviewAction === "rejected" && (
                 <>
-                  <span className="text-muted-foreground text-xs">کد دلیل:</span>
+                  <span className="text-muted-foreground text-xs">
+                    {t("approval.detail.rejectionCode")}
+                  </span>
 
                   <strong
                     className={`text-xs ${c?.myRejectionTier === "good_faith" ? "text-green-600" : "text-red-600"}`}
@@ -428,7 +438,8 @@ export function ApprovalDetailScreen() {
                 </>
               )}
               <span className="text-muted-foreground text-xs">
-                شرح دلیل: {c?.myReviewAction === "rejected" ? c?.myRejectionTier : ""}
+                {t("approval.detail.rejectionReason")}{" "}
+                {c?.myReviewAction === "rejected" ? c?.myRejectionTier : ""}
               </span>
             </div>
           </div>
@@ -443,17 +454,20 @@ export function ApprovalDetailScreen() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <User className="h-5 w-5" />
-                  شخص گزارش‌شده
+                  {t("approval.detail.reportedPerson")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <InfoRow
-                  label="نام"
+                  label={t("approval.detail.name")}
                   value={`${report.person.firstName} ${report.person.lastName}`}
                   icon={User}
                 />
-                <InfoRow label="کد ملی" value={report.person.nationalCode} />
-                <InfoRow label="عنوان/سمت" value={report.person.title} />
+                <InfoRow
+                  label={t("approval.detail.nationalCode")}
+                  value={report.person.nationalCode}
+                />
+                <InfoRow label={t("approval.detail.titlePosition")} value={report.person.title} />
               </CardContent>
             </Card>
 
@@ -462,12 +476,16 @@ export function ApprovalDetailScreen() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <User className="h-5 w-5" />
-                  کاربر ثبت‌کننده
+                  {t("approval.detail.submittingUser")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <InfoRow label="نام" value={report.user.name} icon={User} />
-                <InfoRow label="نام کاربری" value={report.user.username} icon={User} />
+                <InfoRow label={t("approval.detail.name")} value={report.user.name} icon={User} />
+                <InfoRow
+                  label={t("approval.detail.username")}
+                  value={report.user.username}
+                  icon={User}
+                />
               </CardContent>
             </Card>
           </div>
@@ -477,7 +495,7 @@ export function ApprovalDetailScreen() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <MessageSquare className="h-5 w-5" />
-                شرح گزارش
+                {t("approval.detail.reportDescription")}
               </CardTitle>
               {(report.category || report.subcategory || report.title) && (
                 <div className="flex flex-wrap gap-2 text-sm">
@@ -503,15 +521,27 @@ export function ApprovalDetailScreen() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Building2 className="h-5 w-5" />
-                سازمان و مکان
+                {t("approval.detail.organizationLocation")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <InfoRow label="نوع سازمان" value={report.organizationType} icon={Building2} />
-              <InfoRow label="نام سازمان" value={report.organizationName} />
-              <InfoRow label="استان" value={report.province} icon={MapPin} />
-              <InfoRow label="شهر" value={report.city} icon={MapPin} />
-              <InfoRow label="آدرس دقیق" value={report.exactLocation} icon={MapPin} />
+              <InfoRow
+                label={t("approval.detail.orgType")}
+                value={report.organizationType}
+                icon={Building2}
+              />
+              <InfoRow label={t("approval.detail.orgName")} value={report.organizationName} />
+              <InfoRow
+                label={t("approval.detail.province")}
+                value={report.province}
+                icon={MapPin}
+              />
+              <InfoRow label={t("approval.detail.city")} value={report.city} icon={MapPin} />
+              <InfoRow
+                label={t("approval.detail.exactLocation")}
+                value={report.exactLocation}
+                icon={MapPin}
+              />
             </CardContent>
           </Card>
 
@@ -520,12 +550,12 @@ export function ApprovalDetailScreen() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Calendar className="h-5 w-5" />
-                زمان و شواهد
+                {t("approval.detail.timeEvidence")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <InfoRow
-                label="تاریخ وقوع"
+                label={t("approval.detail.occurrenceDate")}
                 value={
                   report.occurrenceDate
                     ? new Date(report.occurrenceDate).toLocaleDateString("fa-IR")
@@ -533,15 +563,21 @@ export function ApprovalDetailScreen() {
                 }
                 icon={Calendar}
               />
-              <InfoRow label="تکرار وقوع" value={report.occurrenceFrequency} />
+              <InfoRow
+                label={t("approval.detail.occurrenceFreq")}
+                value={report.occurrenceFrequency}
+              />
               {report.hasEvidence != null && (
                 <div className="text-sm">
-                  <span className="text-muted-foreground">دارای شواهد: </span>
-                  <span>{report.hasEvidence ? "بله" : "خیر"}</span>
+                  <span className="text-muted-foreground">{t("approval.detail.hasEvidence")}</span>
+                  <span>{report.hasEvidence ? t("common.yes") : t("common.no")}</span>
                 </div>
               )}
-              <InfoRow label="نوع شواهد" value={report.evidenceTypes} />
-              <InfoRow label="توضیح شواهد" value={report.evidenceDescription} />
+              <InfoRow label={t("approval.detail.evidenceType")} value={report.evidenceTypes} />
+              <InfoRow
+                label={t("approval.detail.evidenceDesc")}
+                value={report.evidenceDescription}
+              />
             </CardContent>
           </Card>
 
@@ -554,13 +590,17 @@ export function ApprovalDetailScreen() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Mail className="h-5 w-5" />
-                  تماس
+                  {t("approval.detail.contact")}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <InfoRow label="ایمیل تماس" value={report.contactEmail} icon={Mail} />
-                <InfoRow label="تلفن تماس" value={report.contactPhone} />
-                <InfoRow label="شبکه اجتماعی" value={report.contactSocial} />
+                <InfoRow
+                  label={t("approval.detail.contactEmail")}
+                  value={report.contactEmail}
+                  icon={Mail}
+                />
+                <InfoRow label={t("approval.detail.contactPhone")} value={report.contactPhone} />
+                <InfoRow label={t("approval.detail.contactSocial")} value={report.contactSocial} />
               </CardContent>
             </Card>
           )}
@@ -570,12 +610,12 @@ export function ApprovalDetailScreen() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <FileText className="h-5 w-5" />
-                اسناد ({report.documents?.length ?? 0})
+                {t("approval.detail.documents")} ({report.documents?.length ?? 0})
               </CardTitle>
             </CardHeader>
             <CardContent>
               {!report.documents?.length ? (
-                <p className="text-muted-foreground text-sm">سندی ثبت نشده</p>
+                <p className="text-muted-foreground text-sm">{t("approval.detail.noDocuments")}</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {report.documents.map((doc) => (
@@ -600,7 +640,7 @@ export function ApprovalDetailScreen() {
             className="w-full"
             onClick={() => router.push("/panel/approval-list")}
           >
-            بازگشت به لیست
+            {t("approval.detail.backToList")}
           </Button>
         </div>
 
@@ -613,9 +653,9 @@ export function ApprovalDetailScreen() {
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>تأیید گزارش</DialogTitle>
+              <DialogTitle>{t("approval.detail.approveDialog.title")}</DialogTitle>
               <DialogDescription className="text-right leading-relaxed">
-                لطفاً دلیل تأیید خود را با ارجاع به خلاصه و اسناد بنویسید.
+                {t("approval.detail.approveDialog.description")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -626,12 +666,13 @@ export function ApprovalDetailScreen() {
               )}
               <div className="space-y-2">
                 <Label htmlFor="approve-comment">
-                  شرح نظر شما <span className="text-destructive">*</span>
+                  {t("approval.detail.approveDialog.commentLabel")}{" "}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   id="approve-comment"
                   dir="rtl"
-                  placeholder="حداقل ۱۰ نویسه: جمع‌بندی دلیل تأیید و ارجاع به خلاصه/اسناد…"
+                  placeholder={t("approval.detail.approveDialog.commentPlaceholder")}
                   value={approveComment}
                   onChange={(e) => setApproveComment(e.target.value)}
                   rows={4}
@@ -641,7 +682,7 @@ export function ApprovalDetailScreen() {
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setApproveDialogOpen(false)}>
-                انصراف
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={handleApprove}
@@ -649,7 +690,7 @@ export function ApprovalDetailScreen() {
                 className="gap-1.5 bg-green-600 text-white hover:bg-green-700"
               >
                 <Check className="h-4 w-4" />
-                ثبت تأیید
+                {t("approval.detail.approveDialog.submit")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -664,7 +705,7 @@ export function ApprovalDetailScreen() {
         >
           <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>رد گزارش با کد دلیل</DialogTitle>
+              <DialogTitle>{t("approval.detail.rejectDialog.title")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               {rejectError && (
@@ -673,7 +714,9 @@ export function ApprovalDetailScreen() {
                 </p>
               )}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">نوع رد</Label>
+                <Label className="text-sm font-medium">
+                  {t("approval.detail.rejectDialog.rejectType")}
+                </Label>
                 <RadioGroup
                   value={rejectTier}
                   onValueChange={(v) => setRejectTier(v as "good_faith" | "bad_faith")}
@@ -683,26 +726,28 @@ export function ApprovalDetailScreen() {
                     <RadioGroupItem value="good_faith" id="tier-g" className="mt-0.5" />
                     <span>
                       <span className="font-medium" id="tier-g-label">
-                        رد با حسن‌نیت
+                        {t("approval.detail.rejectDialog.goodFaith")}
                       </span>
                       <span className="text-muted-foreground block text-xs">
-                        بازپرداخت جزئی به گزارش‌دهنده در صورت اجماع
+                        {t("approval.detail.rejectDialog.goodFaithHint")}
                       </span>
                     </span>
                   </label>
                   <label className="flex cursor-pointer items-start gap-2 rounded-md border p-3 text-sm">
                     <RadioGroupItem value="bad_faith" id="tier-b" className="mt-0.5" />
                     <span>
-                      <span className="font-medium">رد با سوءنیت</span>
+                      <span className="font-medium">
+                        {t("approval.detail.rejectDialog.badFaith")}
+                      </span>
                       <span className="text-muted-foreground block text-xs">
-                        جریمه سنگین‌تر در صورت اجماع
+                        {t("approval.detail.rejectDialog.badFaithHint")}
                       </span>
                     </span>
                   </label>
                 </RadioGroup>
               </div>
               <div className="space-y-2">
-                <Label>کد دلیل</Label>
+                <Label>{t("approval.detail.rejectDialog.rejectCode")}</Label>
                 <Select value={rejectCode} onValueChange={setRejectCode}>
                   <SelectTrigger>
                     <SelectValue />
@@ -723,12 +768,13 @@ export function ApprovalDetailScreen() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="reject-comment">
-                  شرح نظر شما <span className="text-destructive">*</span>
+                  {t("approval.detail.rejectDialog.commentLabel")}{" "}
+                  <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   id="reject-comment"
                   dir="rtl"
-                  placeholder="حداقل ۱۰ نویسه: توضیح دقیق با ارجاع به متن گزارش یا اسناد…"
+                  placeholder={t("approval.detail.rejectDialog.commentPlaceholder")}
                   value={rejectComment}
                   onChange={(e) => setRejectComment(e.target.value)}
                   rows={4}
@@ -738,10 +784,10 @@ export function ApprovalDetailScreen() {
             </div>
             <DialogFooter className="gap-2">
               <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-                انصراف
+                {t("common.cancel")}
               </Button>
               <Button variant="destructive" onClick={handleReject} disabled={actionLoading}>
-                ثبت رد
+                {t("approval.detail.rejectDialog.submit")}
               </Button>
             </DialogFooter>
           </DialogContent>
