@@ -5,7 +5,6 @@ import { Shield, X, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 
-const TOR_BANNER_DISMISSED_KEY = "daadnegar_tor_banner_dismissed";
 const ONION_ADDRESS = "daadnevjdvcv2ix5hhe6iklzzviie53kccu66ctp7wml6vpvw52mwvqd.onion";
 
 export function TorBanner() {
@@ -22,7 +21,6 @@ export function TorBanner() {
   }, []);
 
   const handleDismiss = () => {
-    localStorage.setItem(TOR_BANNER_DISMISSED_KEY, "1");
     setShow(false);
   };
 
