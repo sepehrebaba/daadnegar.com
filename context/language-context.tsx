@@ -1,7 +1,17 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from "react";
 import type { Language } from "@/types";
+import { useUser } from "@/context/user-context";
+import { api } from "@/lib/edyen";
 
 interface LanguageContextType {
   language: Language;
@@ -17,11 +27,33 @@ export function LanguageProvider({
   children: ReactNode;
   initialLanguage?: Language;
 }) {
+  const { user, setUser } = useUser();
+  const userRef = useRef(user);
+  userRef.current = user;
+
   const [language, setLanguageState] = useState<Language>(initialLanguage);
 
-  const setLanguage = useCallback((lang: Language) => {
-    setLanguageState(lang);
-  }, []);
+  useEffect(() => {
+    if (!user?.preferredLanguage) return;
+    setLanguageState(user.preferredLanguage);
+  }, [user?.id, user?.preferredLanguage]);
+
+  const setLanguage = useCallback(
+    (lang: Language) => {
+      setLanguageState(lang);
+      const u = userRef.current;
+      if (!u?.id) return;
+      void (async () => {
+        const { error } = await api.me["preferred-language"].patch({ language: lang });
+        if (error) return;
+        const latest = userRef.current;
+        if (latest?.id === u.id) {
+          setUser({ ...latest, preferredLanguage: lang });
+        }
+      })();
+    },
+    [setUser],
+  );
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage }}>

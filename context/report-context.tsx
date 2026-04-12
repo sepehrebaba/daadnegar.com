@@ -73,13 +73,18 @@ export function ReportProvider({ children }: { children: ReactNode }) {
     if (me && user) {
       const fresh = me as Pick<
         User,
-        "tokensCount" | "approvedRequestsCount" | "mustChangePassword"
+        "tokensCount" | "approvedRequestsCount" | "mustChangePassword" | "preferredLanguage"
       >;
+      const preferredLanguage: User["preferredLanguage"] =
+        fresh.preferredLanguage === "en" || fresh.preferredLanguage === "fa"
+          ? fresh.preferredLanguage
+          : (user.preferredLanguage ?? "fa");
       setUser({
         ...user,
         tokensCount: fresh.tokensCount ?? 0,
         approvedRequestsCount: fresh.approvedRequestsCount ?? 0,
         mustChangePassword: fresh.mustChangePassword ?? user.mustChangePassword,
+        preferredLanguage,
       });
     }
 

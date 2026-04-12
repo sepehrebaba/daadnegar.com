@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, getInviteToken } from "@/lib/edyen";
 import { useUser } from "@/context/user-context";
+import { useLanguage } from "@/context/language-context";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -23,6 +24,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 export function PasskeyRegisterScreen() {
   const router = useRouter();
   const { setUser } = useUser();
+  const { language } = useLanguage();
   const { t } = useTranslation();
   const [passkey, setPasskey] = useState("");
   const [confirmPasskey, setConfirmPasskey] = useState("");
@@ -52,7 +54,11 @@ export function PasskeyRegisterScreen() {
       return;
     }
 
-    const { data, error: apiError } = await api.invite.register.post({ token, passkey });
+    const { data, error: apiError } = await api.invite.register.post({
+      token,
+      passkey,
+      preferredLanguage: language,
+    });
     if (apiError || !data) {
       setError(extractErrorMessage(apiError, t("auth.passkey.registerError")));
       setIsLoading(false);

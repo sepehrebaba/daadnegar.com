@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/context/user-context";
-import { api } from "@/lib/edyen";
+import { api, DAADNEGAR_INVITE_TOKEN_KEY } from "@/lib/edyen";
+import { userFromMeApi } from "@/lib/user-from-me-api";
 import { formatTimeAgo, toPersianNum } from "@/lib/utils";
-import { DAADNEGAR_INVITE_TOKEN_KEY } from "@/lib/edyen";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,15 +43,7 @@ export function MyTokensScreen() {
     let cancelled = false;
     api.me.get().then(({ data, error }) => {
       if (cancelled || error || !data) return;
-      setUser({
-        id: data.id,
-        passkey: "",
-        inviteCode: data.inviteCode ?? "",
-        isActivated: true,
-        tokensCount: data.tokensCount ?? 0,
-        approvedRequestsCount: data.approvedRequestsCount ?? 0,
-        role: data.role ?? "user",
-      } as Parameters<typeof setUser>[0]);
+      setUser(userFromMeApi(data));
     });
     return () => {
       cancelled = true;

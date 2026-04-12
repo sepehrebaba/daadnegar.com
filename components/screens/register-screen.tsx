@@ -3,8 +3,9 @@
 import { useState, useEffect, useLayoutEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "@/context/user-context";
-import { api } from "@/lib/edyen";
-import { setInviteTokenStorage } from "@/lib/edyen";
+import { useLanguage } from "@/context/language-context";
+import { api, setInviteTokenStorage } from "@/lib/edyen";
+import { userFromMeApi } from "@/lib/user-from-me-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ export function RegisterScreen() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser } = useUser();
+  const { language } = useLanguage();
   const { t } = useTranslation();
   const codeParam = searchParams.get("code");
 
@@ -111,6 +113,7 @@ export function RegisterScreen() {
       code: codeParam!,
       username: username.trim().toLowerCase(),
       passkey: password,
+      preferredLanguage: language,
     });
 
     if (regError || !data?.ok) {
@@ -138,16 +141,17 @@ export function RegisterScreen() {
       setInviteTokenStorage(result.token);
     }
     if (result.user) {
-      setUser({
-        id: result.user.id,
-        name: result.user.name ?? "",
-        username: result.user.username ?? "",
-        passkey: "",
-        inviteCode: "",
-        isActivated: true,
-        tokensCount: result.user.tokensCount ?? 0,
-        approvedRequestsCount: result.user.approvedRequestsCount ?? 0,
-      } as Parameters<typeof setUser>[0]);
+      setUser(
+        userFromMeApi({
+          id: result.user.id,
+          name: result.user.name ?? "",
+          username: result.user.username ?? "",
+          inviteCode: "",
+          tokensCount: result.user.tokensCount ?? 0,
+          approvedRequestsCount: result.user.approvedRequestsCount ?? 0,
+          preferredLanguage: (result.user as { preferredLanguage?: string }).preferredLanguage,
+        }),
+      );
     }
     router.push(routes.mainMenu);
     setIsLoading(false);

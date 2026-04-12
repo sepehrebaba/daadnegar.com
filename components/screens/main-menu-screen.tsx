@@ -21,6 +21,7 @@ import { routes } from "@/lib/routes";
 import { toPersianNum } from "@/lib/utils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { api } from "@/lib/edyen";
+import { userFromMeApi } from "@/lib/user-from-me-api";
 import { useTranslation } from "react-i18next";
 
 export function MainMenuScreen() {
@@ -38,19 +39,7 @@ export function MainMenuScreen() {
       ([meResult, reportsEnabledResult]) => {
         const { data, error } = meResult;
         if (!cancelled && !error && data) {
-          setUser({
-            id: data.id,
-            passkey: "",
-            inviteCode: data.inviteCode ?? "",
-            isActivated: true,
-            tokensCount: data.tokensCount ?? 0,
-            approvedRequestsCount: data.approvedRequestsCount ?? 0,
-            role: data.role ?? "user",
-            username: (data as { username?: string }).username,
-            name: data.name,
-            mustChangePassword:
-              (data as { mustChangePassword?: boolean }).mustChangePassword ?? false,
-          } as Parameters<typeof setUser>[0]);
+          setUser(userFromMeApi(data));
           setMinApprovedForApproval(
             typeof data.minApprovedReportsForApproval === "number"
               ? data.minApprovedReportsForApproval

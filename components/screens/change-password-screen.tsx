@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@/context/user-context";
 import { routes } from "@/lib/routes";
 import { api } from "@/lib/edyen";
+import { userFromMeApi } from "@/lib/user-from-me-api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -70,28 +71,7 @@ export function ChangePasswordScreen() {
         router.replace(routes.login);
         return;
       }
-      const me = data as {
-        mustChangePassword?: boolean;
-        id: string;
-        name?: string;
-        username?: string;
-        tokensCount?: number;
-        approvedRequestsCount?: number;
-        role?: string;
-        inviteCode?: string;
-      };
-      setUser({
-        id: me.id,
-        passkey: "",
-        inviteCode: me.inviteCode ?? "",
-        isActivated: true,
-        tokensCount: me.tokensCount ?? 0,
-        approvedRequestsCount: me.approvedRequestsCount ?? 0,
-        role: me.role ?? "user",
-        username: me.username,
-        name: me.name,
-        mustChangePassword: me.mustChangePassword ?? false,
-      });
+      setUser(userFromMeApi(data as Parameters<typeof userFromMeApi>[0]));
       if (!me.mustChangePassword) {
         router.replace(routes.mainMenu);
         return;
@@ -127,28 +107,7 @@ export function ChangePasswordScreen() {
     toast(t("auth.changePassword.success"));
     const { data: me2 } = await api.me.get();
     if (me2) {
-      const m = me2 as {
-        id: string;
-        name?: string;
-        username?: string;
-        tokensCount?: number;
-        approvedRequestsCount?: number;
-        role?: string;
-        inviteCode?: string;
-        mustChangePassword?: boolean;
-      };
-      setUser({
-        id: m.id,
-        passkey: "",
-        inviteCode: m.inviteCode ?? "",
-        isActivated: true,
-        tokensCount: m.tokensCount ?? 0,
-        approvedRequestsCount: m.approvedRequestsCount ?? 0,
-        role: m.role ?? "user",
-        username: m.username,
-        name: m.name,
-        mustChangePassword: m.mustChangePassword ?? false,
-      });
+      setUser(userFromMeApi(me2 as Parameters<typeof userFromMeApi>[0]));
     }
     router.replace(routes.mainMenu);
   };

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, UserPlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/context/language-context";
 
 interface AcceptInvitationFormProps {
   invitationId: string;
@@ -18,6 +19,7 @@ interface AcceptInvitationFormProps {
 export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const { language } = useLanguage();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +40,7 @@ export function AcceptInvitationForm({ invitationId }: AcceptInvitationFormProps
       code: invitationId,
       username: u || invitationId,
       passkey: password,
+      preferredLanguage: language,
     });
 
     if (acceptError) {

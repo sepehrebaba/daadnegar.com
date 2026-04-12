@@ -30,6 +30,7 @@ import {
 import Link from "next/link";
 import { routes } from "@/lib/routes";
 import { api, DAADNEGAR_INVITE_TOKEN_KEY, setInviteTokenStorage } from "@/lib/edyen";
+import { userFromMeApi } from "@/lib/user-from-me-api";
 import { useTranslation } from "react-i18next";
 
 const ChevronDown = () => (
@@ -88,18 +89,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     api.me.get().then(({ data, error }) => {
       if (cancelled || error || !data) return;
-      setUser({
-        id: data.id,
-        passkey: "",
-        inviteCode: data.inviteCode ?? "",
-        isActivated: true,
-        tokensCount: data.tokensCount ?? 0,
-        approvedRequestsCount: data.approvedRequestsCount ?? 0,
-        role: data.role ?? "user",
-        username: (data as { username?: string }).username,
-        name: data.name,
-        mustChangePassword: (data as { mustChangePassword?: boolean }).mustChangePassword ?? false,
-      } as Parameters<typeof setUser>[0]);
+      setUser(userFromMeApi(data));
     });
 
     return () => {
