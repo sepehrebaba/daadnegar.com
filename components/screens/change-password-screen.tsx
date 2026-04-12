@@ -71,8 +71,9 @@ export function ChangePasswordScreen() {
         router.replace(routes.login);
         return;
       }
-      setUser(userFromMeApi(data as Parameters<typeof userFromMeApi>[0]));
-      if (!me.mustChangePassword) {
+      const mapped = userFromMeApi(data as Parameters<typeof userFromMeApi>[0]);
+      setUser(mapped);
+      if (!mapped.mustChangePassword) {
         router.replace(routes.mainMenu);
         return;
       }
