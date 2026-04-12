@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { AlertCircle, Eye, EyeOff, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/lib/edyen";
+import { userFromMeApi } from "@/lib/user-from-me-api";
 import { useTranslation } from "react-i18next";
 
 export function LoginScreen() {
@@ -73,17 +74,7 @@ export function LoginScreen() {
       return;
     }
     const mustChange = (me as { mustChangePassword?: boolean }).mustChangePassword === true;
-    setUser({
-      id: me.id,
-      passkey: "",
-      inviteCode: "",
-      isActivated: true,
-      tokensCount: me.tokensCount ?? 0,
-      approvedRequestsCount: me.approvedRequestsCount ?? 0,
-      username: (me as { username?: string }).username,
-      name: me.name,
-      mustChangePassword: mustChange,
-    });
+    setUser(userFromMeApi({ ...me, mustChangePassword: mustChange }));
     toast(mustChange ? t("auth.login.successChangePassword") : t("auth.login.success"));
     router.push(mustChange ? routes.changePasswordRequired : routes.mainMenu);
 

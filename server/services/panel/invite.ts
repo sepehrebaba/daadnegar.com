@@ -144,6 +144,8 @@ export const inviteService = new Elysia({ prefix: "/invite" })
 
       const username = `dn_${session.inviteCode.code.toLowerCase()}`;
       const email = usernameToInternalEmail(username);
+      const preferredLanguage = body.preferredLanguage === "en" ? "en" : "fa";
+
       const user = await prisma.$transaction(async (tx) => {
         const u = await tx.user.create({
           data: {
@@ -151,6 +153,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
             username,
             email,
             role: roleFromAssignedInvite(session.inviteCode.assignedRole),
+            preferredLanguage,
             tokenBalance: defaultTokens,
             accounts: {
               create: {
@@ -208,6 +211,10 @@ export const inviteService = new Elysia({ prefix: "/invite" })
           tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
           role: user.role ?? "user",
+          preferredLanguage:
+            user.preferredLanguage === "en" || user.preferredLanguage === "fa"
+              ? user.preferredLanguage
+              : "fa",
         },
       };
     },
@@ -215,6 +222,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
       body: t.Object({
         token: t.String(),
         passkey: t.String(),
+        preferredLanguage: t.Optional(t.Union([t.Literal("fa"), t.Literal("en")])),
       }),
     },
   )
@@ -273,6 +281,10 @@ export const inviteService = new Elysia({ prefix: "/invite" })
           tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
           role: user.role ?? "user",
+          preferredLanguage:
+            user.preferredLanguage === "en" || user.preferredLanguage === "fa"
+              ? user.preferredLanguage
+              : "fa",
         },
       };
     },
@@ -314,6 +326,10 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         tokensCount: user.tokenBalance ?? 0,
         approvedRequestsCount,
         role: user.role ?? "user",
+        preferredLanguage:
+          user.preferredLanguage === "en" || user.preferredLanguage === "fa"
+            ? user.preferredLanguage
+            : "fa",
       },
     };
   })
@@ -558,6 +574,8 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         await getSettingNumber(SETTING_KEYS.DEFAULT_TOKENS_NEW_USER),
       );
 
+      const preferredLanguage = body.preferredLanguage === "en" ? "en" : "fa";
+
       const sessionToken = generateToken();
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + TOKEN_EXPIRY_DAYS);
@@ -569,6 +587,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
             username: usernameRaw,
             email,
             role: roleFromAssignedInvite(inviteCode.assignedRole),
+            preferredLanguage,
             tokenBalance: defaultTokens,
             accounts: {
               create: {
@@ -637,6 +656,10 @@ export const inviteService = new Elysia({ prefix: "/invite" })
           tokensCount: user.tokenBalance ?? 0,
           approvedRequestsCount,
           role: user.role ?? "user",
+          preferredLanguage:
+            user.preferredLanguage === "en" || user.preferredLanguage === "fa"
+              ? user.preferredLanguage
+              : "fa",
         },
       };
     },
@@ -645,6 +668,7 @@ export const inviteService = new Elysia({ prefix: "/invite" })
         code: t.String(),
         username: t.String(),
         passkey: t.String(),
+        preferredLanguage: t.Optional(t.Union([t.Literal("fa"), t.Literal("en")])),
       }),
     },
   );

@@ -144,6 +144,8 @@ export interface User {
   name?: string;
   /** True until the user changes their initial password */
   mustChangePassword?: boolean;
+  /** Persisted UI language when signed in */
+  preferredLanguage?: Language;
 }
 
 export interface Person {

@@ -7,6 +7,8 @@ import { resolveInviteToken } from "../../lib/auth-invite";
 import { getSettingNumber, SETTING_KEYS } from "../../lib/settings";
 import { isPasswordSecure } from "@/lib/password-utils";
 
+const languageSchema = t.Union([t.Literal("fa"), t.Literal("en")]);
+
 async function getSession(headers: Headers) {
   return auth.api.getSession({ headers });
 }
@@ -75,6 +77,7 @@ export const meService = new Elysia({ prefix: "/me" })
           role: true,
           username: true,
           mustChangePassword: true,
+          preferredLanguage: true,
         },
       }),
       prisma.report.count({
@@ -95,8 +98,30 @@ export const meService = new Elysia({ prefix: "/me" })
       role: user?.role ?? "user",
       minApprovedReportsForApproval,
       mustChangePassword: user?.mustChangePassword ?? false,
+      preferredLanguage:
+        user?.preferredLanguage === "en" || user?.preferredLanguage === "fa"
+          ? user.preferredLanguage
+          : "fa",
     };
   })
+  .patch(
+    "/preferred-language",
+    async ({ body, session }) => {
+      if (!session?.user?.id) {
+        throw new Error("Unauthorized");
+      }
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { preferredLanguage: body.language },
+      });
+      return { ok: true, preferredLanguage: body.language };
+    },
+    {
+      body: t.Object({
+        language: languageSchema,
+      }),
+    },
+  )
   .post(
     "/change-password",
     async ({ body, request, ip }) => {

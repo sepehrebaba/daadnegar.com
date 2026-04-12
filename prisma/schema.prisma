@@ -22,6 +22,8 @@ model User {
   tokenBalance  Float     @default(0)
   /// When true, the user cannot use the main app until they or an admin changes the password.
   mustChangePassword Boolean @default(false)
+  /// UI locale: "fa" | "en"
+  preferredLanguage String @default("fa")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
