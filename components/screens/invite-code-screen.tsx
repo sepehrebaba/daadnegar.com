@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, setInviteTokenStorage } from "@/lib/edyen";
+import { api } from "@/lib/edyen";
 import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -30,20 +30,22 @@ export function InviteCodeScreen() {
     setError("");
     setIsLoading(true);
 
-    const { data, error: apiError } = await api.invite.validate.post({ code });
+    const normalized = code.trim().toUpperCase();
+    const { data, error: apiError } = await api.invite["check-code"].get({
+      query: { code: normalized },
+    });
     if (apiError || !data) {
       setError(extractErrorMessage(apiError, t("auth.inviteCode.invalid")));
       setIsLoading(false);
       return;
     }
-    const result = data as { ok?: boolean; error?: string; token?: string; hasPasskey?: boolean };
-    if (!result.ok) {
-      setError(result.error ?? t("auth.inviteCode.invalid"));
+    if (!data.ok) {
+      setError(t("auth.inviteCode.invalid"));
       setIsLoading(false);
       return;
     }
-    setInviteTokenStorage(result.token);
-    router.push(`${routes.register}?code=${encodeURIComponent(code)}`);
+    // Do not call /invite/validate here: it deactivates the code before register-by-code runs.
+    router.push(`${routes.register}?code=${encodeURIComponent(normalized)}`);
 
     setIsLoading(false);
   };
